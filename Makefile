@@ -15,7 +15,7 @@
 #
 
 SOURCES=room.cc shell.cc
-HEADERS=shell.h namespaceImport.h logger.h
+HEADERS=shell.h namespaceImport.h logger.h fileUtil.h
 
 all: room
 

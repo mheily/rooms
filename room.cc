@@ -42,37 +42,7 @@ static FILE *logfile;
 
 #include "namespaceImport.h"
 #include "shell.h"
-
-class FileUtils {
-public:
-	static bool checkExists(const string& path) {
-		if (eaccess(path.c_str(), F_OK) == 0) {
-			return true;
-		} else {
-			if (errno != ENOENT) {
-				log_errno("eaccess(2) of `%s'", path.c_str());
-				throw std::system_error(errno, std::system_category());
-			}
-			return false;
-		}
-	}
-
-	static void mkdir_idempotent(const string& path, mode_t mode, uid_t uid, gid_t gid) {
-		if (mkdir(path.c_str(), mode) != 0) {
-			if (errno == EEXIST) {
-				return;
-			}
-			log_errno("mkdir(2) of `%s'", path.c_str());
-			throw std::system_error(errno, std::system_category());
-		}
-
-		if (chown(path.c_str(), uid, gid) != 0) {
-			(void) unlink(path.c_str());
-			log_errno("chown(2) of `%s'", path.c_str());
-			throw std::system_error(errno, std::system_category());
-		}
-	}
-};
+#include "fileUtil.h"
 
 class Room {
 public:
@@ -270,10 +240,10 @@ void Room::create(const string& baseTarball)
 	string cmd;
 
 	// Each user has a directory under /var/room
-	FileUtils::mkdir_idempotent(string(roomDir + '/' + std::to_string(ownerUid)), 0700, ownerUid, (gid_t) ownerUid);
+	FileUtil::mkdir_idempotent(string(roomDir + '/' + std::to_string(ownerUid)), 0700, ownerUid, (gid_t) ownerUid);
 
 	log_debug("creating room");
-	FileUtils::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
+	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
 
 	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
 
@@ -316,7 +286,7 @@ void Room::destroy()
 		throw std::runtime_error("bad chrootDir");
 	}
 
-	if (!FileUtils::checkExists(chrootDir)) {
+	if (!FileUtil::checkExists(chrootDir)) {
 		throw std::runtime_error("room does not exist");
 	}
 
@@ -438,7 +408,7 @@ private:
 
 bool RoomManager::isBootstrapComplete()
 {
-	return FileUtils::checkExists("/room");
+	return FileUtil::checkExists("/room");
 }
 
 void RoomManager::bootstrap()
@@ -463,11 +433,11 @@ void RoomManager::bootstrap()
 }
 
 void RoomManager::createRoomDir() {
-	FileUtils::mkdir_idempotent(roomDir, 0700, 0, 0);
+	FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
 }
 
 void RoomManager::downloadBase() {
-	if (!FileUtils::checkExists(baseTarball)) {
+	if (!FileUtil::checkExists(baseTarball)) {
 		cout << "Downloading base.txz..\n";
 		string cmd = "fetch -o " + baseTarball + " " + baseUri;
 		if (system(cmd.c_str()) != 0) {
@@ -478,7 +448,7 @@ void RoomManager::downloadBase() {
 
 string RoomManager::getZfsPoolName(const string& path)
 {
-	if (!FileUtils::checkExists(path)) {
+	if (!FileUtil::checkExists(path)) {
 		throw std::runtime_error("path does not exist: " + path);
 	}
 
