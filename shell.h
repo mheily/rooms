@@ -17,6 +17,7 @@
 #pragma once
 
 #include "namespaceImport.h"
+#include "logger.h"
 
 class Shell {
 public:

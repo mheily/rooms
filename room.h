@@ -14,8 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -40,37 +38,35 @@ extern "C" {
 }
 
 #include "namespaceImport.h"
+#include "shell.h"
+#include "fileUtil.h"
 
 extern FILE *logfile;
 #include "logger.h"
 
-class FileUtil {
+class Room {
 public:
-	static bool checkExists(const string& path) {
-		if (eaccess(path.c_str(), F_OK) == 0) {
-			return true;
-		} else {
-			if (errno != ENOENT) {
-				log_errno("eaccess(2) of `%s'", path.c_str());
-				throw std::system_error(errno, std::system_category());
-			}
-			return false;
-		}
-	}
+	Room(const string& managerRoomDir, const string& name, uid_t uid);
 
-	static void mkdir_idempotent(const string& path, mode_t mode, uid_t uid, gid_t gid) {
-		if (mkdir(path.c_str(), mode) != 0) {
-			if (errno == EEXIST) {
-				return;
-			}
-			log_errno("mkdir(2) of `%s'", path.c_str());
-			throw std::system_error(errno, std::system_category());
-		}
+	void create(const string& baseTarball);
+	void killAllProcesses();
+	void destroy();
+	void enter();
 
-		if (chown(path.c_str(), uid, gid) != 0) {
-			(void) unlink(path.c_str());
-			log_errno("chown(2) of `%s'", path.c_str());
-			throw std::system_error(errno, std::system_category());
-		}
-	}
+private:
+	char ownerPwEntBuf[9999]; // storage used by getpwuid_r(3)
+	struct passwd ownerPwEnt; // the owner's passwd(5) entry
+	uid_t  ownerUid;  // the UID who owns the room
+	string roomDir;   // copy of RoomManager::roomDir
+	string chrootDir; // path to the root of the chroot environment
+	string roomName;  // name of this room
+	string jailName;  // name of the jail
+	bool allowX11Clients = true; // allow X programs to run
+	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
+
+	void getPasswdInfo(uid_t uid);
+	bool jailExists();
+	void customizeWithoutRoot();
+	void enableX11Clients();
+	void validateName(const string& name);
 };

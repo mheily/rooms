@@ -14,7 +14,7 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-SOURCES=room.cc shell.cc
+SOURCES=main.cc room.cc shell.cc
 HEADERS=shell.h namespaceImport.h logger.h fileUtil.h
 
 all: room
