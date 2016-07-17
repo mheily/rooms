@@ -162,6 +162,9 @@ void Room::validateName(const string& name)
 	string buf = name;
 	std::locale loc("C");
 
+	//FIXME: this function does too much.. should have a separate function
+	// for generating roomName and jailName
+	// Having all this here creates subtle ordering bugs.
 	roomName = name;
 	jailName = "room_" + ownerLogin + "_";
 
