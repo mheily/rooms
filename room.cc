@@ -300,7 +300,21 @@ void Room::destroy()
 	Shell::execute("chflags -R noschg " + chrootDir);
 
 	if (useZFS) {
-		Shell::execute("zfs destroy " + roomDataset + "/" + roomName);
+		// this races with "jail -r"
+		bool success = false;
+		for (int i = 0; i < 5; i++) {
+			sleep(1);
+			int result = Shell::executeWithStatus("zfs destroy " + roomDataset + "/" + roomName);
+			if (result == 0) {
+				success = true;
+				break;
+			}
+		}
+		if (!success) {
+			log_error("unable to destroy the ZFS dataset");
+			throw std::runtime_error("unable to destroy the ZFS dataset");
+		}
+
 	} else {
 		// remove all files (this makes me nervous)
 		Shell::execute("rm -rf " + chrootDir);
