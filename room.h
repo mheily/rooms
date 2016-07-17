@@ -47,7 +47,7 @@ extern FILE *logfile;
 
 class Room {
 public:
-	Room(const string& managerRoomDir, const string& name, uid_t uid);
+	Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset);
 
 	void create(const string& baseTarball);
 	void killAllProcesses();
@@ -63,6 +63,9 @@ private:
 	string jailName;  // name of the jail
 	bool allowX11Clients = true; // allow X programs to run
 	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
+
+	bool useZFS = false;
+	string roomDataset; // the name of the ZFS dataset for the room
 
 	bool jailExists();
 	void customizeWithoutRoot();

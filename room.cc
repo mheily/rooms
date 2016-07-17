@@ -42,7 +42,7 @@ extern "C" {
 #include "fileUtil.h"
 #include "room.h"
 
-Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
+Room::Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset)
 {
 	PasswdEntry pwent(uid);
 	validateName(name);
@@ -51,6 +51,12 @@ Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
 	ownerUid = uid;
 	ownerLogin = pwent.getLogin();
 	chrootDir = roomDir + "/" + ownerLogin + "/" + name;
+	if (dataset == "") {
+		useZFS = false;
+	} else {
+		useZFS = true;
+		roomDataset = dataset;
+	}
 }
 
 void Room::enter()
@@ -198,7 +204,12 @@ void Room::create(const string& baseTarball)
 	string cmd;
 
 	log_debug("creating room");
-	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
+
+	if (useZFS) {
+		Shell::execute("zfs create " + roomDataset + "/" + roomName);
+	} else {
+		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
+	}
 
 	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
 

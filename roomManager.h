@@ -67,10 +67,12 @@ private:
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
 	string roomDir = "/room";
 	string zpoolName = "uninitialized-zpool-name";
+	bool useZFS = true; // create ZFS-based rooms
 
 	void downloadBase();
 	void createRoomDir();
 	string getUserRoomDir(uid_t uid);
+	string getUserRoomDataset();
 	string getRoomPathByName(const string& name);
 	bool validateZfsPoolName(const string& name, string& errorMsg);
 	string getZfsPoolName(const string& path);

@@ -158,20 +158,20 @@ bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg) {
 }
 
 Room RoomManager::getRoomByName(const string& name) {
-	return Room(roomDir, name, ownerUid);
+	return Room(roomDir, name, ownerUid, getUserRoomDataset());
 }
 
 void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
-	Room room(roomDir, name, ownerUid);
+	Room room(roomDir, name, ownerUid, getUserRoomDataset());
 	room.create(baseTarball);
 }
 
 void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
-	Room room(roomDir, name, ownerUid);
+	Room room(roomDir, name, ownerUid, getUserRoomDataset());
 	room.destroy();
 }
 
@@ -182,5 +182,13 @@ void RoomManager::listRooms() {
 				<< endl;
 	} else {
 		Shell::execute("/bin/ls -1 " + getUserRoomDir(ownerUid));
+	}
+}
+
+string RoomManager::getUserRoomDataset() {
+	if (useZFS) {
+		return string(zpoolName + "/room/" + ownerLogin);
+	} else {
+		return "";
 	}
 }
