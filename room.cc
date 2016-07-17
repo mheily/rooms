@@ -295,8 +295,12 @@ void Room::destroy()
 	// remove the immutable flag
 	Shell::execute("chflags -R noschg " + chrootDir);
 
-	// remove all files (this makes me nervous)
-	Shell::execute("rm -rf " + chrootDir);
+	if (useZFS) {
+		Shell::execute("zfs destroy " + roomDataset + "/" + roomName);
+	} else {
+		// remove all files (this makes me nervous)
+		Shell::execute("rm -rf " + chrootDir);
+	}
 
 	log_notice("room deleted");
 }
