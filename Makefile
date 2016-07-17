@@ -14,10 +14,13 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
+SOURCES=room.cc shell.cc
+HEADERS=shell.h namespaceImport.h logger.h
+
 all: room
 
-room: room.cc logger.h
-	$(CXX) -std=c++11 -isystem /usr/local/include -o room room.cc
+room: $(SOURCES) $(HEADERS)
+	$(CXX) -std=c++11 -isystem /usr/local/include -o room $(SOURCES)
 
 install: room
 	install -m 6755 -o root -g wheel room /usr/local/bin/room
