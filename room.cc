@@ -45,11 +45,11 @@ extern "C" {
 Room::Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset)
 {
 	PasswdEntry pwent(uid);
-	validateName(name);
 
 	roomDir = managerRoomDir;
 	ownerUid = uid;
 	ownerLogin = pwent.getLogin();
+	validateName(name);
 	chrootDir = roomDir + "/" + ownerLogin + "/" + name;
 	if (dataset == "") {
 		useZFS = false;
@@ -57,6 +57,7 @@ Room::Room(const string& managerRoomDir, const string& name, uid_t uid, const st
 		useZFS = true;
 		roomDataset = dataset;
 	}
+
 }
 
 void Room::enter()
