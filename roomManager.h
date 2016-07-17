@@ -62,6 +62,7 @@ public:
 
 private:
 	uid_t ownerUid;
+	string ownerLogin;
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
 	string roomDir = "/room";

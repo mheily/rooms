@@ -77,6 +77,8 @@ void RoomManager::setup(uid_t uid) {
 		throw std::runtime_error("bootstrap is required");
 	}
 	ownerUid = uid;
+	PasswdEntry pwent(uid);
+	ownerLogin = pwent.getLogin();
 	downloadBase();
 	createRoomDir();
 	zpoolName = getZfsPoolName(roomDir);
@@ -160,5 +162,10 @@ void RoomManager::destroyRoom(const string& name)
 
 void RoomManager::listRooms()
 {
-	Shell::execute("/bin/ls -1 " + roomDir + "/" + std::to_string(ownerUid));
+	string userRoomDir = roomDir + "/" + ownerLogin;
+	if (!FileUtil::checkExists(userRoomDir)) {
+		std::clog << "No rooms exist. Run 'room create' to create a room." << endl;
+	} else {
+		Shell::execute("/bin/ls -1 " + userRoomDir);
+	}
 }
