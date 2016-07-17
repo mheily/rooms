@@ -47,6 +47,8 @@ using std::string;
 
 class Shell {
 public:
+	static string popen_readline(const string& command);
+
 	static int executeWithStatus(const string& command) {
 		log_debug("running %s", command.c_str());
 		int status = system(command.c_str());
@@ -66,6 +68,35 @@ public:
 		}
 	}
 };
+
+// Run a command that is expected to return a single line of output
+// Return the line, without the trailing newline
+string Shell::popen_readline(const string& command)
+{
+	FILE *in;
+	char buf[4096];
+
+	in = popen(command.c_str(), "r");
+	if (!in) {
+		throw std::runtime_error("popen failed");
+	}
+	if (fgets(buf, sizeof(buf), in) == NULL) {
+		throw std::runtime_error("empty response");
+	}
+	if (ferror(in)) {
+		throw std::runtime_error("ferror");
+	}
+	if (feof(in) != 0) {
+		throw std::runtime_error("buffer too small");
+	}
+
+	string s = buf;
+	if (!s.empty() && s[s.length() - 1] == '\n') {
+		s.erase(s.length() - 1);
+	}
+
+	return s;
+}
 
 class FileUtils {
 public:
@@ -246,8 +277,8 @@ void Room::validateName(const string& name)
 	if (name.length() > 72) {
 		throw std::runtime_error("name is too long");
 	}
-	if (name.at(0) == '.') {
-		throw std::runtime_error("names may not start with a dot");
+	if (name.at(0) == '.' || name.at(0) == '_') {
+		throw std::runtime_error("names may not start with a dot or underscore");
 	}
 	for (std::string::iterator it = buf.begin(); it != buf.end(); ++it) {
 		if (*it == '\0') {
@@ -431,7 +462,7 @@ void Room::killAllProcesses()
 class RoomManager {
 public:
 	void bootstrap();
-	bool isBootstrapComplete();
+	static bool isBootstrapComplete();
 	void setup(uid_t uid) {
 		if (!isBootstrapComplete()) {
 			throw std::runtime_error("bootstrap is required");
@@ -484,9 +515,6 @@ void RoomManager::bootstrap()
 	}
 
 	Shell::execute("zfs create -o canmount=on -o mountpoint=/room " + zpool + "/room");
-	Shell::execute("zfs create -o canmount=on " + zpool + "/room/instance");
-	Shell::execute("zfs create -o canmount=on " + zpool + "/room/template");
-	Shell::execute("echo /room/.zpool-name");
 }
 
 void RoomManager::createRoomDir() {
@@ -509,23 +537,8 @@ string RoomManager::getZfsPoolName(const string& path)
 		throw std::runtime_error("path does not exist: " + path);
 	}
 
-	FILE *in;
-	char buf[MAXPATHLEN + 1];
-
 	string cmd = "df -h " + path + " | tail -1 | sed 's,/.*,,'";
-	in = popen(cmd.c_str(), "r");
-	if (!in) {
-		throw std::runtime_error("path does not exist: " + path);
-	}
-	if (fgets(buf, sizeof(buf), in) == NULL) {
-		throw std::runtime_error("empty response");
-	}
-	string s = buf;
-	if (!s.empty() && s[s.length() - 1] == '\n') {
-	    s.erase(s.length() - 1);
-	}
-
-	return s;
+	return Shell::popen_readline(cmd);
 }
 
 bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg)
@@ -664,6 +677,19 @@ main(int argc, char *argv[])
 			}
 		}
 
+		// Implicitly bootstrap OR (bootstrap explicitly AND exit)
+		if (RoomManager::isBootstrapComplete()) {
+			if (argc == 1 && string(argv[0]) == "bootstrap") {
+				cout << "The bootstrap process is already complete. Nothing to do." << endl;
+				exit(0);
+			}
+		} else {
+			mgr.bootstrap();
+			if (argc == 1 && string(argv[0]) == "bootstrap") {
+				exit(0);
+			}
+		}
+
 		mgr.setup(real_uid);
 		log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);
 
@@ -672,12 +698,7 @@ main(int argc, char *argv[])
 			if (command == "list") {
 				mgr.listRooms();
 			} else if (command == "bootstrap") {
-				if (mgr.isBootstrapComplete()) {
-					cout << "The bootstrap process is already complete. Nothing to do." << endl;
-					exit(0);
-				} else {
-					mgr.bootstrap();
-				}
+				throw std::logic_error("NOTREACHED");
 			} else if (command == "--help" || command == "-h" || command == "help") {
 				usage();
 				exit(1);
