@@ -41,6 +41,7 @@ static FILE *logfile;
 }
 
 using std::cout;
+using std::cin;
 using std::endl;
 using std::string;
 
@@ -239,8 +240,14 @@ void Room::validateName(const string& name)
 	roomName = name;
 	jailName = "room_" + string(ownerPwEnt.pw_name) + "_";
 
+	if (name.length() == 0) {
+		throw std::runtime_error("name cannot be empty");
+	}
 	if (name.length() > 72) {
 		throw std::runtime_error("name is too long");
+	}
+	if (name.at(0) == '.') {
+		throw std::runtime_error("names may not start with a dot");
 	}
 	for (std::string::iterator it = buf.begin(); it != buf.end(); ++it) {
 		if (*it == '\0') {
@@ -424,10 +431,15 @@ void Room::killAllProcesses()
 class RoomManager {
 public:
 	void bootstrap();
+	bool isBootstrapComplete();
 	void setup(uid_t uid) {
+		if (!isBootstrapComplete()) {
+			throw std::runtime_error("bootstrap is required");
+		}
 		ownerUid = uid;
 		downloadBase();
 		createRoomDir();
+		zpoolName = getZfsPoolName("/room");
 	}
 	void createRoom(const string& name);
 	void destroyRoom(const string& name);
@@ -435,18 +447,46 @@ public:
 	void listRooms();
 
 private:
-	void downloadBase();
-	void createRoomDir();
 	uid_t ownerUid;
-	string getRoomPathByName(const string& name);
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
 	string roomDir = "/var/room";
+	string zpoolName = "uninitialized-zpool-name";
+
+	void downloadBase();
+	void createRoomDir();
+	string getRoomPathByName(const string& name);
+	bool validateZfsPoolName(const string& name, string& errorMsg);
+	string getZfsPoolName(const string& path);
 };
+
+bool RoomManager::isBootstrapComplete()
+{
+	return FileUtils::checkExists("/room");
+}
 
 void RoomManager::bootstrap()
 {
+	string zpool;
+	for (;;) {
+		cout << "Enter the ZFS pool that rooms will be stored in: ";
+		cin >> zpool;
+		string errorMsg;
+		if (!validateZfsPoolName(zpool, errorMsg)) {
+			cout << "Error: " << errorMsg << endl;
+			continue;
+		}
+		if (Shell::executeWithStatus("zpool list " + zpool + " | grep -q " + zpool) != 0) {
+			cout << "Error: no such ZFS pool" << endl;
+			continue;
+		}
+		break;
+	}
 
+	Shell::execute("zfs create -o canmount=on -o mountpoint=/room " + zpool + "/room");
+	Shell::execute("zfs create -o canmount=on " + zpool + "/room/instance");
+	Shell::execute("zfs create -o canmount=on " + zpool + "/room/template");
+	Shell::execute("echo /room/.zpool-name");
 }
 
 void RoomManager::createRoomDir() {
@@ -461,6 +501,62 @@ void RoomManager::downloadBase() {
 			throw std::runtime_error("Download failed");
 		}
 	}
+}
+
+string RoomManager::getZfsPoolName(const string& path)
+{
+	if (!FileUtils::checkExists(path)) {
+		throw std::runtime_error("path does not exist: " + path);
+	}
+
+	FILE *in;
+	char buf[MAXPATHLEN + 1];
+
+	string cmd = "df -h " + path + " | tail -1 | sed 's,/.*,,'";
+	in = popen(cmd.c_str(), "r");
+	if (!in) {
+		throw std::runtime_error("path does not exist: " + path);
+	}
+	if (fgets(buf, sizeof(buf), in) == NULL) {
+		throw std::runtime_error("empty response");
+	}
+	string s = buf;
+	if (!s.empty() && s[s.length() - 1] == '\n') {
+	    s.erase(s.length() - 1);
+	}
+
+	return s;
+}
+
+bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg)
+{
+	string buf = name;
+	std::locale loc("C");
+
+	errorMsg = "";
+
+	if (name.length() == 0) {
+		errorMsg = "name cannot be empty";
+		return false;
+	}
+	if (name.length() > 72) {
+		errorMsg = "name is too long";
+		return false;
+	}
+	for (std::string::iterator it = buf.begin(); it != buf.end(); ++it) {
+		if (*it == '\0') {
+			errorMsg = "NUL in name";
+			return false;
+		}
+		if (std::isalnum(*it, loc) || strchr("-_", *it)) {
+			// ok
+		} else {
+			errorMsg = "Illegal character in name: ";
+			errorMsg.push_back(*it);
+			return false;
+		}
+	}
+	return true;
 }
 
 Room RoomManager::getRoomByName(const string& name)
@@ -494,11 +590,10 @@ void usage() {
 		"Usage:\n\n"
 		"  room [create|destroy|enter] <name>\n"
 		" -or-\n"
-		"  room list\n"
+		"  room [bootstrap|list]\n"
 		"\n"
 		"  Miscellaneous options:\n\n"
 		"    -h, --help         This screen\n"
-		"    -v, --version      Display the version number\n"
 	<< std::endl;
 }
 
@@ -576,6 +671,13 @@ main(int argc, char *argv[])
 		if (argc == 1) {
 			if (command == "list") {
 				mgr.listRooms();
+			} else if (command == "bootstrap") {
+				if (mgr.isBootstrapComplete()) {
+					cout << "The bootstrap process is already complete. Nothing to do." << endl;
+					exit(0);
+				} else {
+					mgr.bootstrap();
+				}
 			} else if (command == "--help" || command == "-h" || command == "help") {
 				usage();
 				exit(1);
