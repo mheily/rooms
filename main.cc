@@ -126,13 +126,13 @@ main(int argc, char *argv[])
 		}
 
 		// Implicitly bootstrap OR (bootstrap explicitly AND exit)
-		if (RoomManager::isBootstrapComplete()) {
+		if (mgr.isBootstrapComplete(real_uid)) {
 			if (argc == 1 && string(argv[0]) == "bootstrap") {
 				cout << "The bootstrap process is already complete. Nothing to do." << endl;
 				exit(0);
 			}
 		} else {
-			mgr.bootstrap();
+			mgr.bootstrap(real_uid);
 			if (argc == 1 && string(argv[0]) == "bootstrap") {
 				exit(0);
 			}

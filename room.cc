@@ -50,7 +50,7 @@ Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
 	roomDir = managerRoomDir;
 	ownerUid = uid;
 	ownerLogin = pwent.getLogin();
-	chrootDir = roomDir + "/" + std::to_string(ownerUid) + "/" + name;
+	chrootDir = roomDir + "/" + ownerLogin + "/" + name;
 }
 
 void Room::enter()
@@ -196,9 +196,6 @@ void Room::enableX11Clients() {
 void Room::create(const string& baseTarball)
 {
 	string cmd;
-
-	// Each user has a directory under /var/room
-	FileUtil::mkdir_idempotent(string(roomDir + '/' + std::to_string(ownerUid)), 0700, ownerUid, (gid_t) ownerUid);
 
 	log_debug("creating room");
 	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);

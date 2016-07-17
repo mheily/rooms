@@ -46,36 +46,56 @@ extern "C" {
 extern FILE *logfile;
 #include "logger.h"
 
-bool RoomManager::isBootstrapComplete()
-{
-	return FileUtil::checkExists("/room");
+string RoomManager::getUserRoomDir(uid_t uid) {
+	PasswdEntry pwent(uid);
+	string login = pwent.getLogin();
+
+	return string(roomDir + "/" + pwent.getLogin());
 }
 
-void RoomManager::bootstrap()
-{
+bool RoomManager::isBootstrapComplete(uid_t uid) {
+	return FileUtil::checkExists(getUserRoomDir(uid));
+}
+
+void RoomManager::bootstrap(uid_t uid) {
 	string zpool;
-	for (;;) {
-		cout << "Enter the ZFS pool that rooms will be stored in: ";
-		cin >> zpool;
-		string errorMsg;
-		if (!validateZfsPoolName(zpool, errorMsg)) {
-			cout << "Error: " << errorMsg << endl;
-			continue;
+
+	if (!FileUtil::checkExists(roomDir)) {
+
+		for (;;) {
+			cout << "Enter the ZFS pool that rooms will be stored in: ";
+			cin >> zpool;
+			string errorMsg;
+			if (!validateZfsPoolName(zpool, errorMsg)) {
+				cout << "Error: " << errorMsg << endl;
+				continue;
+			}
+			if (Shell::executeWithStatus(
+					"zpool list " + zpool + " | grep -q " + zpool) != 0) {
+				cout << "Error: no such ZFS pool" << endl;
+				continue;
+			}
+			break;
 		}
-		if (Shell::executeWithStatus("zpool list " + zpool + " | grep -q " + zpool) != 0) {
-			cout << "Error: no such ZFS pool" << endl;
-			continue;
-		}
-		break;
+
+		Shell::execute(
+				"zfs create -o canmount=on -o mountpoint=/room " + zpool
+						+ "/room");
+	} else {
+		zpool = getZfsPoolName(roomDir);
 	}
 
-	Shell::execute("zfs create -o canmount=on -o mountpoint=/room " + zpool + "/room");
+	PasswdEntry pwent(uid);
+	if (!FileUtil::checkExists(getUserRoomDir(uid))) {
+		Shell::execute("zfs create " + zpool + "/room/" + pwent.getLogin());
+	}
 }
 
 void RoomManager::setup(uid_t uid) {
-	if (!isBootstrapComplete()) {
+	if (!isBootstrapComplete(uid)) {
 		throw std::runtime_error("bootstrap is required");
 	}
+
 	ownerUid = uid;
 	PasswdEntry pwent(uid);
 	ownerLogin = pwent.getLogin();
@@ -98,8 +118,7 @@ void RoomManager::downloadBase() {
 	}
 }
 
-string RoomManager::getZfsPoolName(const string& path)
-{
+string RoomManager::getZfsPoolName(const string& path) {
 	if (!FileUtil::checkExists(path)) {
 		throw std::runtime_error("path does not exist: " + path);
 	}
@@ -108,8 +127,7 @@ string RoomManager::getZfsPoolName(const string& path)
 	return Shell::popen_readline(cmd);
 }
 
-bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg)
-{
+bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg) {
 	string buf = name;
 	std::locale loc("C");
 
@@ -139,33 +157,30 @@ bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg)
 	return true;
 }
 
-Room RoomManager::getRoomByName(const string& name)
-{
+Room RoomManager::getRoomByName(const string& name) {
 	return Room(roomDir, name, ownerUid);
 }
 
-void RoomManager::createRoom(const string& name)
-{
+void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
 	Room room(roomDir, name, ownerUid);
 	room.create(baseTarball);
 }
 
-void RoomManager::destroyRoom(const string& name)
-{
+void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
 	Room room(roomDir, name, ownerUid);
 	room.destroy();
 }
 
-void RoomManager::listRooms()
-{
-	string userRoomDir = roomDir + "/" + ownerLogin;
-	if (!FileUtil::checkExists(userRoomDir)) {
-		std::clog << "No rooms exist. Run 'room create' to create a room." << endl;
+void RoomManager::listRooms() {
+	if (!FileUtil::checkExists(getUserRoomDir(ownerUid))) {
+		// FIXME: will never happen b/c bootstrap ensures the directory exists
+		std::clog << "No rooms exist. Run 'room create' to create a room."
+				<< endl;
 	} else {
-		Shell::execute("/bin/ls -1 " + userRoomDir);
+		Shell::execute("/bin/ls -1 " + getUserRoomDir(ownerUid));
 	}
 }

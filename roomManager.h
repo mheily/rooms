@@ -52,8 +52,8 @@ extern FILE *logfile;
 
 class RoomManager {
 public:
-	void bootstrap();
-	static bool isBootstrapComplete();
+	void bootstrap(uid_t);
+	bool isBootstrapComplete(uid_t);
 	void setup(uid_t);
 	void createRoom(const string& name);
 	void destroyRoom(const string& name);
@@ -70,6 +70,7 @@ private:
 
 	void downloadBase();
 	void createRoomDir();
+	string getUserRoomDir(uid_t uid);
 	string getRoomPathByName(const string& name);
 	bool validateZfsPoolName(const string& name, string& errorMsg);
 	string getZfsPoolName(const string& path);
