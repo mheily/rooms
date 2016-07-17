@@ -68,6 +68,18 @@ public:
 
 class FileUtils {
 public:
+	static bool checkExists(const string& path) {
+		if (eaccess(path.c_str(), F_OK) == 0) {
+			return true;
+		} else {
+			if (errno != ENOENT) {
+				log_errno("eaccess(2) of `%s'", path.c_str());
+				throw std::system_error(errno, std::system_category());
+			}
+			return false;
+		}
+	}
+
 	static void mkdir_idempotent(const string& path, mode_t mode, uid_t uid, gid_t gid) {
 		if (mkdir(path.c_str(), mode) != 0) {
 			if (errno == EEXIST) {
@@ -321,9 +333,8 @@ void Room::destroy()
 		throw std::runtime_error("bad chrootDir");
 	}
 
-	if (eaccess(chrootDir.c_str(), F_OK) < 0) {
-		log_errno("access(2)");
-		throw std::system_error(errno, std::system_category());
+	if (!FileUtils::checkExists(chrootDir)) {
+		throw std::runtime_error("room does not exist");
 	}
 
 	log_debug("unmounting /dev");
@@ -412,6 +423,7 @@ void Room::killAllProcesses()
 
 class RoomManager {
 public:
+	void bootstrap();
 	void setup(uid_t uid) {
 		ownerUid = uid;
 		downloadBase();
@@ -432,12 +444,17 @@ private:
 	string roomDir = "/var/room";
 };
 
+void RoomManager::bootstrap()
+{
+
+}
+
 void RoomManager::createRoomDir() {
 	FileUtils::mkdir_idempotent(roomDir, 0700, 0, 0);
 }
 
 void RoomManager::downloadBase() {
-	if (access(baseTarball.c_str(), F_OK) < 0) {
+	if (!FileUtils::checkExists(baseTarball)) {
 		cout << "Downloading base.txz..\n";
 		string cmd = "fetch -o " + baseTarball + " " + baseUri;
 		if (system(cmd.c_str()) != 0) {
