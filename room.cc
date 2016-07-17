@@ -18,21 +18,26 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <locale>
 #include <regex>
 #include <string>
 #include <streambuf>
 #include <unordered_set>
 
 extern "C" {
-	#include <getopt.h>
-	#include <pwd.h>
-	#include <sys/mount.h>
-	#include <sys/stat.h>
-	#include <sys/wait.h>
-	#include <unistd.h>
+#include <getopt.h>
+#include <jail.h>
+#include <pwd.h>
+#include <sys/param.h>
+#include <sys/jail.h>
+#include <sys/mount.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
-	static FILE *logfile;
-	#include "logger.h"
+static FILE *logfile;
+#include "logger.h"
 }
 
 using std::cout;
@@ -96,27 +101,25 @@ private:
 	string roomDir;   // copy of RoomManager::roomDir
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
-	string jailName;  // name of the jail(2)
+	string jailName;  // name of the jail
 	bool allowX11Clients = true; // allow X programs to run
 	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
 
 	void getPasswdInfo(uid_t uid);
-	bool validName(const string& name);
 	bool jailExists();
 	void customizeWithoutRoot();
 	void enableX11Clients();
+	void validateName(const string& name);
 };
 
 Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
 {
 	getPasswdInfo(uid);
+	validateName(name);
 
 	roomDir = managerRoomDir;
-	roomName = name;
 	ownerUid = uid;
 	chrootDir = roomDir + "/" + std::to_string(ownerUid) + "/" + name;
-	//XXX-SECURITY unsafe for shell
-	jailName = "room_" + string(ownerPwEnt.pw_name) + "_" + roomName;
 }
 
 void Room::enter()
@@ -216,6 +219,34 @@ bool Room::jailExists()
 	}
 }
 
+void Room::validateName(const string& name)
+{
+	string buf = name;
+	std::locale loc("C");
+
+	roomName = name;
+	jailName = "room_" + string(ownerPwEnt.pw_name) + "_";
+
+	if (name.length() > 72) {
+		throw std::runtime_error("name is too long");
+	}
+	for (std::string::iterator it = buf.begin(); it != buf.end(); ++it) {
+		if (*it == '\0') {
+			throw std::runtime_error("NUL in name");
+		}
+		if (std::isalnum(*it, loc) || strchr("-_.", *it)) {
+			if (*it == '.') {
+				jailName.push_back('^');
+			} else {
+				jailName.push_back(*it);
+			}
+		} else {
+			cout << "Illegal character in name: " << *it << endl;
+			throw std::runtime_error("invalid character in name");
+		}
+	}
+}
+
 void Room::getPasswdInfo(uid_t uid)
 {
 	struct passwd *result;
@@ -265,7 +296,8 @@ void Room::create(const string& baseTarball)
 	// KLUDGE: install pkg(8)
 	Shell::execute("chroot -u root " + chrootDir + " env ASSUME_ALWAYS_YES=YES pkg bootstrap > /dev/null");
 
-	Shell::execute("jail -i -c name=" + jailName +
+	Shell::execute(
+			"jail -i -c name=" + jailName +
 			" host.hostname=" + roomName + ".room" +
 			" path=" + chrootDir +
 			" ip4=inherit" +
@@ -323,7 +355,7 @@ void Room::destroy()
 	}
 
 	if (jailExists()) {
-		log_debug("removing jail %s", jailName.c_str());
+		log_debug("removing jail");
 		Shell::execute("jail -r " + jailName);
 	} else {
 		log_warning("jail(2) does not exist");
