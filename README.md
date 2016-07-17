@@ -9,17 +9,30 @@ sudo make install
 
 # Examples
 
-1. Create a new room called 'hello_world'
+Create a new room called 'hello_world'.
 ```
-room create hello_world
-```
-
-2. Login to the room and play around.
-```
-room enter hello_world
+$ room create hello_world
 ```
 
-3. When you are done, destroy the room
+Enter the room. This will launch a shell inside the room.
 ```
-room destroy hello_world
+$ room enter hello_world
+```
+
+Install the 'xclock' program.
+```
+$ su -
+# pkg install -y xclock
+# exit
+``
+
+Run the 'xclock' program. It should display a small clock on your desktop.
+```
+$ xclock
+```
+
+When you are done, exit the shell, and destroy the room.
+```
+$ exit
+$ room destroy hello_world
 ```

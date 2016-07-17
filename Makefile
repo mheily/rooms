@@ -24,6 +24,9 @@ install: room
 
 check: check-setup check-create check-destroy
 
+clean:
+	rm room
+
 check-setup:
 	make
 	sudo make install
