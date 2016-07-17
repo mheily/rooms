@@ -16,17 +16,6 @@
 
 #pragma once
 
-#if 0
-class LibJobLogger {
-public:
-	LibJobLogger();
-	void debug(std::string message);
-	void info(std::string message);
-	void warning(std::string message);
-	void error(std::string message);
-};
-#endif
-
 extern "C" {
 #include <errno.h>
 #include <stdio.h>
@@ -41,7 +30,7 @@ extern FILE *logfile;
 
 #define _log_all(level, format,...) do {				\
 	if (logfile != NULL) {						\
-		fprintf(stdout, "" _log_all_format "" format "\n",		\
+		fprintf(logfile, "" _log_all_format "" format "\n",		\
 				 __FILE__, __LINE__, __PRETTY_FUNCTION__, ## __VA_ARGS__);	\
 	} else {							\
 		syslog(level, "" _log_all_format "" format "\n",			\
@@ -61,15 +50,4 @@ extern FILE *logfile;
 #define log_errno(format,...) _log_all(LOG_ERR, format ": errno=%d (%s)", ## __VA_ARGS__, errno, strerror(errno))
 
 void log_freopen(FILE *new_logfile);
-
-/* Emulate the <err.h> macros but use our own logging facility */
-#define err(code, format, ...) do { \
-	log_errno("**FATAL ERROR** " format, ## __VA_ARGS__); \
-	exit((code)); \
-} while (0)
-
-#define errx(code, format, ...) do { \
-	_log_all(LOG_ERR, "**FATAL ERROR** " format, ## __VA_ARGS__); \
-	exit((code)); \
-} while (0)
 

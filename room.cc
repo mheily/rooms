@@ -31,7 +31,7 @@ extern "C" {
 	#include <sys/wait.h>
 	#include <unistd.h>
 
-	static FILE *logfile = stdout;
+	static FILE *logfile;
 	#include "logger.h"
 }
 
@@ -92,8 +92,7 @@ public:
 private:
 	char ownerPwEntBuf[9999]; // storage used by getpwuid_r(3)
 	struct passwd ownerPwEnt; // the owner's passwd(5) entry
-	uid_t  ownerUid;  // the registered UID who owns the room
-	uid_t  guestUid;  // the unregistered UID that the room uses
+	uid_t  ownerUid;  // the UID who owns the room
 	string roomDir;   // copy of RoomManager::roomDir
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
@@ -101,28 +100,27 @@ private:
 	bool allowX11Clients = true; // allow X programs to run
 	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
 
-	void getPasswdInfo();
+	void getPasswdInfo(uid_t uid);
 	bool validName(const string& name);
+	bool jailExists();
 	void customizeWithoutRoot();
 	void enableX11Clients();
 };
 
 Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
 {
+	getPasswdInfo(uid);
+
 	roomDir = managerRoomDir;
 	roomName = name;
-	ownerUid = getuid();
-	guestUid = uid;
+	ownerUid = uid;
 	chrootDir = roomDir + "/" + std::to_string(ownerUid) + "/" + name;
-	jailName = "room" + std::to_string(guestUid);
-	getPasswdInfo();
+	//XXX-SECURITY unsafe for shell
+	jailName = "room_" + string(ownerPwEnt.pw_name) + "_" + roomName;
 }
 
 void Room::enter()
 {
-
-	//FIXME: clear environment
-
 	// Strange things happen if you enter the jail with uid != euid,
 	// so lets become root all the way
 	if (setgid(0) < 0) {
@@ -209,40 +207,28 @@ void Room::enter()
 #endif
 }
 
-void Room::getPasswdInfo()
+bool Room::jailExists()
+{
+	if (Shell::executeWithStatus("jls -j " + jailName + " >/dev/null") == 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
+void Room::getPasswdInfo(uid_t uid)
 {
 	struct passwd *result;
 
-	if (getpwuid_r(ownerUid, &ownerPwEnt, (char*)&ownerPwEntBuf,
+	if (getpwuid_r(uid, &ownerPwEnt, (char*)&ownerPwEntBuf,
 			sizeof(ownerPwEntBuf), &result) != 0) {
 		log_errno("getpwuid_r(3)");
 		throw std::system_error(errno, std::system_category());
 	}
 	if (result == NULL) {
-		throw std::runtime_error("missing passwd entry");
+		throw std::runtime_error("missing passwd entry for UID " + std::to_string(uid));
 	}
 }
-
-// DEADWOOD: This creates some problems, but is worth revisiting later.
-void Room::customizeWithoutRoot() {
-	// remove setuid/gid binaries
-	Shell::execute("find " + chrootDir + " -perm +6000 -type f -exec rm -f {} \\;");
-
-	// future testing: can we do this with writable /usr/local only?
-	// set ownership of all files in /usr/local
-	Shell::execute("chown -R " + std::to_string(guestUid) + " " + chrootDir + "/usr/local");
-
-	// TESTING: set ownership of all files
-	Shell::execute("chown -R " + std::to_string(guestUid) + " " + chrootDir);
-
-	// KLUDGE: install fakeroot
-	Shell::execute("chroot -u root " + chrootDir + " /usr/local/sbin/pkg update");
-	Shell::execute("chroot -u root " + chrootDir + " pkg install -y fakeroot");
-
-	// NOTE: fakeroot causes massive slowdown in pkg(8) and probably
-	// should not be used for this. :(
-}
-// END: DEADWOOD
 
 void Room::enableX11Clients() {
 	Shell::execute("cp /var/tmp/.PCDMAuth-* " + chrootDir + "/var/tmp");
@@ -258,10 +244,10 @@ void Room::create(const string& baseTarball)
 	string cmd;
 
 	// Each user has a directory under /var/room
-	FileUtils::mkdir_idempotent(string(roomDir + '/' + std::to_string(ownerUid)), 0700, getuid(), (gid_t) getuid());
+	FileUtils::mkdir_idempotent(string(roomDir + '/' + std::to_string(ownerUid)), 0700, ownerUid, (gid_t) ownerUid);
 
 	log_debug("creating room");
-	FileUtils::mkdir_idempotent(chrootDir, 0700, guestUid, (gid_t) guestUid);
+	FileUtils::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
 
 	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
 
@@ -277,7 +263,7 @@ void Room::create(const string& baseTarball)
 	Shell::execute("cp /etc/resolv.conf " + chrootDir + "/etc/resolv.conf");
 
 	// KLUDGE: install pkg(8)
-	Shell::execute("chroot -u root " + chrootDir + " env ASSUME_ALWAYS_YES=YES pkg bootstrap");
+	Shell::execute("chroot -u root " + chrootDir + " env ASSUME_ALWAYS_YES=YES pkg bootstrap > /dev/null");
 
 	Shell::execute("jail -i -c name=" + jailName +
 			" host.hostname=" + roomName + ".room" +
@@ -336,12 +322,12 @@ void Room::destroy()
 		}
 	}
 
-	if (Shell::executeWithStatus("jls -j room" + std::to_string(guestUid) + " >/dev/null") == 0) {
-		Shell::execute("jail -r room" + std::to_string(guestUid));
+	if (jailExists()) {
+		log_debug("removing jail %s", jailName.c_str());
+		Shell::execute("jail -r " + jailName);
 	} else {
 		log_warning("jail(2) does not exist");
 	}
-
 
 	// remove the immutable flag
 	Shell::execute("chflags -R noschg " + chrootDir);
@@ -356,8 +342,15 @@ void Room::killAllProcesses()
 {
 	log_debug("killing all processes for room %s", roomName.c_str());
 
+	// TODO: have a "nice" option that uses SIGTERM as well
+
+	if (!jailExists()) {
+		log_debug("jail does not exist; skipping");
+		return;
+	}
+
 	// Kill all programs still using the filesystem
-	int status = Shell::executeWithStatus("pkill -9 -u " + std::to_string(guestUid));
+	int status = Shell::executeWithStatus("pkill -9 -j " + jailName);
 	if (status > 1) {
 		log_error("pkill failed");
 		throw std::runtime_error("pkill failed");
@@ -365,7 +358,7 @@ void Room::killAllProcesses()
 
 	bool timeout = true;
 	for (int i = 0 ; i < 60; i++) {
-		int status = Shell::executeWithStatus("pgrep -q -u " + std::to_string(guestUid));
+		int status = Shell::executeWithStatus("pgrep -q -j " + jailName);
 		if (status > 1) {
 			log_error("pkill failed");
 			throw std::runtime_error("pkill failed");
@@ -387,17 +380,20 @@ void Room::killAllProcesses()
 
 class RoomManager {
 public:
-	void setup() {
+	void setup(uid_t uid) {
+		ownerUid = uid;
 		downloadBase();
 		createRoomDir();
 	}
 	void createRoom(const string& name);
 	void destroyRoom(const string& name);
 	Room getRoomByName(const string& name);
+	void listRooms();
+
 private:
 	void downloadBase();
 	void createRoomDir();
-	uid_t getNextUid();
+	uid_t ownerUid;
 	string getRoomPathByName(const string& name);
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
@@ -418,22 +414,16 @@ void RoomManager::downloadBase() {
 	}
 }
 
-uid_t RoomManager::getNextUid()
-{
-	//FIXME: hardcoded
-	return getuid() + 100000;
-}
-
 Room RoomManager::getRoomByName(const string& name)
 {
-	return Room(roomDir, name, getNextUid());
+	return Room(roomDir, name, ownerUid);
 }
 
 void RoomManager::createRoom(const string& name)
 {
 	log_debug("creating room");
 
-	Room room(roomDir, name, getNextUid());
+	Room room(roomDir, name, ownerUid);
 	room.create(baseTarball);
 }
 
@@ -441,14 +431,21 @@ void RoomManager::destroyRoom(const string& name)
 {
 	string cmd;
 
-	Room room(roomDir, name, getNextUid());
+	Room room(roomDir, name, ownerUid);
 	room.destroy();
+}
+
+void RoomManager::listRooms()
+{
+	Shell::execute("ls -1 " + roomDir + "/" + std::to_string(ownerUid));
 }
 
 void usage() {
 	std::cout <<
 		"Usage:\n\n"
-		"  room [create|destroy] <name>\n"
+		"  room [create|destroy|enter] <name>\n"
+		" -or-\n"
+		"  room list\n"
 		"\n"
 		"  Miscellaneous options:\n\n"
 		"    -h, --help         This screen\n"
@@ -480,6 +477,12 @@ main(int argc, char *argv[])
 	}
 #endif
 
+	if (getenv("ROOM_DEBUG") == NULL) {
+		logfile = fopen("/dev/null", "w");
+	} else {
+		logfile = stderr;
+	}
+
 	while ((ch = getopt_long(argc, argv, "hv", longopts, NULL)) != -1) {
 		switch (ch) {
 		case 'h':
@@ -501,33 +504,48 @@ main(int argc, char *argv[])
 	argc -= optind;
 	argv += optind;
 
-	if (argc < 2) {
-		std::cout << "ERROR: Insufficient arguments\n";
-		usage();
-		return EXIT_FAILURE;
-	}
-
-
 	try {
-		std::string command = std::string(argv[0]);
-		std::string name = std::string(argv[1]);
 
 		if (geteuid() != 0) {
 			throw std::runtime_error("Insufficient permissions; must be run as root");
 		}
 
-		mgr.setup();
-
-		if (command == "create") {
-			mgr.createRoom(name);
-		} else if (command == "destroy") {
-			mgr.destroyRoom(name);
-		} else if (command == "enter") {
-			mgr.getRoomByName(name).enter();
-		} else {
-			throw std::runtime_error("Invalid command");
+		uid_t real_uid = getuid();
+		if (getuid() == geteuid()) {
+			const char* buf = getenv("SUDO_UID");
+			if (buf) {
+				real_uid = std::stoul(buf);
+			} else {
+				throw std::runtime_error("The root user is not allowed to create rooms. Use a normal user account instead");
+			}
 		}
 
+		mgr.setup(real_uid);
+		log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);
+
+		std::string command = std::string(argv[0]);
+		if (argc == 1) {
+			if (command == "list") {
+				mgr.listRooms();
+			} else if (command == "--help" || command == "-h" || command == "help") {
+				usage();
+				exit(1);
+			} else {
+				throw std::runtime_error("Invalid command");
+			}
+		} else if (argc > 1) {
+			std::string name = std::string(argv[1]);
+
+			if (command == "create") {
+				mgr.createRoom(name);
+			} else if (command == "destroy") {
+				mgr.destroyRoom(name);
+			} else if (command == "enter") {
+				mgr.getRoomByName(name).enter();
+			} else {
+				throw std::runtime_error("Invalid command");
+			}
+		}
 	} catch(const std::system_error& e) {
 		std::cout << "Caught system_error with code " << e.code()
 	                  << " meaning " << e.what() << '\n';

@@ -16,7 +16,7 @@
 
 all: room
 
-room: room.cc
+room: room.cc logger.h
 	$(CXX) -std=c++11 -isystem /usr/local/include -o room room.cc
 
 install: room
