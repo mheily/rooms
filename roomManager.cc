@@ -72,6 +72,16 @@ void RoomManager::bootstrap()
 	Shell::execute("zfs create -o canmount=on -o mountpoint=/room " + zpool + "/room");
 }
 
+void RoomManager::setup(uid_t uid) {
+	if (!isBootstrapComplete()) {
+		throw std::runtime_error("bootstrap is required");
+	}
+	ownerUid = uid;
+	downloadBase();
+	createRoomDir();
+	zpoolName = getZfsPoolName(roomDir);
+}
+
 void RoomManager::createRoomDir() {
 	FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
 }
@@ -150,5 +160,5 @@ void RoomManager::destroyRoom(const string& name)
 
 void RoomManager::listRooms()
 {
-	Shell::execute("ls -1 " + roomDir + "/" + std::to_string(ownerUid));
+	Shell::execute("/bin/ls -1 " + roomDir + "/" + std::to_string(ownerUid));
 }

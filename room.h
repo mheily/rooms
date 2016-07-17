@@ -40,6 +40,7 @@ extern "C" {
 #include "namespaceImport.h"
 #include "shell.h"
 #include "fileUtil.h"
+#include "passwdEntry.h"
 
 extern FILE *logfile;
 #include "logger.h"
@@ -54,9 +55,8 @@ public:
 	void enter();
 
 private:
-	char ownerPwEntBuf[9999]; // storage used by getpwuid_r(3)
-	struct passwd ownerPwEnt; // the owner's passwd(5) entry
 	uid_t  ownerUid;  // the UID who owns the room
+	string ownerLogin; // the login name of the user from passwd(5)
 	string roomDir;   // copy of RoomManager::roomDir
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
@@ -64,7 +64,6 @@ private:
 	bool allowX11Clients = true; // allow X programs to run
 	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
 
-	void getPasswdInfo(uid_t uid);
 	bool jailExists();
 	void customizeWithoutRoot();
 	void enableX11Clients();

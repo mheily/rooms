@@ -54,15 +54,7 @@ class RoomManager {
 public:
 	void bootstrap();
 	static bool isBootstrapComplete();
-	void setup(uid_t uid) {
-		if (!isBootstrapComplete()) {
-			throw std::runtime_error("bootstrap is required");
-		}
-		ownerUid = uid;
-		downloadBase();
-		createRoomDir();
-		zpoolName = getZfsPoolName("/room");
-	}
+	void setup(uid_t);
 	void createRoom(const string& name);
 	void destroyRoom(const string& name);
 	Room getRoomByName(const string& name);
@@ -72,7 +64,7 @@ private:
 	uid_t ownerUid;
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
-	string roomDir = "/var/room";
+	string roomDir = "/room";
 	string zpoolName = "uninitialized-zpool-name";
 
 	void downloadBase();

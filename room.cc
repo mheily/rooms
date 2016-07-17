@@ -44,11 +44,12 @@ extern "C" {
 
 Room::Room(const string& managerRoomDir, const string& name, uid_t uid)
 {
-	getPasswdInfo(uid);
+	PasswdEntry pwent(uid);
 	validateName(name);
 
 	roomDir = managerRoomDir;
 	ownerUid = uid;
+	ownerLogin = pwent.getLogin();
 	chrootDir = roomDir + "/" + std::to_string(ownerUid) + "/" + name;
 }
 
@@ -74,8 +75,8 @@ void Room::enter()
 		x11_display += getenv("DISPLAY");
 		x11_xauthority += getenv("XAUTHORITY");
 		dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
-		jail_username = string(ownerPwEnt.pw_name);
-		env_username = "USER=" + string(ownerPwEnt.pw_name);
+		jail_username = ownerLogin;
+		env_username = "USER=" + ownerLogin;
 		enableX11Clients();
 	}
 
@@ -155,7 +156,7 @@ void Room::validateName(const string& name)
 	std::locale loc("C");
 
 	roomName = name;
-	jailName = "room_" + string(ownerPwEnt.pw_name) + "_";
+	jailName = "room_" + ownerLogin + "_";
 
 	if (name.length() == 0) {
 		throw std::runtime_error("name cannot be empty");
@@ -183,20 +184,6 @@ void Room::validateName(const string& name)
 	}
 }
 
-void Room::getPasswdInfo(uid_t uid)
-{
-	struct passwd *result;
-
-	if (getpwuid_r(uid, &ownerPwEnt, (char*)&ownerPwEntBuf,
-			sizeof(ownerPwEntBuf), &result) != 0) {
-		log_errno("getpwuid_r(3)");
-		throw std::system_error(errno, std::system_category());
-	}
-	if (result == NULL) {
-		throw std::runtime_error("missing passwd entry for UID " + std::to_string(uid));
-	}
-}
-
 void Room::enableX11Clients() {
 	Shell::execute("cp /var/tmp/.PCDMAuth-* " + chrootDir + "/var/tmp");
 
@@ -218,10 +205,11 @@ void Room::create(const string& baseTarball)
 
 	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
 
+	PasswdEntry pwent(ownerUid);
 	Shell::execute(string("pw -R " + chrootDir + " user add -u " + std::to_string(ownerUid) +
-			" -n " + string(ownerPwEnt.pw_name) +
-			" -c " + string(ownerPwEnt.pw_gecos) +
-			" -s " + string(ownerPwEnt.pw_shell) +
+			" -n " + pwent.getLogin() +
+			" -c " + pwent.getGecos() +
+			" -s " + pwent.getShell() +
 			" -G wheel" +
 			" -m")
 			);
