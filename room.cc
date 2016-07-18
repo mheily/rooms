@@ -203,6 +203,12 @@ void Room::enableX11Clients() {
 	Shell::execute("xhost +local >/dev/null");
 }
 
+void Room::clone(const string& srcRoom, const string& destRoom)
+{
+	log_debug("cloning room");
+	abort();
+}
+
 void Room::create(const string& baseTarball)
 {
 	string cmd;

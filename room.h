@@ -50,6 +50,7 @@ public:
 	Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset);
 
 	void create(const string& baseTarball);
+	void clone(const string& srcRoom, const string& destRoom);
 	void killAllProcesses();
 	void destroy();
 	void enter();

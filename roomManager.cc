@@ -34,6 +34,7 @@ extern "C" {
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 }
 
@@ -89,6 +90,17 @@ void RoomManager::bootstrap(uid_t uid) {
 	if (!FileUtil::checkExists(getUserRoomDir(uid))) {
 		Shell::execute("zfs create " + zpool + "/room/" + pwent.getLogin());
 	}
+
+	//XXX-this entire block is duplicated in setup()
+	{
+	ownerUid = uid;
+	PasswdEntry pwent(uid);
+	ownerLogin = pwent.getLogin();
+	createRoomDir();
+	zpoolName = getZfsPoolName(roomDir);
+	}
+
+	createBaseTemplate();
 }
 
 void RoomManager::setup(uid_t uid) {
@@ -96,12 +108,14 @@ void RoomManager::setup(uid_t uid) {
 		throw std::runtime_error("bootstrap is required");
 	}
 
+	//XXX-this block is duplicated in bootstrap()
+	{
 	ownerUid = uid;
 	PasswdEntry pwent(uid);
 	ownerLogin = pwent.getLogin();
-	downloadBase();
 	createRoomDir();
 	zpoolName = getZfsPoolName(roomDir);
+	}
 }
 
 void RoomManager::createRoomDir() {
@@ -165,6 +179,7 @@ void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
 	Room room(roomDir, name, ownerUid, getUserRoomDataset());
+	createBaseTemplate();
 	room.create(baseTarball);
 }
 
@@ -191,4 +206,34 @@ string RoomManager::getUserRoomDataset() {
 	} else {
 		return "";
 	}
+}
+
+bool RoomManager::checkRoomExists(const string& name) {
+	return FileUtil::checkExists(getUserRoomDir(ownerUid) + "/" + name);
+}
+
+string RoomManager::getBaseTemplateName() {
+	struct utsname uts;
+
+	if (uname(&uts) < 0) {
+		log_errno("uname(3)");
+		throw std::system_error(errno, std::system_category());
+	}
+
+	return string(uts.sysname) + "-" + string(uts.release);
+}
+
+void RoomManager::createBaseTemplate() {
+	string base_template = getBaseTemplateName();
+
+	if (checkRoomExists(base_template)) {
+		return;
+	}
+
+	downloadBase();
+
+	log_debug("creating base template: %s", base_template.c_str());
+
+	Room room(roomDir, base_template, ownerUid, getUserRoomDataset());
+	room.create(baseTarball);
 }
