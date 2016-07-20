@@ -16,39 +16,50 @@
 
 #pragma once
 
-#include <pwd.h>
+#include <unistd.h>
 
 #include "namespaceImport.h"
-#include "logger.h"
 
-class PasswdEntry {
+class RoomConfig {
 public:
-	PasswdEntry(uid_t uid) {
-		struct passwd *result;
+	RoomConfig();
 
-		if (getpwuid_r(uid, &pwent, (char*)&pwent_buf,
-			sizeof(pwent_buf), &result) != 0) {
-			log_errno("getpwuid_r(3)");
-			throw std::system_error(errno, std::system_category());
-		}
-		if (result == NULL) {
-			throw std::runtime_error("missing passwd entry for UID " + std::to_string(uid));
-		}
+	const string& getParentDataset() const {
+		return parentDataset;
 	}
 
-	const char* getLogin() const {
-		return pwent.pw_name;
+	void setParentDataset(const string& parentDataset) {
+		this->parentDataset = parentDataset;
 	}
 
-	const char* getGecos() const {
-		return pwent.pw_gecos;
+	uid_t getOwnerUid() const {
+		return ownerUid;
 	}
 
-	const char* getShell() const {
-		return pwent.pw_shell;
+	void setOwnerUid(uid_t ownerUid) {
+		this->ownerUid = ownerUid;
+	}
+
+	const string& getRoomDir() const {
+		return roomDir;
+	}
+
+	void setRoomDir(const string& roomDir = "/room") {
+		this->roomDir = roomDir;
+	}
+
+	const string& getOwnerLogin() const {
+		return ownerLogin;
+	}
+
+	void setOwnerLogin(const string& ownerLogin) {
+		this->ownerLogin = ownerLogin;
 	}
 
 private:
-	struct passwd pwent;
-	char pwent_buf[9999]; // storage used by getpwuid_r(3)
+	// the top-level directory for rooms
+	string roomDir = "/room";
+	string parentDataset;
+	uid_t ownerUid;
+	string ownerLogin;
 };

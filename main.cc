@@ -61,7 +61,8 @@ void usage() {
 int
 main(int argc, char *argv[])
 {
-	RoomManager mgr;
+	RoomConfig roomConfig;
+	RoomManager mgr(roomConfig);
 	char ch;
 	static struct option longopts[] = {
 			{ "help", no_argument, NULL, 'h' },
@@ -110,36 +111,20 @@ main(int argc, char *argv[])
 	argv += optind;
 
 	try {
-
-		if (geteuid() != 0) {
-			throw std::runtime_error("Insufficient permissions; must be run as root");
-		}
-
-		uid_t real_uid = getuid();
-		if (getuid() == geteuid()) {
-			const char* buf = getenv("SUDO_UID");
-			if (buf) {
-				real_uid = std::stoul(buf);
-			} else {
-				throw std::runtime_error("The root user is not allowed to create rooms. Use a normal user account instead");
-			}
-		}
-
 		// Implicitly bootstrap OR (bootstrap explicitly AND exit)
-		if (mgr.isBootstrapComplete(real_uid)) {
+		if (mgr.isBootstrapComplete()) {
 			if (argc == 1 && string(argv[0]) == "bootstrap") {
 				cout << "The bootstrap process is already complete. Nothing to do." << endl;
 				exit(0);
 			}
 		} else {
-			mgr.bootstrap(real_uid);
+			mgr.bootstrap();
 			if (argc == 1 && string(argv[0]) == "bootstrap") {
 				exit(0);
 			}
 		}
 
-		mgr.setup(real_uid);
-		log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);
+		mgr.setup();
 
 		std::string command = std::string(argv[0]);
 		if (argc == 1) {
@@ -157,7 +142,7 @@ main(int argc, char *argv[])
 			std::string name = std::string(argv[1]);
 
 			if (command == "create") {
-				mgr.createRoom(name);
+				mgr.cloneRoom(name);
 			} else if (command == "destroy") {
 				mgr.destroyRoom(name);
 			} else if (command == "enter") {

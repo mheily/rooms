@@ -14,41 +14,30 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
-
-#include <pwd.h>
-
-#include "namespaceImport.h"
 #include "logger.h"
+#include "namespaceImport.h"
+#include "roomConfig.h"
+#include "passwdEntry.h"
 
-class PasswdEntry {
-public:
-	PasswdEntry(uid_t uid) {
-		struct passwd *result;
+RoomConfig::RoomConfig() {
+	if (geteuid() != 0) {
+		throw std::runtime_error(
+				"Insufficient permissions; must be run as root");
+	}
 
-		if (getpwuid_r(uid, &pwent, (char*)&pwent_buf,
-			sizeof(pwent_buf), &result) != 0) {
-			log_errno("getpwuid_r(3)");
-			throw std::system_error(errno, std::system_category());
+	uid_t real_uid = getuid();
+	if (getuid() == geteuid()) {
+		const char* buf = getenv("SUDO_UID");
+		if (buf) {
+			real_uid = std::stoul(buf);
+		} else {
+			throw std::runtime_error(
+					"The root user is not allowed to create rooms. Use a normal user account instead");
 		}
-		if (result == NULL) {
-			throw std::runtime_error("missing passwd entry for UID " + std::to_string(uid));
-		}
 	}
+	setOwnerUid(real_uid);
+	log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);
 
-	const char* getLogin() const {
-		return pwent.pw_name;
+	PasswdEntry pwent(real_uid);
+	setOwnerLogin(pwent.getLogin());
 	}
-
-	const char* getGecos() const {
-		return pwent.pw_gecos;
-	}
-
-	const char* getShell() const {
-		return pwent.pw_shell;
-	}
-
-private:
-	struct passwd pwent;
-	char pwent_buf[9999]; // storage used by getpwuid_r(3)
-};

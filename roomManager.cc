@@ -38,27 +38,37 @@ extern "C" {
 #include <unistd.h>
 }
 
+#include "logger.h"
 #include "namespaceImport.h"
 #include "shell.h"
 #include "fileUtil.h"
 #include "room.h"
+#include "roomConfig.h"
 #include "roomManager.h"
 
-extern FILE *logfile;
-#include "logger.h"
-
-string RoomManager::getUserRoomDir(uid_t uid) {
-	PasswdEntry pwent(uid);
+string RoomManager::getUserRoomDir() {
+	PasswdEntry pwent(roomConfig.getOwnerUid());
 	string login = pwent.getLogin();
 
 	return string(roomDir + "/" + pwent.getLogin());
 }
 
-bool RoomManager::isBootstrapComplete(uid_t uid) {
-	return FileUtil::checkExists(getUserRoomDir(uid));
+bool RoomManager::isBootstrapComplete() {
+	return FileUtil::checkExists(getUserRoomDir());
 }
 
-void RoomManager::bootstrap(uid_t uid) {
+void RoomManager::updateRoomConfig() {
+	//TODO: move these into RoomConfig
+	{
+
+	createRoomDir();
+	zpoolName = getZfsPoolName(roomDir);
+	}
+
+	roomConfig.setParentDataset(zpoolName + "/room/" + ownerLogin);
+}
+
+void RoomManager::bootstrap() {
 	string zpool;
 
 	if (!FileUtil::checkExists(roomDir)) {
@@ -86,36 +96,20 @@ void RoomManager::bootstrap(uid_t uid) {
 		zpool = getZfsPoolName(roomDir);
 	}
 
-	PasswdEntry pwent(uid);
-	if (!FileUtil::checkExists(getUserRoomDir(uid))) {
-		Shell::execute("zfs create " + zpool + "/room/" + pwent.getLogin());
+	if (!FileUtil::checkExists(getUserRoomDir())) {
+		Shell::execute("zfs create " + zpool + "/room/" + roomConfig.getOwnerLogin());
 	}
 
-	//XXX-this entire block is duplicated in setup()
-	{
-	ownerUid = uid;
-	PasswdEntry pwent(uid);
-	ownerLogin = pwent.getLogin();
-	createRoomDir();
-	zpoolName = getZfsPoolName(roomDir);
-	}
-
+	updateRoomConfig();
 	createBaseTemplate();
 }
 
-void RoomManager::setup(uid_t uid) {
-	if (!isBootstrapComplete(uid)) {
+void RoomManager::setup() {
+	if (!isBootstrapComplete()) {
 		throw std::runtime_error("bootstrap is required");
 	}
 
-	//XXX-this block is duplicated in bootstrap()
-	{
-	ownerUid = uid;
-	PasswdEntry pwent(uid);
-	ownerLogin = pwent.getLogin();
-	createRoomDir();
-	zpoolName = getZfsPoolName(roomDir);
-	}
+	updateRoomConfig();
 }
 
 void RoomManager::createRoomDir() {
@@ -172,31 +166,40 @@ bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg) {
 }
 
 Room RoomManager::getRoomByName(const string& name) {
-	return Room(roomDir, name, ownerUid, getUserRoomDataset());
+	return Room(roomConfig, roomDir, name, getUserRoomDataset());
 }
 
 void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
-	Room room(roomDir, name, ownerUid, getUserRoomDataset());
+	Room room(roomConfig, roomDir, name, getUserRoomDataset());
 	createBaseTemplate();
 	room.create(baseTarball);
+}
+
+void RoomManager::cloneRoom(const string& src, const string& dest) {
+	Room srcRoom(roomConfig, roomDir, src, getUserRoomDataset());
+	srcRoom.clone("__initial", dest);
+}
+
+void RoomManager::cloneRoom(const string& dest) {
+	cloneRoom(getBaseTemplateName(), dest);
 }
 
 void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
-	Room room(roomDir, name, ownerUid, getUserRoomDataset());
+	Room room(roomConfig, roomDir, name, getUserRoomDataset());
 	room.destroy();
 }
 
 void RoomManager::listRooms() {
-	if (!FileUtil::checkExists(getUserRoomDir(ownerUid))) {
+	if (!FileUtil::checkExists(getUserRoomDir())) {
 		// FIXME: will never happen b/c bootstrap ensures the directory exists
 		std::clog << "No rooms exist. Run 'room create' to create a room."
 				<< endl;
 	} else {
-		Shell::execute("/bin/ls -1 " + getUserRoomDir(ownerUid));
+		Shell::execute("/bin/ls -1 " + getUserRoomDir());
 	}
 }
 
@@ -209,7 +212,7 @@ string RoomManager::getUserRoomDataset() {
 }
 
 bool RoomManager::checkRoomExists(const string& name) {
-	return FileUtil::checkExists(getUserRoomDir(ownerUid) + "/" + name);
+	return FileUtil::checkExists(getUserRoomDir() + "/" + name);
 }
 
 string RoomManager::getBaseTemplateName() {
@@ -234,6 +237,6 @@ void RoomManager::createBaseTemplate() {
 
 	log_debug("creating base template: %s", base_template.c_str());
 
-	Room room(roomDir, base_template, ownerUid, getUserRoomDataset());
+	Room room(roomConfig, roomDir, base_template, getUserRoomDataset());
 	room.create(baseTarball);
 }

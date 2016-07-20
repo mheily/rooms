@@ -41,23 +41,24 @@ extern "C" {
 #include "shell.h"
 #include "fileUtil.h"
 #include "passwdEntry.h"
+#include "roomConfig.h"
 
 extern FILE *logfile;
 #include "logger.h"
 
 class Room {
 public:
-	Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset);
+	Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name, const string& dataset);
 
 	void create(const string& baseTarball);
-	void clone(const string& srcRoom, const string& destRoom);
+	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
+	void boot();
 	void destroy();
 	void enter();
 
 private:
-	uid_t  ownerUid;  // the UID who owns the room
-	string ownerLogin; // the login name of the user from passwd(5)
+	RoomConfig roomConfig;
 	string roomDir;   // copy of RoomManager::roomDir
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
@@ -65,7 +66,6 @@ private:
 	bool allowX11Clients = true; // allow X programs to run
 	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
 
-	bool useZFS = false;
 	string roomDataset; // the name of the ZFS dataset for the room
 
 	bool jailExists();

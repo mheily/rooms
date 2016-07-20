@@ -16,52 +16,29 @@
 
 #pragma once
 
-#if 0
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <locale>
-#include <regex>
-#include <string>
-#include <streambuf>
-#include <unordered_set>
-
-extern "C" {
-#include <getopt.h>
-#include <jail.h>
-#include <pwd.h>
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/uio.h>
-#include <unistd.h>
-}
-#include "shell.h"
-#include "fileUtil.h"
-#include "room.h"
-
-#endif
-
 #include "namespaceImport.h"
+#include "roomConfig.h"
 
 extern FILE *logfile;
 #include "logger.h"
 
 class RoomManager {
 public:
-	void bootstrap(uid_t);
-	bool isBootstrapComplete(uid_t);
-	void setup(uid_t);
+	RoomManager(RoomConfig roomConfig) {
+		this->roomConfig = roomConfig;
+	}
+	void bootstrap();
+	bool isBootstrapComplete();
+	void setup();
 	void createRoom(const string& name);
+	void cloneRoom(const string& src, const string& dest);
+	void cloneRoom(const string& dest);
 	void destroyRoom(const string& name);
 	Room getRoomByName(const string& name);
 	void listRooms();
 
 private:
-	uid_t ownerUid;
+	RoomConfig roomConfig;
 	string ownerLogin;
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
@@ -72,9 +49,10 @@ private:
 	void downloadBase();
 	void createRoomDir();
 	bool checkRoomExists(const string&);
-	string getUserRoomDir(uid_t uid);
+	string getUserRoomDir();
 	string getUserRoomDataset();
 	string getRoomPathByName(const string& name);
+	void updateRoomConfig();
 	bool validateZfsPoolName(const string& name, string& errorMsg);
 	string getZfsPoolName(const string& path);
 

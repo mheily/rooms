@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include <iostream>
+#include <string>
+
 // Selectively import things into the global namespace
 
 using std::cout;

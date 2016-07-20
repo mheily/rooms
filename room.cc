@@ -42,22 +42,13 @@ extern "C" {
 #include "fileUtil.h"
 #include "room.h"
 
-Room::Room(const string& managerRoomDir, const string& name, uid_t uid, const string& dataset)
+Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name, const string& dataset)
 {
-	PasswdEntry pwent(uid);
-
+	this->roomConfig = roomConfig;
 	roomDir = managerRoomDir;
-	ownerUid = uid;
-	ownerLogin = pwent.getLogin();
 	validateName(name);
-	chrootDir = roomDir + "/" + ownerLogin + "/" + name;
-	if (dataset == "") {
-		useZFS = false;
-	} else {
-		useZFS = true;
-		roomDataset = dataset;
-	}
-
+	chrootDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
+	roomDataset = roomConfig.getParentDataset() + roomConfig.getOwnerLogin();
 }
 
 void Room::enter()
@@ -82,8 +73,8 @@ void Room::enter()
 		x11_display += getenv("DISPLAY");
 		x11_xauthority += getenv("XAUTHORITY");
 		dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
-		jail_username = ownerLogin;
-		env_username = "USER=" + ownerLogin;
+		jail_username = roomConfig.getOwnerLogin();
+		env_username = "USER=" + roomConfig.getOwnerLogin();
 		enableX11Clients();
 	}
 
@@ -166,7 +157,7 @@ void Room::validateName(const string& name)
 	// for generating roomName and jailName
 	// Having all this here creates subtle ordering bugs.
 	roomName = name;
-	jailName = "room_" + ownerLogin + "_";
+	jailName = "room_" + roomConfig.getOwnerLogin() + "_";
 
 	if (name.length() == 0) {
 		throw std::runtime_error("name cannot be empty");
@@ -203,10 +194,16 @@ void Room::enableX11Clients() {
 	Shell::execute("xhost +local >/dev/null");
 }
 
-void Room::clone(const string& srcRoom, const string& destRoom)
+void Room::clone(const string& snapshot, const string& destRoom)
 {
 	log_debug("cloning room");
-	abort();
+
+	Shell::execute("zfs clone " + roomDataset + "/" + roomName + "@" + snapshot +
+			" " + roomConfig.getParentDataset() + roomConfig.getOwnerLogin() + "/" + destRoom);
+
+	Room cloneRoom(roomConfig, roomDir, destRoom, roomDataset);
+
+	cloneRoom.boot();
 }
 
 void Room::create(const string& baseTarball)
@@ -215,16 +212,17 @@ void Room::create(const string& baseTarball)
 
 	log_debug("creating room");
 
-	if (useZFS) {
+//	if (useZFS) {
 		Shell::execute("zfs create " + roomDataset + "/" + roomName);
-	} else {
-		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
-	}
+//	} else {
+//		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
+//	}
 
 	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
 
-	PasswdEntry pwent(ownerUid);
-	Shell::execute(string("pw -R " + chrootDir + " user add -u " + std::to_string(ownerUid) +
+	PasswdEntry pwent(roomConfig.getOwnerUid());
+	Shell::execute(string("pw -R " + chrootDir + " user add -u " +
+			std::to_string(roomConfig.getOwnerUid()) +
 			" -n " + pwent.getLogin() +
 			" -c " + pwent.getGecos() +
 			" -s " + pwent.getShell() +
@@ -238,6 +236,10 @@ void Room::create(const string& baseTarball)
 	// KLUDGE: install pkg(8)
 	Shell::execute("chroot -u root " + chrootDir + " env ASSUME_ALWAYS_YES=YES pkg bootstrap > /dev/null");
 
+	boot();
+}
+
+void Room::boot() {
 	Shell::execute(
 			"jail -i -c name=" + jailName +
 			" host.hostname=" + roomName + ".room" +
@@ -305,7 +307,8 @@ void Room::destroy()
 	// remove the immutable flag
 	Shell::execute("chflags -R noschg " + chrootDir);
 
-	if (useZFS) {
+	//TODO: if useZFS
+	if (1) {
 		// this races with "jail -r"
 		bool success = false;
 		for (int i = 0; i < 5; i++) {
