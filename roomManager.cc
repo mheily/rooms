@@ -199,7 +199,7 @@ void RoomManager::listRooms() {
 		std::clog << "No rooms exist. Run 'room create' to create a room."
 				<< endl;
 	} else {
-		Shell::execute("/bin/ls -1 " + getUserRoomDir());
+		Shell::execute2("/bin/ls", { "-1", getUserRoomDir() });
 	}
 }
 

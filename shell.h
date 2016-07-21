@@ -23,6 +23,45 @@ class Shell {
 public:
 	static string popen_readline(const string& command);
 
+	static int execute2(const char *path, const std::vector<std::string>& args) {
+		char* const envp[] = {
+				(char*)"HOME=/",
+				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
+				(char*)"LC_ALL=C",
+				NULL
+		};
+
+		std::vector<char*> argv;
+		argv.push_back(const_cast<char*>(path));
+		for (auto it = args.begin(); it != args.end(); ++it) {
+			argv.push_back(const_cast<char*>(it->c_str()));
+		}
+		argv.push_back(NULL);
+
+		pid_t pid = fork();
+		if (pid < 0) {
+			log_errno("fork(2)");
+			throw std::runtime_error("fork failed");
+		}
+		if (pid == 0) {
+			if (execve(path, argv.data(), envp) < 0) {
+				log_errno("execve(2)");
+				throw std::runtime_error("execve failed");
+			}
+			exit(1);
+		} else {
+			int status;
+			if (waitpid(pid, &status, 0) < 0) {
+				log_errno("waitpid(2)");
+				throw std::runtime_error("waitpid failed");
+			}
+			if (!WIFEXITED(status)) {
+				throw std::runtime_error("abnormal child termination");
+			}
+			return WEXITSTATUS(status);
+		}
+	}
+
 	static int executeWithStatus(const string& command) {
 		log_debug("running %s", command.c_str());
 		int status = system(command.c_str());
