@@ -55,6 +55,7 @@ void usage() {
 		"\n"
 		"  Miscellaneous options:\n\n"
 		"    -h, --help         This screen\n"
+		"    -v, --verbose      Increase verbosity level\n"
 	<< std::endl;
 }
 
@@ -66,7 +67,7 @@ main(int argc, char *argv[])
 	char ch;
 	static struct option longopts[] = {
 			{ "help", no_argument, NULL, 'h' },
-			{ "version", no_argument, NULL, 'v' },
+			{ "verbose", no_argument, NULL, 'v' },
 			{ NULL, 0, NULL, 0 }
 	};
 
@@ -83,11 +84,7 @@ main(int argc, char *argv[])
 	}
 #endif
 
-	if (getenv("ROOM_DEBUG") == NULL) {
-		logfile = fopen("/dev/null", "w");
-	} else {
-		logfile = stderr;
-	}
+	logfile = fopen("/dev/null", "w");
 
 	while ((ch = getopt_long(argc, argv, "hv", longopts, NULL)) != -1) {
 		switch (ch) {
@@ -97,8 +94,8 @@ main(int argc, char *argv[])
 			break;
 
 		case 'v':
-			puts("FIXME: not implemented yet");
-			return 0;
+			fclose(logfile);
+			logfile = stderr;
 			break;
 
 		default:

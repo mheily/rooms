@@ -185,21 +185,27 @@ void Room::validateName(const string& name)
 	}
 }
 
+// This should really be replaced w/ 'xauth generate' to generate an untrusted authorization key
 void Room::enableX11Clients() {
+	//FIXME: VERY BAD SECURITY
 	Shell::execute("cp /var/tmp/.PCDMAuth-* " + chrootDir + "/var/tmp");
 
 	// FIXME: SECURITY
+	// FIXME: also want to use execute2, but need XAUTHORITY variable.
 	// Despite having the cookie, clients fail with 'No protocol specified'
 	// This workaround is bad for security in a multi-user system, but gets things going for a desktop.
-	Shell::execute("xhost +local >/dev/null");
+	Shell::execute("/usr/local/bin/xhost +local");
 }
 
 void Room::clone(const string& snapshot, const string& destRoom)
 {
 	log_debug("cloning room");
 
-	Shell::execute("zfs clone " + roomDataset + "/" + roomName + "@" + snapshot +
-			" " + roomConfig.getParentDataset() + roomConfig.getOwnerLogin() + "/" + destRoom);
+	Shell::execute2("/sbin/zfs", {
+			"clone",
+			roomDataset + "/" + roomName + "@" + snapshot,
+			roomConfig.getParentDataset() + roomConfig.getOwnerLogin() + "/" + destRoom
+	});
 
 	Room cloneRoom(roomConfig, roomDir, destRoom, roomDataset);
 
@@ -213,46 +219,62 @@ void Room::create(const string& baseTarball)
 	log_debug("creating room");
 
 //	if (useZFS) {
-		Shell::execute("zfs create " + roomDataset + "/" + roomName);
+		Shell::execute2("/sbin/zfs", {"create", roomDataset + "/" + roomName});
 //	} else {
 //		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
 //	}
 
-	Shell::execute("tar -C " + chrootDir + " -xf " + baseTarball);
+	Shell::execute2("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
 	PasswdEntry pwent(roomConfig.getOwnerUid());
-	Shell::execute(string("pw -R " + chrootDir + " user add -u " +
-			std::to_string(roomConfig.getOwnerUid()) +
-			" -n " + pwent.getLogin() +
-			" -c " + pwent.getGecos() +
-			" -s " + pwent.getShell() +
-			" -G wheel" +
-			" -m")
-			);
+	Shell::execute2("/usr/sbin/pw", {
+			"-R",  chrootDir,
+			"user", "add",
+			"-u", std::to_string(roomConfig.getOwnerUid()),
+			"-n", pwent.getLogin(),
+			"-c", pwent.getGecos(),
+			"-s", pwent.getShell(),
+			"-G", "wheel",
+			"-m"
+	});
 
 	// KLUDGE: copy /etc/resolv.conf
-	Shell::execute("cp /etc/resolv.conf " + chrootDir + "/etc/resolv.conf");
+	Shell::execute2("/bin/cp", {
+			"/etc/resolv.conf",
+			chrootDir + "/etc/resolv.conf"
+	});
 
 	// KLUDGE: install pkg(8)
-	Shell::execute("chroot -u root " + chrootDir + " env ASSUME_ALWAYS_YES=YES pkg bootstrap > /dev/null");
+	Shell::execute2("/usr/sbin/chroot", {
+			"-u", "root",
+			chrootDir,
+			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
+	});
+
+	Shell::execute2("/sbin/zfs", {
+			"snapshot",
+			roomDataset + "/" + roomName + "@__initial"
+	});
 
 	boot();
 }
 
 void Room::boot() {
-	Shell::execute(
-			"jail -i -c name=" + jailName +
-			" host.hostname=" + roomName + ".room" +
-			" path=" + chrootDir +
-			" ip4=inherit" +
-			" mount.devfs" +
-			" sysvmsg=new sysvsem=new sysvshm=new" +
-			" persist"
-			" >/dev/null"
-	);
+	Shell::execute2("/usr/sbin/jail", {
+			"-i",
+			"-c", "name=" + jailName,
+			"host.hostname=" + roomName + ".room",
+			"path=" + chrootDir,
+			"ip4=inherit",
+			"mount.devfs",
+			"sysvmsg=new",
+			"sysvsem=new",
+			"sysvshm=new",
+			"persist",
+	});
 
 	if (shareTempDir) {
-		Shell::execute("mount -t nullfs /tmp " + chrootDir + "/tmp");
+		Shell::execute2("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 	}
 }
 
@@ -299,13 +321,13 @@ void Room::destroy()
 
 	if (jailExists()) {
 		log_debug("removing jail");
-		Shell::execute("jail -r " + jailName);
+		Shell::execute2("/usr/sbin/jail", { "-r", jailName });
 	} else {
 		log_warning("jail(2) does not exist");
 	}
 
 	// remove the immutable flag
-	Shell::execute("chflags -R noschg " + chrootDir);
+	Shell::execute2("/bin/chflags", {"-R", "noschg", chrootDir});
 
 	//TODO: if useZFS
 	if (1) {
@@ -326,7 +348,7 @@ void Room::destroy()
 
 	} else {
 		// remove all files (this makes me nervous)
-		Shell::execute("rm -rf " + chrootDir);
+		Shell::execute2("/bin/rm", {"-rf", chrootDir});
 	}
 
 	log_notice("room deleted");

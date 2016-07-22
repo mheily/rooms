@@ -23,7 +23,7 @@ class Shell {
 public:
 	static string popen_readline(const string& command);
 
-	static int execute2(const char *path, const std::vector<std::string>& args) {
+	static int execute2(const char *path, const std::vector<std::string>& args, int& exit_status) {
 		char* const envp[] = {
 				(char*)"HOME=/",
 				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
@@ -31,12 +31,16 @@ public:
 				NULL
 		};
 
+		string argv_s = path;
 		std::vector<char*> argv;
 		argv.push_back(const_cast<char*>(path));
 		for (auto it = args.begin(); it != args.end(); ++it) {
 			argv.push_back(const_cast<char*>(it->c_str()));
+			argv_s.append(" " + *it);
 		}
 		argv.push_back(NULL);
+
+		log_debug("executing: %s", argv_s.c_str());
 
 		pid_t pid = fork();
 		if (pid < 0) {
@@ -58,7 +62,15 @@ public:
 			if (!WIFEXITED(status)) {
 				throw std::runtime_error("abnormal child termination");
 			}
+			exit_status = status;
 			return WEXITSTATUS(status);
+		}
+	}
+
+	static void execute2(const char *path, const std::vector<std::string>& args) {
+		int rv = Shell::execute2(path, args, rv);
+		if (rv != 0) {
+			throw std::runtime_error("command returned a non-zero exit code");
 		}
 	}
 

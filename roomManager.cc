@@ -81,23 +81,26 @@ void RoomManager::bootstrap() {
 				cout << "Error: " << errorMsg << endl;
 				continue;
 			}
-			if (Shell::executeWithStatus(
-					"zpool list " + zpool + " | grep -q " + zpool) != 0) {
+			int rv = Shell::execute2("/sbin/zfs", {	"list", zpool }, rv);
+			if (rv != 0) {
 				cout << "Error: no such ZFS pool" << endl;
 				continue;
 			}
 			break;
 		}
 
-		Shell::execute(
-				"zfs create -o canmount=on -o mountpoint=/room " + zpool
-						+ "/room");
+		Shell::execute2("/sbin/zfs", {
+				"create",
+				"-o", "canmount=on",
+				"-o", "mountpoint=/room",
+				zpool + "/room"});
 	} else {
 		zpool = getZfsPoolName(roomDir);
 	}
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
-		Shell::execute("zfs create " + zpool + "/room/" + roomConfig.getOwnerLogin());
+		Shell::execute2("/sbin/zfs",
+				{ "create", zpool + "/room/" + roomConfig.getOwnerLogin() });
 	}
 
 	updateRoomConfig();
