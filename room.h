@@ -70,6 +70,5 @@ private:
 
 	bool jailExists();
 	void customizeWithoutRoot();
-	void enableX11Clients();
 	void validateName(const string& name);
 };

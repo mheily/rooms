@@ -70,12 +70,11 @@ void Room::enter()
 	string jail_username = "root";
 	string env_username = "USER=root";
 	if (allowX11Clients) {
-		x11_display += getenv("DISPLAY");
-		x11_xauthority += getenv("XAUTHORITY");
-		dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
+		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
+		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
+		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
 		jail_username = roomConfig.getOwnerLogin();
 		env_username = "USER=" + roomConfig.getOwnerLogin();
-		enableX11Clients();
 	}
 
 	char* const args[] = {
@@ -141,11 +140,8 @@ void Room::enter()
 
 bool Room::jailExists()
 {
-	if (Shell::executeWithStatus("jls -j " + jailName + " >/dev/null") == 0) {
-		return true;
-	} else {
-		return false;
-	}
+	int rv;Shell::execute("/usr/sbin/jls", {"-j", jailName});//TODO: >/dev/null
+	return (rv == 0);
 }
 
 void Room::validateName(const string& name)
@@ -185,23 +181,11 @@ void Room::validateName(const string& name)
 	}
 }
 
-// This should really be replaced w/ 'xauth generate' to generate an untrusted authorization key
-void Room::enableX11Clients() {
-	//FIXME: VERY BAD SECURITY
-	Shell::execute("cp /var/tmp/.PCDMAuth-* " + chrootDir + "/var/tmp");
-
-	// FIXME: SECURITY
-	// FIXME: also want to use execute2, but need XAUTHORITY variable.
-	// Despite having the cookie, clients fail with 'No protocol specified'
-	// This workaround is bad for security in a multi-user system, but gets things going for a desktop.
-	Shell::execute("/usr/local/bin/xhost +local");
-}
-
 void Room::clone(const string& snapshot, const string& destRoom)
 {
 	log_debug("cloning room");
 
-	Shell::execute2("/sbin/zfs", {
+	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
 			roomConfig.getParentDataset() + roomConfig.getOwnerLogin() + "/" + destRoom
@@ -219,15 +203,15 @@ void Room::create(const string& baseTarball)
 	log_debug("creating room");
 
 //	if (useZFS) {
-		Shell::execute2("/sbin/zfs", {"create", roomDataset + "/" + roomName});
+		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName});
 //	} else {
 //		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
 //	}
 
-	Shell::execute2("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
+	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
 	PasswdEntry pwent(roomConfig.getOwnerUid());
-	Shell::execute2("/usr/sbin/pw", {
+	Shell::execute("/usr/sbin/pw", {
 			"-R",  chrootDir,
 			"user", "add",
 			"-u", std::to_string(roomConfig.getOwnerUid()),
@@ -239,19 +223,19 @@ void Room::create(const string& baseTarball)
 	});
 
 	// KLUDGE: copy /etc/resolv.conf
-	Shell::execute2("/bin/cp", {
+	Shell::execute("/bin/cp", {
 			"/etc/resolv.conf",
 			chrootDir + "/etc/resolv.conf"
 	});
 
 	// KLUDGE: install pkg(8)
-	Shell::execute2("/usr/sbin/chroot", {
+	Shell::execute("/usr/sbin/chroot", {
 			"-u", "root",
 			chrootDir,
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
 	});
 
-	Shell::execute2("/sbin/zfs", {
+	Shell::execute("/sbin/zfs", {
 			"snapshot",
 			roomDataset + "/" + roomName + "@__initial"
 	});
@@ -260,7 +244,7 @@ void Room::create(const string& baseTarball)
 }
 
 void Room::boot() {
-	Shell::execute2("/usr/sbin/jail", {
+	Shell::execute("/usr/sbin/jail", {
 			"-i",
 			"-c", "name=" + jailName,
 			"host.hostname=" + roomName + ".room",
@@ -274,7 +258,8 @@ void Room::boot() {
 	});
 
 	if (shareTempDir) {
-		Shell::execute2("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
+		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
+		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
 }
 
@@ -317,17 +302,24 @@ void Room::destroy()
 				throw std::system_error(errno, std::system_category());
 			}
 		}
+		log_debug("unmounting /var/tmp");
+		if (unmount(string(chrootDir + "/var/tmp").c_str(), MNT_FORCE) < 0) {
+			if (errno != EINVAL) {
+				log_errno("unmount(2)");
+				throw std::system_error(errno, std::system_category());
+			}
+		}
 	}
 
 	if (jailExists()) {
 		log_debug("removing jail");
-		Shell::execute2("/usr/sbin/jail", { "-r", jailName });
+		Shell::execute("/usr/sbin/jail", { "-r", jailName });
 	} else {
 		log_warning("jail(2) does not exist");
 	}
 
 	// remove the immutable flag
-	Shell::execute2("/bin/chflags", {"-R", "noschg", chrootDir});
+	Shell::execute("/bin/chflags", {"-R", "noschg", chrootDir});
 
 	//TODO: if useZFS
 	if (1) {
@@ -335,7 +327,8 @@ void Room::destroy()
 		bool success = false;
 		for (int i = 0; i < 5; i++) {
 			sleep(1);
-			int result = Shell::executeWithStatus("zfs destroy " + roomDataset + "/" + roomName);
+			int result;
+			Shell::execute("/sbin/zfs", { "destroy", roomDataset + "/" + roomName}, result);
 			if (result == 0) {
 				success = true;
 				break;
@@ -348,7 +341,7 @@ void Room::destroy()
 
 	} else {
 		// remove all files (this makes me nervous)
-		Shell::execute2("/bin/rm", {"-rf", chrootDir});
+		Shell::execute("/bin/rm", {"-rf", chrootDir});
 	}
 
 	log_notice("room deleted");
@@ -366,7 +359,8 @@ void Room::killAllProcesses()
 	}
 
 	// Kill all programs still using the filesystem
-	int status = Shell::executeWithStatus("pkill -9 -j " + jailName);
+	int status;
+	Shell::execute("/bin/pkill", { "-9", "-j", jailName}, status);
 	if (status > 1) {
 		log_error("pkill failed");
 		throw std::runtime_error("pkill failed");
@@ -374,7 +368,8 @@ void Room::killAllProcesses()
 
 	bool timeout = true;
 	for (int i = 0 ; i < 60; i++) {
-		int status = Shell::executeWithStatus("pgrep -q -j " + jailName);
+		int status;
+		Shell::execute("/bin/pgrep", { "-q", "-j", jailName }, status);
 		if (status > 1) {
 			log_error("pkill failed");
 			throw std::runtime_error("pkill failed");

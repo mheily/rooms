@@ -81,7 +81,7 @@ void RoomManager::bootstrap() {
 				cout << "Error: " << errorMsg << endl;
 				continue;
 			}
-			int rv = Shell::execute2("/sbin/zfs", {	"list", zpool }, rv);
+			int rv = Shell::execute("/sbin/zfs", {	"list", zpool }, rv);
 			if (rv != 0) {
 				cout << "Error: no such ZFS pool" << endl;
 				continue;
@@ -89,7 +89,7 @@ void RoomManager::bootstrap() {
 			break;
 		}
 
-		Shell::execute2("/sbin/zfs", {
+		Shell::execute("/sbin/zfs", {
 				"create",
 				"-o", "canmount=on",
 				"-o", "mountpoint=/room",
@@ -99,7 +99,7 @@ void RoomManager::bootstrap() {
 	}
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
-		Shell::execute2("/sbin/zfs",
+		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + roomConfig.getOwnerLogin() });
 	}
 
@@ -202,7 +202,7 @@ void RoomManager::listRooms() {
 		std::clog << "No rooms exist. Run 'room create' to create a room."
 				<< endl;
 	} else {
-		Shell::execute2("/bin/ls", { "-1", getUserRoomDir() });
+		Shell::execute("/bin/ls", { "-1", getUserRoomDir() });
 	}
 }
 

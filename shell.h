@@ -23,7 +23,7 @@ class Shell {
 public:
 	static string popen_readline(const string& command);
 
-	static int execute2(const char *path, const std::vector<std::string>& args, int& exit_status) {
+	static int execute(const char *path, const std::vector<std::string>& args, int& exit_status) {
 		char* const envp[] = {
 				(char*)"HOME=/",
 				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
@@ -67,29 +67,10 @@ public:
 		}
 	}
 
-	static void execute2(const char *path, const std::vector<std::string>& args) {
-		int rv = Shell::execute2(path, args, rv);
+	static void execute(const char *path, const std::vector<std::string>& args) {
+		int rv = Shell::execute(path, args, rv);
 		if (rv != 0) {
 			throw std::runtime_error("command returned a non-zero exit code");
-		}
-	}
-
-	static int executeWithStatus(const string& command) {
-		log_debug("running %s", command.c_str());
-		int status = system(command.c_str());
-		if (status < 0) {
-			log_error("command failed: %s", command.c_str());
-			throw std::runtime_error("command failed");
-		}
-
-		return WEXITSTATUS(status);
-	}
-
-	static void execute(const string& command) {
-		int status = executeWithStatus(command);
-		if (status != 0) {
-			throw std::runtime_error("command returned unexpected status code " +
-					std::to_string(status) + ": " + command);
 		}
 	}
 };
