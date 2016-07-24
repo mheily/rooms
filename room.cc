@@ -252,6 +252,7 @@ void Room::create(const string& baseTarball)
 }
 
 void Room::boot() {
+	int rv;
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
 			"-c", "name=" + jailName,
@@ -263,7 +264,11 @@ void Room::boot() {
 			"sysvsem=new",
 			"sysvshm=new",
 			"persist",
-	});
+	}, rv, true);
+	if (rv != 0) {
+		log_error("jail(1) failed");
+		throw std::runtime_error("jail(1) failed");
+	}
 
 	if (shareTempDir) {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });

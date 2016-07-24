@@ -21,9 +21,12 @@
 
 class Shell {
 public:
+
 	static string popen_readline(const string& command);
 
-	static int execute(const char *path, const std::vector<std::string>& args, int& exit_status) {
+	static int execute(const char *path,
+			const std::vector<std::string>& args,
+			int& exit_status, bool silent = false) {
 		char* const envp[] = {
 				(char*)"HOME=/",
 				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
@@ -53,6 +56,9 @@ public:
 			throw std::runtime_error("fork failed");
 		}
 		if (pid == 0) {
+			if (silent) {
+				fclose(stdout);
+			}
 			if (execve(path, argv.data(), envp) < 0) {
 				log_errno("execve(2)");
 				throw std::runtime_error("execve failed");
