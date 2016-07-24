@@ -40,6 +40,7 @@ extern "C" {
 #include "namespaceImport.h"
 #include "shell.h"
 #include "fileUtil.h"
+#include "jail_getid.h"
 #include "room.h"
 
 Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name, const string& dataset)
@@ -53,6 +54,12 @@ Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const stri
 
 void Room::enter()
 {
+	int jid = jail_getid(jailName.c_str());
+	if (jid < 0) {
+		log_debug("jail `%s' not running; will start it now", jailName.c_str());
+		boot();
+	}
+
 	// Strange things happen if you enter the jail with uid != euid,
 	// so lets become root all the way
 	if (setgid(0) < 0) {
@@ -104,7 +111,7 @@ void Room::enter()
 	}
 	abort();
 
-//DEADWOOD: easier to use jexec here
+//DEADWOOD: easier to use jexec here, but this works for systems w/o jails
 #if 0
 	gid_t guestGid = (gid_t) guestUid;
 
@@ -140,8 +147,9 @@ void Room::enter()
 
 bool Room::jailExists()
 {
-	int rv;Shell::execute("/usr/sbin/jls", {"-j", jailName});//TODO: >/dev/null
-	return (rv == 0);
+	int jid = jail_getid(jailName.c_str());
+	log_debug("jail `%s' has jid %d", jailName.c_str(), jid);
+	return (jid >= 0);
 }
 
 void Room::validateName(const string& name)
@@ -318,11 +326,7 @@ void Room::destroy()
 		log_warning("jail(2) does not exist");
 	}
 
-	// remove the immutable flag
-	Shell::execute("/bin/chflags", {"-R", "noschg", chrootDir});
-
-	//TODO: if useZFS
-	if (1) {
+	if (useZFS()) {
 		// this races with "jail -r"
 		bool success = false;
 		for (int i = 0; i < 5; i++) {
@@ -340,6 +344,9 @@ void Room::destroy()
 		}
 
 	} else {
+		// remove the immutable flag
+		Shell::execute("/bin/chflags", {"-R", "noschg", chrootDir});
+
 		// remove all files (this makes me nervous)
 		Shell::execute("/bin/rm", {"-rf", chrootDir});
 	}
@@ -353,23 +360,25 @@ void Room::killAllProcesses()
 
 	// TODO: have a "nice" option that uses SIGTERM as well
 
-	if (!jailExists()) {
+	int jid = jail_getid(jailName.c_str());
+
+	if (jid < 0) {
 		log_debug("jail does not exist; skipping");
 		return;
 	}
 
 	// Kill all programs still using the filesystem
 	int status;
-	Shell::execute("/bin/pkill", { "-9", "-j", jailName}, status);
+	Shell::execute("/bin/pkill", { "-9", "-j", std::to_string(jid)}, status);
 	if (status > 1) {
-		log_error("pkill failed");
+		log_error("pkill failed with status %d", status);
 		throw std::runtime_error("pkill failed");
 	}
 
 	bool timeout = true;
 	for (int i = 0 ; i < 60; i++) {
 		int status;
-		Shell::execute("/bin/pgrep", { "-q", "-j", jailName }, status);
+		Shell::execute("/bin/pgrep", { "-q", "-j", std::to_string(jid) }, status);
 		if (status > 1) {
 			log_error("pkill failed");
 			throw std::runtime_error("pkill failed");

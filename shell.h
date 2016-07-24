@@ -27,7 +27,12 @@ public:
 		char* const envp[] = {
 				(char*)"HOME=/",
 				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
+				(char*)"LANG=C",
 				(char*)"LC_ALL=C",
+				(char*)"TERM=vt220",
+				(char*)"LOGNAME=root",
+				(char*)"USER=root",
+				(char*)"SHELL=/bin/sh",
 				NULL
 		};
 
@@ -62,8 +67,8 @@ public:
 			if (!WIFEXITED(status)) {
 				throw std::runtime_error("abnormal child termination");
 			}
-			exit_status = status;
-			return WEXITSTATUS(status);
+			exit_status = WEXITSTATUS(status);
+			return exit_status;
 		}
 	}
 

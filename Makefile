@@ -18,6 +18,10 @@ SOURCES=main.cc room.cc roomConfig.cc roomManager.cc shell.cc
 HEADERS=shell.h namespaceImport.h logger.h fileUtil.h room.h roomManager.h \
 	passwdEntry.h roomConfig.h
 
+# TODO: ifdef FreeBSD
+SOURCES+=jail_getid.cc
+HEADERS+=jail_getid.h
+
 all: room
 
 room: $(SOURCES) $(HEADERS)

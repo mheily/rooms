@@ -49,7 +49,7 @@ FILE *logfile = NULL;
 void usage() {
 	std::cout <<
 		"Usage:\n\n"
-		"  room [create|destroy|enter] <name>\n"
+		"  room <name> [create|destroy|enter]\n"
 		" -or-\n"
 		"  room [bootstrap|list]\n"
 		"\n"
@@ -70,19 +70,6 @@ main(int argc, char *argv[])
 			{ "verbose", no_argument, NULL, 'v' },
 			{ NULL, 0, NULL, 0 }
 	};
-
-#if 0
-	try {
-		std::unique_ptr<libjob::jobdConfig> jc(new libjob::jobdConfig);
-		jobd_config = jc.get();
-	} catch (std::exception& e) {
-		printf("ERROR: jobd_config: %s\n", e.what());
-		exit(EXIT_FAILURE);
-	} catch (...) {
-		puts("ERROR: Unhandled exception when initializing jobd_config");
-		exit(EXIT_FAILURE);
-	}
-#endif
 
 	logfile = fopen("/dev/null", "w");
 
@@ -123,8 +110,8 @@ main(int argc, char *argv[])
 
 		mgr.setup();
 
-		std::string command = std::string(argv[0]);
 		if (argc == 1) {
+			std::string command = std::string(argv[0]);
 			if (command == "list") {
 				mgr.listRooms();
 			} else if (command == "bootstrap") {
@@ -136,7 +123,8 @@ main(int argc, char *argv[])
 				throw std::runtime_error("Invalid command");
 			}
 		} else if (argc > 1) {
-			std::string name = std::string(argv[1]);
+			std::string name = std::string(argv[0]);
+			std::string command = std::string(argv[1]);
 
 			if (command == "create") {
 				mgr.cloneRoom(name);
