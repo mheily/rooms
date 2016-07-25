@@ -20,20 +20,21 @@
 #include "passwdEntry.h"
 
 RoomConfig::RoomConfig() {
-	if (geteuid() != 0) {
-		throw std::runtime_error(
-				"Insufficient permissions; must be run as root");
-	}
+//	if (geteuid() != 0) {
+//		throw std::runtime_error(
+//				"Insufficient permissions; must be run as root");
+//	}
 
 	uid_t real_uid = getuid();
 	if (getuid() == geteuid()) {
 		const char* buf = getenv("SUDO_UID");
 		if (buf) {
 			real_uid = std::stoul(buf);
-		} else {
-			throw std::runtime_error(
-					"The root user is not allowed to create rooms. Use a normal user account instead");
 		}
+//		else {
+//			throw std::runtime_error(
+//					"The root user is not allowed to create rooms. Use a normal user account instead");
+//		}
 	}
 	setOwnerUid(real_uid);
 	log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);

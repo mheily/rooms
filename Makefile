@@ -25,7 +25,7 @@ HEADERS+=jail_getid.h
 all: room
 
 room: $(SOURCES) $(HEADERS)
-	$(CXX) -std=c++11 -isystem /usr/local/include -o room $(SOURCES)
+	$(CXX) $(CFLAGS) -std=c++11 -isystem /usr/local/include -o room $(SOURCES)
 
 install: room
 	install -m 6755 -o root -g wheel room /usr/local/bin/room

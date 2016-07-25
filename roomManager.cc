@@ -73,22 +73,23 @@ void RoomManager::bootstrap() {
 
 	if (!FileUtil::checkExists(roomDir)) {
 
-		for (;;) {
-			cout << "Enter the ZFS pool that rooms will be stored in: ";
-			cin >> zpool;
-			string errorMsg;
-			if (!validateZfsPoolName(zpool, errorMsg)) {
-				cout << "Error: " << errorMsg << endl;
-				continue;
-			}
-			int rv = Shell::execute("/sbin/zfs", {	"list", zpool }, rv);
-			if (rv != 0) {
-				cout << "Error: no such ZFS pool" << endl;
-				continue;
-			}
-			break;
-		}
+//		for (;;) {
+//			cout << "Enter the ZFS pool that rooms will be stored in: ";
+//			cin >> zpool;
+//			string errorMsg;
+//			if (!validateZfsPoolName(zpool, errorMsg)) {
+//				cout << "Error: " << errorMsg << endl;
+//				continue;
+//			}
+//			int rv = Shell::execute("/sbin/zfs", {	"list", zpool }, rv);
+//			if (rv != 0) {
+//				cout << "Error: no such ZFS pool" << endl;
+//				continue;
+//			}
+//			break;
+//		}
 
+		zpool = RoomManager::getZfsPoolName("/");
 		Shell::execute("/sbin/zfs", {
 				"create",
 				"-o", "canmount=on",
@@ -134,8 +135,21 @@ string RoomManager::getZfsPoolName(const string& path) {
 		throw std::runtime_error("path does not exist: " + path);
 	}
 
-	string cmd = "df -h " + path + " | tail -1 | sed 's,/.*,,'";
-	return Shell::popen_readline(cmd);
+	int exit_status;
+	string child_stdout;
+	Shell::execute("/bin/sh", {
+			"-c",
+			"df -h " + path + " | tail -1 | sed 's,/.*,,'"
+	}, exit_status, child_stdout);
+	if (exit_status != 0 || child_stdout == "") {
+		throw std::runtime_error("unable to determine pool name");
+	}
+	string errorMsg;
+	if (!validateZfsPoolName(child_stdout, errorMsg)) {
+		log_error("illegal pool name: %s", errorMsg.c_str());
+		throw std::runtime_error("invalid pool name");
+	}
+	return child_stdout;
 }
 
 bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg) {

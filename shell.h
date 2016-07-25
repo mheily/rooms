@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <fcntl.h>
+
 #include "namespaceImport.h"
 #include "logger.h"
 
@@ -26,7 +28,7 @@ public:
 
 	static int execute(const char *path,
 			const std::vector<std::string>& args,
-			int& exit_status, bool silent = false) {
+			int& exit_status, string& child_stdout) {
 		char* const envp[] = {
 				(char*)"HOME=/",
 				(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
@@ -50,15 +52,25 @@ public:
 
 		log_debug("executing: %s", argv_s.c_str());
 
+		int pd[2];
+		if (pipe(pd) < 0) {
+			log_errno("fork(2)");
+			throw std::runtime_error("fork failed");
+		}
+
 		pid_t pid = fork();
 		if (pid < 0) {
 			log_errno("fork(2)");
 			throw std::runtime_error("fork failed");
 		}
 		if (pid == 0) {
-			if (silent) {
-				fclose(stdout);
+			/* Connect the child process STDOUT to the parent via a pipe */
+			if (dup2(pd[1], STDOUT_FILENO) < 0) {
+				log_errno("dup2(2)");
+				throw std::runtime_error("dup2 failed");
 			}
+			close(pd[1]);
+			close(pd[0]);
 			if (execve(path, argv.data(), envp) < 0) {
 				log_errno("execve(2)");
 				throw std::runtime_error("execve failed");
@@ -74,14 +86,36 @@ public:
 				throw std::runtime_error("abnormal child termination");
 			}
 			exit_status = WEXITSTATUS(status);
+
+			/* Capture the first line of stdout */
+			int flags = fcntl(pd[0], F_GETFL, 0);
+			flags |= O_NONBLOCK;
+			fcntl(pd[0], F_SETFL, flags);
+			child_stdout = Shell::readline(pd[0]);
+			close(pd[0]);
+			close(pd[1]);
+
 			return exit_status;
 		}
 	}
 
+	static int execute(const char *path,
+			const std::vector<std::string>& args,
+			int& exit_status)
+	{
+		string child_stdout;
+		int rv = Shell::execute(path, args, rv, child_stdout);
+		return rv;
+	}
+
 	static void execute(const char *path, const std::vector<std::string>& args) {
-		int rv = Shell::execute(path, args, rv);
+		string child_stdout;
+		int rv = Shell::execute(path, args, rv, child_stdout);
 		if (rv != 0) {
 			throw std::runtime_error("command returned a non-zero exit code");
 		}
 	}
+
+private:
+	static string readline(int);
 };
