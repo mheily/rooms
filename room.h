@@ -56,6 +56,7 @@ public:
 	void boot();
 	void destroy();
 	void enter();
+	void exec(int argc, char *argv[]);
 
 private:
 	RoomConfig roomConfig;

@@ -52,7 +52,7 @@ Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const stri
 	roomDataset = roomConfig.getParentDataset() + roomConfig.getOwnerLogin();
 }
 
-void Room::enter()
+void Room::exec(int argc, char *argv[])
 {
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
@@ -84,14 +84,23 @@ void Room::enter()
 		env_username = "USER=" + roomConfig.getOwnerLogin();
 	}
 
-	char* const args[] = {
+	std::vector<char*> argsVec = {
 			(char*)"/usr/sbin/jexec",
 			(char*) "-U",
 			(char*) jail_username.c_str(),
 			(char*) jailName.c_str(),
-			(char*)"/bin/sh",
-			NULL
 	};
+	if (argc == 0) {
+		argsVec.push_back((char*)"/bin/sh");
+	} else {
+		char **p;
+
+		for (p = argv + 2; *p != NULL; p++) {
+			puts(*p);
+			argsVec.push_back(const_cast<char*>(*p));
+		}
+	}
+	argsVec.push_back(NULL);
 
 	char* const envp[] = {
 			(char*)"HOME=/",
@@ -105,11 +114,13 @@ void Room::enter()
 			NULL
 	};
 
-	if (execve("/usr/sbin/jexec", args, envp) < 0) {
+	if (execve("/usr/sbin/jexec", argsVec.data(), envp) < 0) {
 		log_errno("execve(2)");
 		throw std::system_error(errno, std::system_category());
 	}
-	abort();
+	//NOTREACHED
+	log_errno("execve(2)");
+	throw std::runtime_error("exec failed");
 
 //DEADWOOD: easier to use jexec here, but this works for systems w/o jails
 #if 0
@@ -143,6 +154,13 @@ void Room::enter()
 	}
 	abort();
 #endif
+}
+
+void Room::enter() {
+	int argc = 0;
+	char *argv[] = { NULL };
+
+	Room::exec(argc, argv);
 }
 
 bool Room::jailExists()

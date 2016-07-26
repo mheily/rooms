@@ -51,6 +51,8 @@ void usage() {
 		"Usage:\n\n"
 		"  room <name> [create|destroy|enter]\n"
 		" -or-\n"
+		"  room <name> exec <arg0..argN>\n"
+		" -or-\n"
 		"  room [bootstrap|list]\n"
 		"\n"
 		"  Miscellaneous options:\n\n"
@@ -73,7 +75,17 @@ main(int argc, char *argv[])
 
 	logfile = fopen("/dev/null", "w");
 
-	while ((ch = getopt_long(argc, argv, "hv", longopts, NULL)) != -1) {
+	// Find an 'exec' argument and ignore everything after it
+	// Without this, getopt_long() gets confused.
+	int argc_before_exec = argc;
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "exec")) {
+			argc_before_exec = i;
+			break;
+		}
+	}
+
+	while ((ch = getopt_long(argc_before_exec, argv, "hv", longopts, NULL)) != -1) {
 		switch (ch) {
 		case 'h':
 			usage();
@@ -132,6 +144,8 @@ main(int argc, char *argv[])
 				mgr.destroyRoom(name);
 			} else if (command == "enter") {
 				mgr.getRoomByName(name).enter();
+			} else if (command == "exec") {
+				mgr.getRoomByName(name).exec(argc, argv);
 			} else {
 				throw std::runtime_error("Invalid command");
 			}
