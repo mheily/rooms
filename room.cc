@@ -248,7 +248,7 @@ void Room::create(const string& baseTarball)
 			roomDataset + "/" + roomName + "@__initial"
 	});
 
-	boot();
+	log_debug("room %s created", roomName.c_str());
 }
 
 void Room::boot() {
@@ -267,7 +267,7 @@ void Room::boot() {
 			"persist",
 	}, rv);
 	if (rv != 0) {
-		log_error("jail(1) failed");
+		log_error("jail(1) failed; rv=%d", rv);
 		throw std::runtime_error("jail(1) failed");
 	}
 
