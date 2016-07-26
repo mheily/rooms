@@ -200,8 +200,6 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	});
 
 	Room cloneRoom(roomConfig, roomDir, destRoom, roomDataset);
-
-	cloneRoom.boot();
 }
 
 void Room::create(const string& baseTarball)
