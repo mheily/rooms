@@ -1,3 +1,9 @@
+# Overview
+
+Features:
+1. Allows unprivileged users to create jails in a simple and safe manner
+2. Allows running X11 applications in jails
+
 # Installation
 
 ```
@@ -11,12 +17,12 @@ sudo make install
 
 Create a new room called 'hello_world'.
 ```
-$ room create hello_world
+$ room hello_world create
 ```
 
 Enter the room. This will launch a shell inside the room.
 ```
-$ room enter hello_world
+$ room hello_world create
 ```
 
 Install the 'xclock' program.
@@ -34,5 +40,5 @@ $ xclock
 When you are done, exit the shell, and destroy the room.
 ```
 $ exit
-$ room destroy hello_world
+$ room hello_world destroy
 ```
