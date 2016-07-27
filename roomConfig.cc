@@ -25,7 +25,7 @@
 static bool detectZfs() {
 	int exit_status;
 	string child_stdout;
-	Shell::execute("/bin/sh", { "-c", "zpool list -H" }, exit_status);
+	Shell::execute("/sbin/zpool", { "list", "-H" }, exit_status);
 	if (exit_status == 0) {
 		return true;
 	} else {

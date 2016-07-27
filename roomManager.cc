@@ -59,11 +59,8 @@ bool RoomManager::isBootstrapComplete() {
 	return FileUtil::checkExists(getUserRoomDir());
 }
 
+//DEADWOOD
 void RoomManager::updateRoomConfig() {
-	//TODO: move these into RoomConfig
-	{
-	createRoomDir();
-	}
 }
 
 void RoomManager::bootstrap() {
@@ -87,19 +84,27 @@ void RoomManager::bootstrap() {
 //			break;
 //		}
 
-		zpool = ZfsPool::getNameByPath("/");
-		Shell::execute("/sbin/zfs", {
-				"create",
-				"-o", "canmount=on",
-				"-o", "mountpoint=/room",
-				zpool + "/room"});
+		if (roomConfig.useZfs()) {
+			zpool = ZfsPool::getNameByPath("/");
+			Shell::execute("/sbin/zfs", {
+					"create",
+					"-o", "canmount=on",
+					"-o", "mountpoint=/room",
+					zpool + "/room"});
+		} else {
+			FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
+		}
 	} else {
 		zpool = ZfsPool::getNameByPath(roomDir);
 	}
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
+		if (roomConfig.useZfs()) {
 		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + roomConfig.getOwnerLogin() });
+		} else {
+			FileUtil::mkdir_idempotent(roomDir + "/" + roomConfig.getOwnerLogin(), 0700, 0, 0);
+		}
 	}
 
 	updateRoomConfig();
@@ -114,10 +119,6 @@ void RoomManager::setup() {
 	updateRoomConfig();
 }
 
-void RoomManager::createRoomDir() {
-	FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
-}
-
 void RoomManager::downloadBase() {
 	if (!FileUtil::checkExists(baseTarball)) {
 		cout << "Downloading base.txz..\n";
@@ -129,20 +130,25 @@ void RoomManager::downloadBase() {
 }
 
 Room RoomManager::getRoomByName(const string& name) {
-	return Room(roomConfig, roomDir, name, getUserRoomDataset());
+	return Room(roomConfig, roomDir, name);
 }
 
 void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
-	Room room(roomConfig, roomDir, name, getUserRoomDataset());
+	Room room(roomConfig, roomDir, name);
 	createBaseTemplate();
 	room.create(baseTarball);
 }
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
-	Room srcRoom(roomConfig, roomDir, src, getUserRoomDataset());
-	srcRoom.clone("__initial", dest);
+	if (roomConfig.useZfs()) {
+		Room srcRoom(roomConfig, roomDir, src);
+		srcRoom.clone("__initial", dest);
+	} else {
+		// XXX-FIXME assumes we are cloning a template
+		createRoom(dest);
+	}
 }
 
 void RoomManager::cloneRoom(const string& dest) {
@@ -152,7 +158,7 @@ void RoomManager::cloneRoom(const string& dest) {
 void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
-	Room room(roomConfig, roomDir, name, getUserRoomDataset());
+	Room room(roomConfig, roomDir, name);
 	room.destroy();
 }
 
@@ -226,6 +232,6 @@ void RoomManager::createBaseTemplate() {
 
 	log_debug("creating base template: %s", base_template.c_str());
 
-	Room room(roomConfig, roomDir, base_template, getUserRoomDataset());
+	Room room(roomConfig, roomDir, base_template);
 	room.create(baseTarball);
 }

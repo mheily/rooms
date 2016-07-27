@@ -43,13 +43,15 @@ extern "C" {
 #include "jail_getid.h"
 #include "room.h"
 
-Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name, const string& dataset)
+Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name)
 {
 	this->roomConfig = roomConfig;
 	roomDir = managerRoomDir;
 	validateName(name);
 	chrootDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
-	roomDataset = roomConfig.getParentDataset();
+	if (roomConfig.useZfs()) {
+		roomDataset = roomConfig.getParentDataset();
+	}
 }
 
 void Room::exec(int argc, char *argv[])
@@ -217,7 +219,7 @@ void Room::clone(const string& snapshot, const string& destRoom)
 			roomConfig.getParentDataset() + "/" + destRoom
 	});
 
-	Room cloneRoom(roomConfig, roomDir, destRoom, roomDataset);
+	Room cloneRoom(roomConfig, roomDir, destRoom);
 }
 
 void Room::create(const string& baseTarball)
@@ -234,6 +236,7 @@ void Room::create(const string& baseTarball)
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
+	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 	PasswdEntry pwent(roomConfig.getOwnerUid());
 	Shell::execute("/usr/sbin/pw", {
 			"-R",  chrootDir,
@@ -259,10 +262,12 @@ void Room::create(const string& baseTarball)
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
 	});
 
-	Shell::execute("/sbin/zfs", {
-			"snapshot",
-			roomDataset + "/" + roomName + "@__initial"
-	});
+	if (roomConfig.useZfs()) {
+		Shell::execute("/sbin/zfs", {
+				"snapshot",
+				roomDataset + "/" + roomName + "@__initial"
+		});
+	}
 
 	log_debug("room %s created", roomName.c_str());
 }
@@ -277,9 +282,11 @@ void Room::boot() {
 			"path=" + chrootDir,
 			"ip4=inherit",
 			"mount.devfs",
+#if __FreeBSD__ >= 11
 			"sysvmsg=new",
 			"sysvsem=new",
 			"sysvshm=new",
+#endif
 			"persist",
 	}, rv);
 	if (rv != 0) {

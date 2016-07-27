@@ -41,7 +41,8 @@ private:
 	RoomConfig roomConfig;
 	string ownerLogin;
 	string baseTarball = "/var/cache/room-base.txz";
-	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
+	//string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
+	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.2-RELEASE/base.txz";
 	string roomDir = "/room";
 
 	void downloadBase();

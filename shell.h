@@ -109,6 +109,7 @@ public:
 	{
 		string child_stdout;
 		int rv = Shell::execute(path, args, rv, child_stdout);
+		exit_status = rv;
 		return rv;
 	}
 

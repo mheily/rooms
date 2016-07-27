@@ -48,7 +48,7 @@ extern FILE *logfile;
 
 class Room {
 public:
-	Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name, const string& dataset);
+	Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name);
 
 	void create(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
