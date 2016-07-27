@@ -46,6 +46,7 @@ extern "C" {
 #include "room.h"
 #include "roomConfig.h"
 #include "roomManager.h"
+#include "zfsPool.h"
 
 string RoomManager::getUserRoomDir() {
 	PasswdEntry pwent(roomConfig.getOwnerUid());
@@ -61,12 +62,8 @@ bool RoomManager::isBootstrapComplete() {
 void RoomManager::updateRoomConfig() {
 	//TODO: move these into RoomConfig
 	{
-
 	createRoomDir();
-	zpoolName = getZfsPoolName(roomDir);
 	}
-
-	roomConfig.setParentDataset(zpoolName + "/room/" + ownerLogin);
 }
 
 void RoomManager::bootstrap() {
@@ -90,14 +87,14 @@ void RoomManager::bootstrap() {
 //			break;
 //		}
 
-		zpool = RoomManager::getZfsPoolName("/");
+		zpool = ZfsPool::getNameByPath("/");
 		Shell::execute("/sbin/zfs", {
 				"create",
 				"-o", "canmount=on",
 				"-o", "mountpoint=/room",
 				zpool + "/room"});
 	} else {
-		zpool = getZfsPoolName(roomDir);
+		zpool = ZfsPool::getNameByPath(roomDir);
 	}
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
@@ -129,58 +126,6 @@ void RoomManager::downloadBase() {
 			throw std::runtime_error("Download failed");
 		}
 	}
-}
-
-string RoomManager::getZfsPoolName(const string& path) {
-	if (!FileUtil::checkExists(path)) {
-		throw std::runtime_error("path does not exist: " + path);
-	}
-
-	int exit_status;
-	string child_stdout;
-	Shell::execute("/bin/sh", {
-			"-c",
-			"df -h " + path + " | tail -1 | sed 's,/.*,,'"
-	}, exit_status, child_stdout);
-	if (exit_status != 0 || child_stdout == "") {
-		throw std::runtime_error("unable to determine pool name");
-	}
-	string errorMsg;
-	if (!validateZfsPoolName(child_stdout, errorMsg)) {
-		log_error("illegal pool name: %s", errorMsg.c_str());
-		throw std::runtime_error("invalid pool name");
-	}
-	return child_stdout;
-}
-
-bool RoomManager::validateZfsPoolName(const string& name, string& errorMsg) {
-	string buf = name;
-	std::locale loc("C");
-
-	errorMsg = "";
-
-	if (name.length() == 0) {
-		errorMsg = "name cannot be empty";
-		return false;
-	}
-	if (name.length() > 72) {
-		errorMsg = "name is too long";
-		return false;
-	}
-	for (std::string::iterator it = buf.begin(); it != buf.end(); ++it) {
-		if (*it == '\0') {
-			errorMsg = "NUL in name";
-			return false;
-		}
-		if (std::isalnum(*it, loc) || strchr("-_", *it)) {
-			// ok
-		} else {
-			errorMsg = "Illegal character in name: ";
-			errorMsg.push_back(*it);
-			return false;
-		}
-	}
-	return true;
 }
 
 Room RoomManager::getRoomByName(const string& name) {
@@ -249,7 +194,7 @@ void RoomManager::listRooms() {
 
 string RoomManager::getUserRoomDataset() {
 	if (roomConfig.useZfs()) {
-		return string(zpoolName + "/room/" + ownerLogin);
+		return string(roomConfig.getZpoolName() + "/" + ownerLogin);
 	} else {
 		throw std::logic_error("ZFS not enabled");
 	}

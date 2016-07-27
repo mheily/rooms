@@ -19,6 +19,7 @@
 #include "roomConfig.h"
 #include "passwdEntry.h"
 #include "shell.h"
+#include "zfsPool.h"
 
 // Check for any ZFS pools.
 static bool detectZfs() {
@@ -56,4 +57,8 @@ RoomConfig::RoomConfig() {
 	setOwnerLogin(pwent.getLogin());
 
 	b_useZfs = detectZfs();
+	if (useZfs()) {
+		zpoolName = ZfsPool::getNameByPath(roomDir);
+		setParentDataset(zpoolName + "/room/" + ownerLogin);
+	}
 }

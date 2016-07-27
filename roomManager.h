@@ -43,7 +43,6 @@ private:
 	string baseTarball = "/var/cache/room-base.txz";
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
 	string roomDir = "/room";
-	string zpoolName;// = "uninitialized-zpool-name";
 
 	void downloadBase();
 	void createRoomDir();
@@ -52,8 +51,6 @@ private:
 	string getUserRoomDataset();
 	string getRoomPathByName(const string& name);
 	void updateRoomConfig();
-	bool validateZfsPoolName(const string& name, string& errorMsg);
-	string getZfsPoolName(const string& path);
 
 	// templates
 	string getBaseTemplateName();

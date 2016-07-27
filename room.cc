@@ -49,7 +49,7 @@ Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const stri
 	roomDir = managerRoomDir;
 	validateName(name);
 	chrootDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
-	roomDataset = roomConfig.getParentDataset() + roomConfig.getOwnerLogin();
+	roomDataset = roomConfig.getParentDataset();
 }
 
 void Room::exec(int argc, char *argv[])
@@ -214,7 +214,7 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
-			roomConfig.getParentDataset() + roomConfig.getOwnerLogin() + "/" + destRoom
+			roomConfig.getParentDataset() + "/" + destRoom
 	});
 
 	Room cloneRoom(roomConfig, roomDir, destRoom, roomDataset);
@@ -226,11 +226,11 @@ void Room::create(const string& baseTarball)
 
 	log_debug("creating room");
 
-//	if (useZFS) {
+	if (roomConfig.useZfs()) {
 		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName});
-//	} else {
-//		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
-//	}
+	} else {
+		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
+	}
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
@@ -348,7 +348,7 @@ void Room::destroy()
 		log_warning("jail(2) does not exist");
 	}
 
-	if (useZFS()) {
+	if (roomConfig.useZfs()) {
 		// this races with "jail -r"
 		bool success = false;
 		for (int i = 0; i < 5; i++) {

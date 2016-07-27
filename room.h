@@ -69,7 +69,6 @@ private:
 
 	string roomDataset; // the name of the ZFS dataset for the room
 
-	bool useZFS() { return true; }
 	bool jailExists();
 	void customizeWithoutRoot();
 	void validateName(const string& name);

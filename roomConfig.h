@@ -60,6 +60,13 @@ public:
 		return b_useZfs;
 	}
 
+	const string& getZpoolName() const {
+		if (!b_useZfs) {
+			throw std::logic_error("ZFS not enabled");
+		}
+		return zpoolName;
+	}
+
 private:
 	// the top-level directory for rooms
 	string roomDir = "/room";
@@ -67,4 +74,5 @@ private:
 	uid_t ownerUid;
 	string ownerLogin;
 	bool b_useZfs;
+	string zpoolName;
 };
