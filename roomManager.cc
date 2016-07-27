@@ -248,10 +248,10 @@ void RoomManager::listRooms() {
 }
 
 string RoomManager::getUserRoomDataset() {
-	if (useZFS) {
+	if (roomConfig.useZfs()) {
 		return string(zpoolName + "/room/" + ownerLogin);
 	} else {
-		return "";
+		throw std::logic_error("ZFS not enabled");
 	}
 }
 
