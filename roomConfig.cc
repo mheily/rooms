@@ -18,6 +18,19 @@
 #include "namespaceImport.h"
 #include "roomConfig.h"
 #include "passwdEntry.h"
+#include "shell.h"
+
+// Check for any ZFS pools.
+static bool detectZfs() {
+	int exit_status;
+	string child_stdout;
+	Shell::execute("/bin/sh", { "-c", "zpool list -H" }, exit_status);
+	if (exit_status == 0) {
+		return true;
+	} else {
+		return false;
+	}
+}
 
 RoomConfig::RoomConfig() {
 //	if (geteuid() != 0) {
@@ -41,4 +54,6 @@ RoomConfig::RoomConfig() {
 
 	PasswdEntry pwent(real_uid);
 	setOwnerLogin(pwent.getLogin());
-	}
+
+	b_useZfs = detectZfs();
+}

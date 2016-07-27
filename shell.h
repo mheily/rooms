@@ -16,7 +16,11 @@
 
 #pragma once
 
+#include <vector>
+
 #include <fcntl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "namespaceImport.h"
 #include "logger.h"

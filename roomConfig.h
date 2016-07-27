@@ -56,10 +56,15 @@ public:
 		this->ownerLogin = ownerLogin;
 	}
 
+	bool useZfs() const {
+		return b_useZfs;
+	}
+
 private:
 	// the top-level directory for rooms
 	string roomDir = "/room";
 	string parentDataset;
 	uid_t ownerUid;
 	string ownerLogin;
+	bool b_useZfs;
 };
