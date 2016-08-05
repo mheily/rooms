@@ -25,7 +25,6 @@
 #include <unordered_set>
 
 extern "C" {
-#include <getopt.h>
 #include <jail.h>
 #include <pwd.h>
 #include <sys/param.h>
@@ -46,35 +45,15 @@ extern "C" {
 FILE *logfile = NULL;
 #include "logger.h"
 
-void usage() {
-	std::cout <<
-		"Usage:\n\n"
-		"  room <name> [create|destroy|enter]\n"
-		" -or-\n"
-		"  room <name> exec <arg0..argN>\n"
-		" -or-\n"
-		"  room [bootstrap|list]\n"
-		"\n"
-		"  Miscellaneous options:\n\n"
-		"    -h, --help         This screen\n"
-		"    -v, --verbose      Increase verbosity level\n"
-	<< std::endl;
-}
-
 int
 main(int argc, char *argv[])
 {
 	RoomConfig roomConfig;
 	RoomManager mgr(roomConfig);
-	char ch;
-	static struct option longopts[] = {
-			{ "help", no_argument, NULL, 'h' },
-			{ "verbose", no_argument, NULL, 'v' },
-			{ NULL, 0, NULL, 0 }
-	};
 
 	logfile = fopen("/dev/null", "w");
 
+#if 0
 	// Find an 'exec' argument and ignore everything after it
 	// Without this, getopt_long() gets confused.
 	int argc_before_exec = argc;
@@ -105,8 +84,12 @@ main(int argc, char *argv[])
 
 	argc -= optind;
 	argv += optind;
+#endif
 
 	try {
+		mgr.setup();
+		mgr.getOptions(argc, argv);
+#if 0
 		// Implicitly bootstrap OR (bootstrap explicitly AND exit)
 		if (mgr.isBootstrapComplete()) {
 			if (argc == 1 && string(argv[0]) == "bootstrap") {
@@ -119,37 +102,7 @@ main(int argc, char *argv[])
 				exit(0);
 			}
 		}
-
-		mgr.setup();
-
-		if (argc == 1) {
-			std::string command = std::string(argv[0]);
-			if (command == "list") {
-				mgr.listRooms();
-			} else if (command == "bootstrap") {
-				throw std::logic_error("NOTREACHED");
-			} else if (command == "--help" || command == "-h" || command == "help") {
-				usage();
-				exit(1);
-			} else {
-				throw std::runtime_error("Invalid command");
-			}
-		} else if (argc > 1) {
-			std::string name = std::string(argv[0]);
-			std::string command = std::string(argv[1]);
-
-			if (command == "create") {
-				mgr.cloneRoom(name);
-			} else if (command == "destroy") {
-				mgr.destroyRoom(name);
-			} else if (command == "enter") {
-				mgr.getRoomByName(name).enter();
-			} else if (command == "exec") {
-				mgr.getRoomByName(name).exec(argc, argv);
-			} else {
-				throw std::runtime_error("Invalid command");
-			}
-		}
+#endif
 	} catch(const std::system_error& e) {
 		std::cout << "Caught system_error with code " << e.code()
 	                  << " meaning " << e.what() << '\n';

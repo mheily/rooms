@@ -137,6 +137,7 @@ void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
 	Room room(roomConfig, roomDir, name);
+	room.setRoomOptions(roomOptions);
 	createBaseTemplate();
 	room.create(baseTarball);
 }
@@ -144,6 +145,7 @@ void RoomManager::createRoom(const string& name) {
 void RoomManager::cloneRoom(const string& src, const string& dest) {
 	if (roomConfig.useZfs()) {
 		Room srcRoom(roomConfig, roomDir, src);
+		srcRoom.setRoomOptions(roomOptions);
 		srcRoom.clone("__initial", dest);
 	} else {
 		// XXX-FIXME assumes we are cloning a template
@@ -159,6 +161,7 @@ void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
 	Room room(roomConfig, roomDir, name);
+	room.setRoomOptions(roomOptions);
 	room.destroy();
 }
 
@@ -234,4 +237,66 @@ void RoomManager::createBaseTemplate() {
 
 	Room room(roomConfig, roomDir, base_template);
 	room.create(baseTarball);
+}
+
+static void printUsage() {
+	std::cout <<
+		"Usage:\n\n"
+		"  room <name> [create|destroy|enter]\n"
+		" -or-\n"
+		"  room <name> exec <arg0..argN>\n"
+		" -or-\n"
+		"  room [bootstrap|list]\n"
+		"\n"
+		"  Miscellaneous options:\n\n"
+		"    -h, --help         This screen\n"
+		"    -v, --verbose      Increase verbosity level\n"
+	<< std::endl;
+}
+
+void RoomManager::getOptions(int argc, char *argv[]) {
+	string room = "";
+
+	// Find the first positional argument
+	int i;
+	for (i = 1; i < argc; i++) {
+		string context = argv[i];
+		if (context == "bootstrap") { }
+		else if (context == "list") {
+			listRooms();
+			exit(0);
+		} else if (context == "help" || context == "--help" || context == "-h") {
+			printUsage();
+			exit(0);
+		} else if (context == "--verbose" || context == "-v") {
+			fclose(logfile);
+			logfile = stderr;
+			continue;
+//		} else if (context.at(0) == '-') {
+//			continue;
+		} else {
+			room = context;
+			break;
+		}
+	}
+
+	if (i == argc) {
+		cout << "ERROR: must specify an action\n";
+		printUsage();
+		exit(1);
+	}
+	string command = argv[i + 1];
+
+	if (command == "create") {
+		getRoomOptions(argc, argv);
+		cloneRoom(room);
+	} else if (command == "destroy") {
+		destroyRoom(room);
+	} else if (command == "enter") {
+		getRoomByName(room).enter();
+	} else if (command == "exec") {
+		getRoomByName(room).exec(argc, argv);
+	} else {
+		throw std::runtime_error("Invalid command");
+	}
 }

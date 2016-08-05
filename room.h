@@ -42,6 +42,7 @@ extern "C" {
 #include "fileUtil.h"
 #include "passwdEntry.h"
 #include "roomConfig.h"
+#include "roomOptions.h"
 
 extern FILE *logfile;
 #include "logger.h"
@@ -58,14 +59,17 @@ public:
 	void enter();
 	void exec(int argc, char *argv[]);
 
+	void setRoomOptions(RoomOptions& roomOptions) {
+		this->roomOptions = &roomOptions;
+	}
+
 private:
 	RoomConfig roomConfig;
+	RoomOptions* roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
 	string jailName;  // name of the jail
-	bool allowX11Clients = true; // allow X programs to run
-	bool shareTempDir = true; // share /tmp with the main system, sadly needed for X11 and other progs
 
 	string roomDataset; // the name of the ZFS dataset for the room
 

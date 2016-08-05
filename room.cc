@@ -78,7 +78,7 @@ void Room::exec(int argc, char *argv[])
 	string dbus_address = "DBUS_SESSION_BUS_ADDRESS=";
 	string jail_username = "root";
 	string env_username = "USER=root";
-	if (allowX11Clients) {
+	if (roomOptions->isAllowX11Clients()) {
 		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
 		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
 		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
@@ -294,7 +294,7 @@ void Room::boot() {
 		throw std::runtime_error("jail(1) failed");
 	}
 
-	if (shareTempDir) {
+	if (roomOptions->isShareTempDir()) {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
@@ -331,7 +331,7 @@ void Room::destroy()
 		}
 	}
 
-	if (shareTempDir) {
+	if (roomOptions->isShareTempDir()) {
 		log_debug("unmounting /tmp");
 		if (unmount(string(chrootDir + "/tmp").c_str(), MNT_FORCE) < 0) {
 			if (errno != EINVAL) {
