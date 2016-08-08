@@ -130,7 +130,9 @@ void RoomManager::downloadBase() {
 }
 
 Room RoomManager::getRoomByName(const string& name) {
-	return Room(roomConfig, roomDir, name);
+	Room room(roomConfig, roomDir, name);
+	room.setRoomOptions(roomOptions);
+	return room;
 }
 
 void RoomManager::createRoom(const string& name) {
@@ -255,7 +257,7 @@ static void printUsage() {
 }
 
 void RoomManager::getOptions(int argc, char *argv[]) {
-	string room = "";
+	string room_name = "";
 
 	// Find the first positional argument
 	int i;
@@ -275,7 +277,7 @@ void RoomManager::getOptions(int argc, char *argv[]) {
 //		} else if (context.at(0) == '-') {
 //			continue;
 		} else {
-			room = context;
+			room_name = context;
 			break;
 		}
 	}
@@ -285,17 +287,28 @@ void RoomManager::getOptions(int argc, char *argv[]) {
 		printUsage();
 		exit(1);
 	}
-	string command = argv[i + 1];
+	string command = argv[++i];
 
 	if (command == "create") {
 		getRoomOptions(argc, argv);
-		cloneRoom(room);
+		cloneRoom(room_name);
 	} else if (command == "destroy") {
-		destroyRoom(room);
+		destroyRoom(room_name);
 	} else if (command == "enter") {
-		getRoomByName(room).enter();
+		getRoomOptions(argc, argv); // FIXME: read the configuration file instead
+		getRoomByName(room_name).enter();
 	} else if (command == "exec") {
-		getRoomByName(room).exec(argc, argv);
+		getRoomOptions(argc, argv); // FIXME: read the configuration file instead
+
+		std::vector<std::string> execVec;
+		for (i++; i < argc; i++) {
+			execVec.push_back(argv[i]);
+		}
+		if (execVec.size() == 0) {
+			cout << "ERROR: must specify a command to execute\n";
+			exit(1);
+		}
+		getRoomByName(room_name).exec(execVec);
 	} else {
 		throw std::runtime_error("Invalid command");
 	}

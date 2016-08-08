@@ -57,7 +57,7 @@ public:
 	void boot();
 	void destroy();
 	void enter();
-	void exec(int argc, char *argv[]);
+	void exec(std::vector<std::string> execVec);
 
 	void setRoomOptions(RoomOptions& roomOptions) {
 		this->roomOptions = &roomOptions;

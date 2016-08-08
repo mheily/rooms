@@ -54,7 +54,7 @@ Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const stri
 	}
 }
 
-void Room::exec(int argc, char *argv[])
+void Room::exec(std::vector<std::string> execVec)
 {
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
@@ -92,14 +92,12 @@ void Room::exec(int argc, char *argv[])
 			(char*) jail_username.c_str(),
 			(char*) jailName.c_str(),
 	};
-	if (argc == 0) {
+	if (execVec.size() == 0) {
 		argsVec.push_back((char*)"/bin/sh");
 	} else {
-		char **p;
-
-		for (p = argv + 2; *p != NULL; p++) {
-			puts(*p);
-			argsVec.push_back(const_cast<char*>(*p));
+		for (string& s : execVec) {
+			char *tmp = strdup(s.c_str());
+			argsVec.push_back(tmp);
 		}
 	}
 	argsVec.push_back(NULL);
@@ -159,10 +157,9 @@ void Room::exec(int argc, char *argv[])
 }
 
 void Room::enter() {
-	int argc = 0;
-	char *argv[] = { NULL };
+	std::vector<std::string> argsVec;
 
-	Room::exec(argc, argv);
+	Room::exec(argsVec);
 }
 
 bool Room::jailExists()
