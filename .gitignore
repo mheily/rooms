@@ -2,3 +2,13 @@ room
 .cproject
 .project
 .settings
+*.o
+
+# makeconf stuff
+Makefile
+config.h
+config.log
+config.mk
+config.sub
+depends.mk
+vars.sh
