@@ -30,7 +30,6 @@ public:
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
-	void setup();
 	void createRoom(const string& name);
 	void cloneRoom(const string& src, const string& dest);
 	void cloneRoom(const string& dest);
@@ -59,7 +58,6 @@ private:
 	string getUserRoomDir();
 	string getUserRoomDataset();
 	string getRoomPathByName(const string& name);
-	void updateRoomConfig();
 
 	// templates
 	string getBaseTemplateName();

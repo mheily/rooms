@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include <iostream>
+#include <fstream>
+
 #include "namespaceImport.h"
 
 // Options that can be controlled by the user
@@ -31,12 +34,6 @@ public:
 				setShareTempDir(true);
 			}
 		}
-
-	    // KLUDGE: This is needed for now, until we can create additional xauth
-	    // credentials
-	    if (isAllowX11Clients()) {
-	    	shareTempDir = true;
-	    }
 	}
 
 	bool isAllowX11Clients() const {
@@ -53,6 +50,45 @@ public:
 
 	void setShareTempDir(bool shareTempDir = false) {
 		this->shareTempDir = shareTempDir;
+	}
+
+	void readfile(const string& path)
+	{
+		string line;
+
+		std::ifstream f(path, std::ios::in);
+		if (!f.is_open()) {
+			throw std::runtime_error("error opening file");
+		}
+
+		while (getline(f, line)) {
+			if (line.length() > 0 && line.at(0) == '#') {
+				continue;
+			}
+
+			if (line == "allowX11Clients") {
+				setAllowX11Clients(true);
+			} else if (line == "shareTempDir") {
+				setShareTempDir(true);
+			} else {
+				throw std::runtime_error("unrecognized option");
+			}
+		}
+
+		f.close();
+	}
+
+	void writefile(const string& path)
+	{
+		std::ofstream f(path, std::ios::out);
+		f << "# room-options-schema-version: 0" << endl;
+		if (isAllowX11Clients()) {
+			f << "allowX11Clients" << endl;
+		}
+		if (isShareTempDir()) {
+			f << "shareTempDir" << endl;
+		}
+		f.close();
 	}
 
 private:

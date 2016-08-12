@@ -63,10 +63,15 @@ public:
 		this->roomOptions = &roomOptions;
 	}
 
+	RoomOptions* getRoomOptions() const {
+		return roomOptions;
+	}
+
 private:
 	RoomConfig roomConfig;
 	RoomOptions* roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir
+	string roomDataDir; // directory where this rooms data is stored
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
 	string jailName;  // name of the jail

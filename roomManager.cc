@@ -59,10 +59,6 @@ bool RoomManager::isBootstrapComplete() {
 	return FileUtil::checkExists(getUserRoomDir());
 }
 
-//DEADWOOD
-void RoomManager::updateRoomConfig() {
-}
-
 void RoomManager::bootstrap() {
 	string zpool;
 
@@ -107,16 +103,7 @@ void RoomManager::bootstrap() {
 		}
 	}
 
-	updateRoomConfig();
 	createBaseTemplate();
-}
-
-void RoomManager::setup() {
-	if (!isBootstrapComplete()) {
-		throw std::runtime_error("bootstrap is required");
-	}
-
-	updateRoomConfig();
 }
 
 void RoomManager::downloadBase() {
@@ -238,6 +225,9 @@ void RoomManager::createBaseTemplate() {
 	log_debug("creating base template: %s", base_template.c_str());
 
 	Room room(roomConfig, roomDir, base_template);
+	RoomOptions* roomOpt = room.getRoomOptions();
+	roomOpt->setAllowX11Clients(true);
+	roomOpt->setShareTempDir(true);
 	room.create(baseTarball);
 }
 
@@ -270,6 +260,8 @@ void RoomManager::getOptions(int argc, char *argv[]) {
 		} else if (context == "help" || context == "--help" || context == "-h") {
 			printUsage();
 			exit(0);
+
+//FIXME: this wont detect if -v is after the context argument
 		} else if (context == "--verbose" || context == "-v") {
 			fclose(logfile);
 			logfile = stderr;

@@ -48,7 +48,8 @@ Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const stri
 	this->roomConfig = roomConfig;
 	roomDir = managerRoomDir;
 	validateName(name);
-	chrootDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
+	roomDataDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
+	chrootDir = roomDataDir + "/root";
 	if (roomConfig.useZfs()) {
 		roomDataset = roomConfig.getParentDataset();
 	}
@@ -227,13 +228,14 @@ void Room::create(const string& baseTarball)
 
 	if (roomConfig.useZfs()) {
 		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName});
+		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
 	} else {
+		FileUtil::mkdir_idempotent(roomDataDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
 		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
 	}
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
-	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 	PasswdEntry pwent(roomConfig.getOwnerUid());
 	Shell::execute("/usr/sbin/pw", {
 			"-R",  chrootDir,
@@ -259,6 +261,8 @@ void Room::create(const string& baseTarball)
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
 	});
 
+	roomOptions->writefile(roomDataDir + "/options.0");
+
 	if (roomConfig.useZfs()) {
 		Shell::execute("/sbin/zfs", {
 				"snapshot",
@@ -271,6 +275,8 @@ void Room::create(const string& baseTarball)
 
 void Room::boot() {
 	int rv;
+
+	roomOptions->readfile(roomDataDir + "/options.0");
 
 	Shell::execute("/usr/sbin/jail", {
 			"-i",

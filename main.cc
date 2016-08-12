@@ -87,22 +87,26 @@ main(int argc, char *argv[])
 #endif
 
 	try {
-		mgr.setup();
-		mgr.getOptions(argc, argv);
-#if 0
 		// Implicitly bootstrap OR (bootstrap explicitly AND exit)
 		if (mgr.isBootstrapComplete()) {
-			if (argc == 1 && string(argv[0]) == "bootstrap") {
+			if (argc >= 2 && string(argv[1]) == "bootstrap") {
 				cout << "The bootstrap process is already complete. Nothing to do." << endl;
 				exit(0);
 			}
 		} else {
+			if (argc > 2) {
+				// KLUDGE: assume "-v" option
+				fclose(logfile);
+				logfile = stderr;
+			}
 			mgr.bootstrap();
-			if (argc == 1 && string(argv[0]) == "bootstrap") {
+			if (argc >= 2 && string(argv[1]) == "bootstrap") {
 				exit(0);
 			}
 		}
-#endif
+
+		mgr.getOptions(argc, argv);
+
 	} catch(const std::system_error& e) {
 		std::cout << "Caught system_error with code " << e.code()
 	                  << " meaning " << e.what() << '\n';
