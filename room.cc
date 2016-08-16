@@ -42,16 +42,26 @@ extern "C" {
 #include "fileUtil.h"
 #include "jail_getid.h"
 #include "room.h"
+#include "zfsPool.h"
 
-Room::Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name)
+Room::Room(const string& managerRoomDir, const string& name)
 {
-	this->roomConfig = roomConfig;
 	roomDir = managerRoomDir;
 	validateName(name);
-	roomDataDir = roomDir + "/" + roomConfig.getOwnerLogin() + "/" + name;
+
+	ownerUid = PasswdEntry::getRealUid();
+
+	PasswdEntry pwent(ownerUid);
+	ownerLogin = pwent.getLogin();
+
+	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
 	chrootDir = roomDataDir + "/root";
-	if (roomConfig.useZfs()) {
-		roomDataset = roomConfig.getParentDataset();
+	useZfs = ZfsPool::detectZfs();
+	if (useZfs) {
+		string zpoolName = ZfsPool::getNameByPath(roomDir);
+		//FIXME: these are two names for the same thing now..
+		parentDataset = zpoolName + "/room/" + ownerLogin;
+		roomDataset = zpoolName + "/room/" + ownerLogin;
 	}
 }
 
@@ -79,12 +89,12 @@ void Room::exec(std::vector<std::string> execVec)
 	string dbus_address = "DBUS_SESSION_BUS_ADDRESS=";
 	string jail_username = "root";
 	string env_username = "USER=root";
-	if (roomOptions->isAllowX11Clients()) {
+	if (roomOptions.isAllowX11Clients()) {
 		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
 		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
 		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
-		jail_username = roomConfig.getOwnerLogin();
-		env_username = "USER=" + roomConfig.getOwnerLogin();
+		jail_username = ownerLogin;
+		env_username = "USER=" + ownerLogin;
 	}
 
 	std::vector<char*> argsVec = {
@@ -179,7 +189,7 @@ void Room::validateName(const string& name)
 	// for generating roomName and jailName
 	// Having all this here creates subtle ordering bugs.
 	roomName = name;
-	jailName = "room_" + roomConfig.getOwnerLogin() + "_";
+	jailName = "room_" + ownerLogin + "_";
 
 	if (name.length() == 0) {
 		throw std::runtime_error("name cannot be empty");
@@ -214,10 +224,10 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
-			roomConfig.getParentDataset() + "/" + destRoom
+			parentDataset + "/" + destRoom
 	});
 
-	Room cloneRoom(roomConfig, roomDir, destRoom);
+	Room cloneRoom(roomDir, destRoom);
 }
 
 void Room::create(const string& baseTarball)
@@ -226,21 +236,21 @@ void Room::create(const string& baseTarball)
 
 	log_debug("creating room");
 
-	if (roomConfig.useZfs()) {
+	if (useZfs) {
 		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName});
-		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
+		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
 	} else {
-		FileUtil::mkdir_idempotent(roomDataDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
-		FileUtil::mkdir_idempotent(chrootDir, 0700, roomConfig.getOwnerUid(), (gid_t) roomConfig.getOwnerUid());
+		FileUtil::mkdir_idempotent(roomDataDir, 0700, ownerUid, (gid_t) ownerUid);
+		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
 	}
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
-	PasswdEntry pwent(roomConfig.getOwnerUid());
+	PasswdEntry pwent(ownerUid);
 	Shell::execute("/usr/sbin/pw", {
 			"-R",  chrootDir,
 			"user", "add",
-			"-u", std::to_string(roomConfig.getOwnerUid()),
+			"-u", std::to_string(ownerUid),
 			"-n", pwent.getLogin(),
 			"-c", pwent.getGecos(),
 			"-s", pwent.getShell(),
@@ -261,9 +271,9 @@ void Room::create(const string& baseTarball)
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
 	});
 
-	roomOptions->writefile(roomDataDir + "/options.0");
+	roomOptions.writefile(roomDataDir + "/options.0");
 
-	if (roomConfig.useZfs()) {
+	if (useZfs) {
 		Shell::execute("/sbin/zfs", {
 				"snapshot",
 				roomDataset + "/" + roomName + "@__initial"
@@ -276,7 +286,7 @@ void Room::create(const string& baseTarball)
 void Room::boot() {
 	int rv;
 
-	roomOptions->readfile(roomDataDir + "/options.0");
+	roomOptions.readfile(roomDataDir + "/options.0");
 
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
@@ -297,7 +307,7 @@ void Room::boot() {
 		throw std::runtime_error("jail(1) failed");
 	}
 
-	if (roomOptions->isShareTempDir()) {
+	if (roomOptions.isShareTempDir()) {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
@@ -334,7 +344,7 @@ void Room::destroy()
 		}
 	}
 
-	if (roomOptions->isShareTempDir()) {
+	if (true || roomOptions.isShareTempDir()) {
 		log_debug("unmounting /tmp");
 		if (unmount(string(chrootDir + "/tmp").c_str(), MNT_FORCE) < 0) {
 			if (errno != EINVAL) {
@@ -358,7 +368,7 @@ void Room::destroy()
 		log_warning("jail(2) does not exist");
 	}
 
-	if (roomConfig.useZfs()) {
+	if (useZfs) {
 		// this races with "jail -r"
 		bool success = false;
 		for (int i = 0; i < 5; i++) {

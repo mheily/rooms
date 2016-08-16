@@ -24,6 +24,7 @@
 
 class ZfsPool {
 public:
+	static bool detectZfs();
 	static bool validateName(const string& name, string& errorMsg) {
 		string buf = name;
 		std::locale loc("C");

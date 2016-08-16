@@ -41,7 +41,6 @@ extern "C" {
 #include "shell.h"
 #include "fileUtil.h"
 #include "passwdEntry.h"
-#include "roomConfig.h"
 #include "roomOptions.h"
 
 extern FILE *logfile;
@@ -49,7 +48,7 @@ extern FILE *logfile;
 
 class Room {
 public:
-	Room(const RoomConfig roomConfig, const string& managerRoomDir, const string& name);
+	Room(const string& managerRoomDir, const string& name);
 
 	void create(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
@@ -59,24 +58,22 @@ public:
 	void enter();
 	void exec(std::vector<std::string> execVec);
 
-	void setRoomOptions(RoomOptions& roomOptions) {
-		this->roomOptions = &roomOptions;
-	}
-
-	RoomOptions* getRoomOptions() const {
+	RoomOptions& getRoomOptions() {
 		return roomOptions;
 	}
 
 private:
-	RoomConfig roomConfig;
-	RoomOptions* roomOptions;
+	RoomOptions roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir
 	string roomDataDir; // directory where this rooms data is stored
 	string chrootDir; // path to the root of the chroot environment
 	string roomName;  // name of this room
 	string jailName;  // name of the jail
-
+	uid_t ownerUid; // the uid of the jail owner
+	string ownerLogin; // the login name from passwd(5) for the jail owner
+	string parentDataset; // the parent of roomDataset
 	string roomDataset; // the name of the ZFS dataset for the room
+	bool useZfs; // if true, create ZFS rooms
 
 	bool jailExists();
 	void customizeWithoutRoot();

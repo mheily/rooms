@@ -44,12 +44,11 @@ extern "C" {
 #include "shell.h"
 #include "fileUtil.h"
 #include "room.h"
-#include "roomConfig.h"
 #include "roomManager.h"
 #include "zfsPool.h"
 
 string RoomManager::getUserRoomDir() {
-	PasswdEntry pwent(roomConfig.getOwnerUid());
+	PasswdEntry pwent(ownerUid);
 	string login = pwent.getLogin();
 
 	return string(roomDir + "/" + pwent.getLogin());
@@ -80,7 +79,7 @@ void RoomManager::bootstrap() {
 //			break;
 //		}
 
-		if (roomConfig.useZfs()) {
+		if (useZfs) {
 			zpool = ZfsPool::getNameByPath("/");
 			Shell::execute("/sbin/zfs", {
 					"create",
@@ -95,11 +94,11 @@ void RoomManager::bootstrap() {
 	}
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
-		if (roomConfig.useZfs()) {
+		if (useZfs) {
 		Shell::execute("/sbin/zfs",
-				{ "create", zpool + "/room/" + roomConfig.getOwnerLogin() });
+				{ "create", zpool + "/room/" + ownerLogin });
 		} else {
-			FileUtil::mkdir_idempotent(roomDir + "/" + roomConfig.getOwnerLogin(), 0700, 0, 0);
+			FileUtil::mkdir_idempotent(roomDir + "/" + ownerLogin, 0700, 0, 0);
 		}
 	}
 
@@ -116,25 +115,22 @@ void RoomManager::downloadBase() {
 	}
 }
 
-Room RoomManager::getRoomByName(const string& name) {
-	Room room(roomConfig, roomDir, name);
-	room.setRoomOptions(roomOptions);
-	return room;
+Room& RoomManager::getRoomByName(const string& name) {
+	Room* r = rooms[name];
+	return *r;
 }
 
 void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
-	Room room(roomConfig, roomDir, name);
-	room.setRoomOptions(roomOptions);
+	Room room(roomDir, name);
 	createBaseTemplate();
 	room.create(baseTarball);
 }
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
-	if (roomConfig.useZfs()) {
-		Room srcRoom(roomConfig, roomDir, src);
-		srcRoom.setRoomOptions(roomOptions);
+	if (useZfs) {
+		Room srcRoom(roomDir, src);
 		srcRoom.clone("__initial", dest);
 	} else {
 		// XXX-FIXME assumes we are cloning a template
@@ -149,13 +145,42 @@ void RoomManager::cloneRoom(const string& dest) {
 void RoomManager::destroyRoom(const string& name) {
 	string cmd;
 
-	Room room(roomConfig, roomDir, name);
-	room.setRoomOptions(roomOptions);
+	Room room(roomDir, name);
 	room.destroy();
 }
 
+void RoomManager::enumerateRooms() {
+	DIR* dir;
+	struct dirent* dp;
+
+	if (!isBootstrapComplete()) {
+		return;
+	}
+
+	dir = opendir(getUserRoomDir().c_str());
+	if (dir == NULL) {
+		log_errno("opendir(3)");
+		throw std::system_error(errno, std::system_category());
+	}
+
+	string baseTemplateName = getBaseTemplateName();
+	std::vector<string> roomVec;
+	while ((dp = readdir(dir)) != NULL) {
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
+			continue;
+		}
+		if (baseTemplateName == dp->d_name) {
+			continue;
+		}
+		Room* r = new Room(roomDir, dp->d_name);
+		rooms.insert(std::make_pair(string(dp->d_name), r));
+	}
+	closedir(dir);
+}
+
+// FIXME: make this use this->rooms instead
 void RoomManager::listRooms() {
-	if (!FileUtil::checkExists(getUserRoomDir())) {
+	if (rooms.empty()) {
 		// FIXME: will never happen b/c bootstrap ensures the directory exists
 		std::clog << "No rooms exist. Run 'room create' to create a room."
 				<< endl;
@@ -191,8 +216,8 @@ void RoomManager::listRooms() {
 }
 
 string RoomManager::getUserRoomDataset() {
-	if (roomConfig.useZfs()) {
-		return string(roomConfig.getZpoolName() + "/" + ownerLogin);
+	if (useZfs) {
+		return string(ZfsPool::getNameByPath(roomDir) + "/" + ownerLogin);
 	} else {
 		throw std::logic_error("ZFS not enabled");
 	}
@@ -224,84 +249,9 @@ void RoomManager::createBaseTemplate() {
 
 	log_debug("creating base template: %s", base_template.c_str());
 
-	Room room(roomConfig, roomDir, base_template);
-	RoomOptions* roomOpt = room.getRoomOptions();
-	roomOpt->setAllowX11Clients(true);
-	roomOpt->setShareTempDir(true);
+	Room room(roomDir, base_template);
+	RoomOptions roomOpt = room.getRoomOptions();
+	roomOpt.setAllowX11Clients(true);
+	roomOpt.setShareTempDir(true);
 	room.create(baseTarball);
-}
-
-static void printUsage() {
-	std::cout <<
-		"Usage:\n\n"
-		"  room <name> [create|destroy|enter]\n"
-		" -or-\n"
-		"  room <name> exec <arg0..argN>\n"
-		" -or-\n"
-		"  room [bootstrap|list]\n"
-		"\n"
-		"  Miscellaneous options:\n\n"
-		"    -h, --help         This screen\n"
-		"    -v, --verbose      Increase verbosity level\n"
-	<< std::endl;
-}
-
-void RoomManager::getOptions(int argc, char *argv[]) {
-	string room_name = "";
-
-	// Find the first positional argument
-	int i;
-	for (i = 1; i < argc; i++) {
-		string context = argv[i];
-		if (context == "bootstrap") { }
-		else if (context == "list") {
-			listRooms();
-			exit(0);
-		} else if (context == "help" || context == "--help" || context == "-h") {
-			printUsage();
-			exit(0);
-
-//FIXME: this wont detect if -v is after the context argument
-		} else if (context == "--verbose" || context == "-v") {
-			fclose(logfile);
-			logfile = stderr;
-			continue;
-//		} else if (context.at(0) == '-') {
-//			continue;
-		} else {
-			room_name = context;
-			break;
-		}
-	}
-
-	if (i == argc) {
-		cout << "ERROR: must specify an action\n";
-		printUsage();
-		exit(1);
-	}
-	string command = argv[++i];
-
-	if (command == "create") {
-		getRoomOptions(argc, argv);
-		cloneRoom(room_name);
-	} else if (command == "destroy") {
-		destroyRoom(room_name);
-	} else if (command == "enter") {
-		getRoomOptions(argc, argv); // FIXME: read the configuration file instead
-		getRoomByName(room_name).enter();
-	} else if (command == "exec") {
-		getRoomOptions(argc, argv); // FIXME: read the configuration file instead
-
-		std::vector<std::string> execVec;
-		for (i++; i < argc; i++) {
-			execVec.push_back(argv[i]);
-		}
-		if (execVec.size() == 0) {
-			cout << "ERROR: must specify a command to execute\n";
-			exit(1);
-		}
-		getRoomByName(room_name).exec(execVec);
-	} else {
-		throw std::runtime_error("Invalid command");
-	}
 }

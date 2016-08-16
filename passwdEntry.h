@@ -36,6 +36,20 @@ public:
 		}
 	}
 
+	// get the "real" UID of the current process,
+	// taking into account sudo(1) and running setuid binaries
+	static uid_t getRealUid() {
+		uid_t real_uid = getuid();
+		if (getuid() == geteuid()) {
+			const char* buf = getenv("SUDO_UID");
+			if (buf) {
+				real_uid = std::stoul(buf);
+			}
+		}
+		//log_debug("uid=%d euid=%d real_uid=%d", getuid(), geteuid(), real_uid);
+		return real_uid;
+	}
+
 	const char* getLogin() const {
 		return pwent.pw_name;
 	}

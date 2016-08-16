@@ -16,17 +16,25 @@
 
 #pragma once
 
+#include <map>
+
 #include "namespaceImport.h"
-#include "roomConfig.h"
+#include "passwdEntry.h"
 #include "roomOptions.h"
+#include "zfsPool.h"
 
 extern FILE *logfile;
 #include "logger.h"
 
 class RoomManager {
 public:
-	RoomManager(RoomConfig roomConfig) {
-		this->roomConfig = roomConfig;
+	RoomManager() {
+		useZfs = ZfsPool::detectZfs();
+		ownerUid = PasswdEntry::getRealUid();
+		ownerLogin = PasswdEntry(ownerUid).getLogin();
+		if (isBootstrapComplete()) {
+			enumerateRooms();
+		}
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
@@ -34,17 +42,29 @@ public:
 	void cloneRoom(const string& src, const string& dest);
 	void cloneRoom(const string& dest);
 	void destroyRoom(const string& name);
-	Room getRoomByName(const string& name);
+	Room& getRoomByName(const string& name);
+	bool checkRoomExists(const string&);
 	void listRooms();
 
-	void getOptions(int argc, char *argv[]);
+	bool isVerbose() const {
+		return verbose;
+	}
 
-	void getRoomOptions(int argc, char *argv[]) {
-		roomOptions.getOptions(argc, argv);
+	void setVerbose(bool verbose = false) {
+		this->verbose = verbose;
+		fclose(logfile);
+		if (verbose) {
+			logfile = stderr;
+		} else {
+			logfile = fopen("/dev/null", "w");
+		}
 	}
 
 private:
-	RoomConfig roomConfig;
+	std::map<std::string, Room*> rooms;
+	bool verbose = false;
+	bool useZfs;
+	uid_t ownerUid;
 	RoomOptions roomOptions;
 	string ownerLogin;
 	string baseTarball = "/var/cache/room-base.txz";
@@ -52,9 +72,9 @@ private:
 	string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.2-RELEASE/base.txz";
 	string roomDir = "/room";
 
+	void enumerateRooms();
 	void downloadBase();
 	void createRoomDir();
-	bool checkRoomExists(const string&);
 	string getUserRoomDir();
 	string getUserRoomDataset();
 	string getRoomPathByName(const string& name);

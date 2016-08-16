@@ -25,17 +25,6 @@
 class RoomOptions {
 public:
 
-	void getOptions(int argc, char *argv[])
-	{
-		for (int i = 0; i < argc; i++) {
-			if (!strcmp(argv[i], "--allow-x11")) {
-				setAllowX11Clients(true);
-			} else if (!strcmp(argv[i], "--share-tmpdir")) {
-				setShareTempDir(true);
-			}
-		}
-	}
-
 	bool isAllowX11Clients() const {
 		return allowX11Clients;
 	}
