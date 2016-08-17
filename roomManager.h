@@ -38,6 +38,7 @@ public:
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
+	void importRoom(const string& name);
 	void createRoom(const string& name);
 	void cloneRoom(const string& src, const string& dest);
 	void cloneRoom(const string& dest);

@@ -25,6 +25,29 @@
 #include "namespaceImport.h"
 #include "logger.h"
 
+class Subprocess {
+public:
+	pid_t pid;
+	int child_stdout;
+	int exitStatus;
+
+	void execute(const char *path, const std::vector<std::string>& args);
+	int waitForExit();
+
+	int getSavedErrno() const {
+		return savedErrno;
+	}
+
+	const string& getSavedErrnoMessage() const {
+		return savedErrnoMessage;
+	}
+
+private:
+	bool captureStdio = false;
+	int savedErrno = 0;
+	string savedErrnoMessage = "No error";
+};
+
 class Shell {
 public:
 

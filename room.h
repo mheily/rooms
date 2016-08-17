@@ -57,6 +57,7 @@ public:
 	void destroy();
 	void enter();
 	void exec(std::vector<std::string> execVec);
+	void exportArchive();
 
 	RoomOptions& getRoomOptions() {
 		return roomOptions;

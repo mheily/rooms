@@ -138,6 +138,30 @@ void RoomManager::cloneRoom(const string& src, const string& dest) {
 	}
 }
 
+void RoomManager::importRoom(const string& roomName) {
+	const string snapName = "tmp_export";
+	int result;
+
+	if (!useZfs) {
+		throw std::runtime_error("TODO -- not implemented yet");
+	}
+
+	string snapPath = getUserRoomDataset() + "/" + roomName;
+
+	Subprocess p;
+	p.execute("/sbin/zfs", { "receive", snapPath });
+	if (p.waitForExit() != 0) {
+		std::cerr << "command failed: zfs receive" << endl;
+		exit(1);
+	}
+
+	Shell::execute("/sbin/zfs", { "destroy", snapPath + "@" + snapName }, result);
+	if (result != 0) {
+		std::cerr << "failed to destroy snapshot: " << snapName << endl;
+		exit(1);
+	}
+}
+
 void RoomManager::cloneRoom(const string& dest) {
 	cloneRoom(getBaseTemplateName(), dest);
 }
@@ -182,7 +206,7 @@ void RoomManager::enumerateRooms() {
 void RoomManager::listRooms() {
 	if (rooms.empty()) {
 		// FIXME: will never happen b/c bootstrap ensures the directory exists
-		std::clog << "No rooms exist. Run 'room create' to create a room."
+		std::cerr << "No rooms exist. Run 'room create' to create a room."
 				<< endl;
 	} else {
 		DIR* dir;
@@ -217,7 +241,7 @@ void RoomManager::listRooms() {
 
 string RoomManager::getUserRoomDataset() {
 	if (useZfs) {
-		return string(ZfsPool::getNameByPath(roomDir) + "/" + ownerLogin);
+		return string(ZfsPool::getNameByPath(roomDir) + "/room/" + ownerLogin);
 	} else {
 		throw std::logic_error("ZFS not enabled");
 	}

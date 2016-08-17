@@ -439,3 +439,40 @@ void Room::killAllProcesses()
 		throw std::runtime_error("processes will not die");
 	}
 }
+
+void Room::exportArchive()
+{
+	const string snapName = "tmp_export";
+	int result;
+
+	if (!useZfs) {
+		throw std::runtime_error("TODO -- not implemented yet");
+	}
+
+	string snapPath = roomDataset + "/" + roomName + "@" + snapName;
+
+	Shell::execute("/sbin/zfs", { "snapshot", "-r", snapPath }, result);
+	if (result != 0) {
+		throw std::runtime_error("command failed: zfs snapshot");
+	}
+
+	Subprocess p;
+	p.execute("/sbin/zfs", { "send", snapPath });
+	result = p.waitForExit();
+	if (result != 0) {
+		sleep(2); // horrible way to avoid "snapshot is busy" error
+
+		int ignored;
+		Shell::execute("/sbin/zfs", { "destroy", snapPath }, ignored);
+		std::cerr << "ZFS send failed with exit code " << result << "\n";
+		throw std::runtime_error("command failed: zfs send");
+	}
+
+	sleep(2); // horrible way to avoid "snapshot is busy" error
+
+	Shell::execute("/sbin/zfs", { "destroy", snapPath }, result);
+	if (result != 0) {
+		std::cerr << "Failed 2\n";
+		throw std::runtime_error("command failed: zfs destroy");
+	}
+}

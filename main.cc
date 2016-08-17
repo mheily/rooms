@@ -56,6 +56,7 @@ namespace po = boost::program_options;
 static const std::vector<string> actions = {
 		"clone", "create", "destroy", "enter", "exec",
 		"init", "list",
+		"export", "import",
 };
 
 static bool isValidAction(const string& s)
@@ -78,9 +79,11 @@ static pair<string, string> parseAction(const string& s)
 static void printUsage(po::options_description desc) {
 	std::cout <<
 		"Usage:\n\n"
-		"  room <name> [create|destroy|enter]\n"
+		"  room <name> [create|destroy|enter|export]\n"
 		" -or-\n"
-		"  room <name> exec <arg0..argN>\n"
+		"  room <name> exec <command> [arguments]\n"
+		" -or-\n"
+		"  room import --name=<name>\n"
 		" -or-\n"
 		"  room [init|list]\n"
 		"\n"
@@ -189,6 +192,10 @@ static void get_options(int argc, char *argv[])
 		exit(1);
 	} else if (action == "destroy") {
 		mgr.getRoomByName(roomName).destroy();
+	} else if (action == "import") {
+		mgr.importRoom(roomName);
+	} else if (action == "export") {
+		mgr.getRoomByName(roomName).exportArchive();
 	} else if (action == "enter") {
 		mgr.getRoomByName(roomName).enter();
 	} else if (action == "exec") {

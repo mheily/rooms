@@ -98,3 +98,80 @@ string Shell::readline(int pd) {
 
 	return s;
 }
+
+
+void Subprocess::execute(const char *path, const std::vector<std::string>& args)
+{
+	char* const envp[] = {
+			(char*)"HOME=/",
+			(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
+			(char*)"LANG=C",
+			(char*)"LC_ALL=C",
+			(char*)"TERM=vt220",
+			(char*)"LOGNAME=root",
+			(char*)"USER=root",
+			(char*)"SHELL=/bin/sh",
+			NULL
+	};
+
+	string argv_s = path;
+	std::vector<char*> argv;
+	argv.push_back(const_cast<char*>(path));
+	for (auto it = args.begin(); it != args.end(); ++it) {
+		argv.push_back(const_cast<char*>(it->c_str()));
+		argv_s.append(" " + *it);
+	}
+	argv.push_back(NULL);
+
+	log_debug("executing: %s", argv_s.c_str());
+
+	int pd[2];
+	if (captureStdio && pipe(pd) < 0) {
+		log_errno("fork(2)");
+		throw std::runtime_error("fork failed");
+	}
+
+	pid = fork();
+	if (pid < 0) {
+		log_errno("fork(2)");
+		throw std::runtime_error("fork failed");
+	}
+	if (pid == 0) {
+		if (captureStdio) {
+			/* Connect the child process STDOUT to the parent via a pipe */
+			if (dup2(pd[1], STDOUT_FILENO) < 0) {
+				log_errno("dup2(2)");
+				throw std::runtime_error("dup2 failed");
+			}
+			close(pd[1]);
+			close(pd[0]);
+		}
+		if (execve(path, argv.data(), envp) < 0) {
+			log_errno("execve(2)");
+			throw std::runtime_error("execve failed");
+		}
+		exit(1);
+	} else {
+		if (captureStdio) {
+			close(pd[1]);
+			child_stdout = pd[0];
+		}
+	}
+}
+
+int Subprocess::waitForExit() {
+	int status;
+	if (waitpid(pid, &status, 0) < 0) {
+		savedErrno = errno;
+		savedErrnoMessage = "waitpid(2)";
+		return -1;
+	}
+	if (!WIFEXITED(status)) {
+		savedErrno = 0;
+		savedErrnoMessage = "!WIFEXITED";
+		return -1;
+	}
+	exitStatus = WEXITSTATUS(status);
+
+	return exitStatus;
+}
