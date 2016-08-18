@@ -79,9 +79,9 @@ private:
 	string roomDataset; // the name of the ZFS dataset for the room
 	bool useZfs; // if true, create ZFS rooms
 
-	struct {
+/*	struct {
 		string tarballUri; // URI to the tarball for the root fs
-	} installOpts;
+	} installOpts;*/
 
 	bool jailExists();
 	void customizeWithoutRoot();
