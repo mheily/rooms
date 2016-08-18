@@ -59,6 +59,8 @@ public:
 				setAllowX11Clients(true);
 			} else if (line == "shareTempDir") {
 				setShareTempDir(true);
+			} else if (line == "useLinuxABI") {
+				setUseLinuxAbi(true);
 			} else {
 				throw std::runtime_error("unrecognized option");
 			}
@@ -77,7 +79,18 @@ public:
 		if (isShareTempDir()) {
 			f << "shareTempDir" << endl;
 		}
+		if (isUseLinuxAbi()) {
+			f << "useLinuxABI" << endl;
+		}
 		f.close();
+	}
+
+	bool isUseLinuxAbi() const {
+		return useLinuxABI;
+	}
+
+	void setUseLinuxAbi(bool useLinuxAbi = false) {
+		useLinuxABI = useLinuxAbi;
 	}
 
 private:
@@ -86,4 +99,7 @@ private:
 
 	// share /tmp and /var/tmp with the main system, sadly needed for X11 and other progs
 	bool shareTempDir = false;
+
+	// use the Linux ABI
+	bool useLinuxABI = false;
 };

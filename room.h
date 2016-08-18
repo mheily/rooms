@@ -59,6 +59,9 @@ public:
 	void exec(std::vector<std::string> execVec);
 	void exportArchive();
 
+	// The following methods can be used after create() but before install()
+	void setOsType(const string& osType);
+
 	RoomOptions& getRoomOptions() {
 		return roomOptions;
 	}
@@ -75,6 +78,10 @@ private:
 	string parentDataset; // the parent of roomDataset
 	string roomDataset; // the name of the ZFS dataset for the room
 	bool useZfs; // if true, create ZFS rooms
+
+	struct {
+		string tarballUri; // URI to the tarball for the root fs
+	} installOpts;
 
 	bool jailExists();
 	void customizeWithoutRoot();

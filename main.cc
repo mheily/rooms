@@ -102,6 +102,7 @@ static void get_options(int argc, char *argv[])
 	struct {
 		bool allow_x11;
 		bool share_tempdir;
+		/*string os_type;*/
 	} roomOpt;
 	bool isVerbose;
 
@@ -120,12 +121,19 @@ static void get_options(int argc, char *argv[])
 	;
 
 	po::options_description clone_opts("Options when cloning:");
-	undocumented.add_options()
+	clone_opts.add_options()
 	    ("source", po::value<string>(&action), "the action to perform")
 	;
 
+/*
+	po::options_description install_opts("Options when installing:");
+	install_opts.add_options()
+	    ("os", po::value<string>(&roomOpt.os_type), "the name-version-architecture of the OS")
+	;
+*/
+
 	po::options_description all("Allowed options");
-	all.add(desc).add(undocumented);
+	all.add(desc).add(undocumented).add(clone_opts);
 
 	// If this is an 'exec' command, ignore all subsequent arguments
 	// TODO: should add support for '--' so you could say:

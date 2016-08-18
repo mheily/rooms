@@ -311,6 +311,13 @@ void Room::boot() {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
+
+	if (roomOptions.isUseLinuxAbi()) {
+		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
+		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
+		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
+		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
+	}
 }
 
 void Room::destroy()
@@ -359,6 +366,11 @@ void Room::destroy()
 				throw std::system_error(errno, std::system_category());
 			}
 		}
+	}
+
+	if (roomOptions.isUseLinuxAbi()) {
+		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
+		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
 	}
 
 	if (jailExists()) {
@@ -476,3 +488,16 @@ void Room::exportArchive()
 		throw std::runtime_error("command failed: zfs destroy");
 	}
 }
+
+/*
+void Room::setOsType(const string& osType)
+{
+	if (osType == "centos-6-x86") {
+		installOpts.tarballUri = "http://download.openvz.org/template/precreated/centos-6-x86.tar.gz";
+	} else if (osType == "freebsd-10-amd64") {
+		installOpts.tarballUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz";
+	} else {
+		throw std::runtime_error("invalid value for OS type");
+	}
+}
+*/
