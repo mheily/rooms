@@ -40,7 +40,7 @@ public:
 	// taking into account sudo(1) and running setuid binaries
 	static uid_t getRealUid() {
 		uid_t real_uid = getuid();
-		if (getuid() == geteuid()) {
+		if (0 == getuid() == geteuid()) {
 			const char* buf = getenv("SUDO_UID");
 			if (buf) {
 				real_uid = std::stoul(buf);
@@ -56,6 +56,10 @@ public:
 
 	const char* getGecos() const {
 		return pwent.pw_gecos;
+	}
+
+	const char* getHome() const {
+		return pwent.pw_dir;
 	}
 
 	const char* getShell() const {

@@ -21,6 +21,7 @@
 #include "namespaceImport.h"
 #include "passwdEntry.h"
 #include "roomOptions.h"
+#include "setuidHelper.h"
 #include "zfsPool.h"
 
 extern FILE *logfile;
@@ -30,11 +31,8 @@ class RoomManager {
 public:
 	RoomManager() {
 		useZfs = ZfsPool::detectZfs();
-		ownerUid = PasswdEntry::getRealUid();
+		ownerUid = SetuidHelper::getActualUid();
 		ownerLogin = PasswdEntry(ownerUid).getLogin();
-		if (isBootstrapComplete()) {
-			enumerateRooms();
-		}
 	}
 	void bootstrap();
 	bool isBootstrapComplete();

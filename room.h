@@ -66,6 +66,8 @@ public:
 		return roomOptions;
 	}
 
+	void syncRoomOptions();
+
 private:
 	RoomOptions roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir

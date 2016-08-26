@@ -55,7 +55,9 @@ string RoomManager::getUserRoomDir() {
 }
 
 bool RoomManager::isBootstrapComplete() {
-	return FileUtil::checkExists(getUserRoomDir());
+	string dir = getUserRoomDir();
+	log_debug("checking if %s exists", dir.c_str());
+	return FileUtil::checkExists(dir);
 }
 
 void RoomManager::bootstrap() {
@@ -116,8 +118,14 @@ void RoomManager::downloadBase() {
 }
 
 Room& RoomManager::getRoomByName(const string& name) {
-	Room* r = rooms[name];
-	return *r;
+	enumerateRooms();
+	auto it = rooms.find(name);
+	if (it != rooms.end()) {
+	    Room* r = rooms[name];
+	    return *r;
+	} else {
+		throw std::runtime_error("Room " + name + " does not exist");
+	}
 }
 
 void RoomManager::createRoom(const string& name) {
@@ -130,11 +138,18 @@ void RoomManager::createRoom(const string& name) {
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
 	if (useZfs) {
-		Room srcRoom(roomDir, src);
-		srcRoom.clone("__initial", dest);
+		Room* srcRoom = new Room(roomDir, src);
+		srcRoom->clone("__initial", dest);
+		delete srcRoom;
+		enumerateRooms();
 	} else {
 		// XXX-FIXME assumes we are cloning a template
 		createRoom(dest);
+
+		// FIXME: below is untested
+		Room* r = new Room(roomDir, src);
+		rooms.insert(std::make_pair(dest, r));
+		abort(); // fix the above code later
 	}
 }
 
@@ -178,9 +193,10 @@ void RoomManager::enumerateRooms() {
 	struct dirent* dp;
 
 	if (!isBootstrapComplete()) {
-		return;
+		throw std::logic_error("tried to list rooms before bootstrapping");
 	}
 
+	log_debug("scanning rooms in %s", getUserRoomDir().c_str());
 	dir = opendir(getUserRoomDir().c_str());
 	if (dir == NULL) {
 		log_errno("opendir(3)");
@@ -193,17 +209,26 @@ void RoomManager::enumerateRooms() {
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
 			continue;
 		}
-		if (baseTemplateName == dp->d_name) {
+		string roomName = string(dp->d_name);
+
+		if (baseTemplateName == roomName) {
 			continue;
 		}
-		Room* r = new Room(roomDir, dp->d_name);
-		rooms.insert(std::make_pair(string(dp->d_name), r));
+
+		auto it = rooms.find(roomName);
+		if (it != rooms.end()) {
+			continue;
+		}
+
+		Room* r = new Room(roomDir, roomName);
+		rooms.insert(std::make_pair(roomName, r));
 	}
 	closedir(dir);
 }
 
 // FIXME: make this use this->rooms instead
 void RoomManager::listRooms() {
+	enumerateRooms();
 	if (rooms.empty()) {
 		// FIXME: will never happen b/c bootstrap ensures the directory exists
 		std::cerr << "No rooms exist. Run 'room create' to create a room."

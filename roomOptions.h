@@ -59,6 +59,8 @@ public:
 				setAllowX11Clients(true);
 			} else if (line == "shareTempDir") {
 				setShareTempDir(true);
+			} else if (line == "shareHomeDir") {
+				setShareHomeDir(true);
 			} else if (line == "useLinuxABI") {
 				setUseLinuxAbi(true);
 			} else {
@@ -79,6 +81,9 @@ public:
 		if (isShareTempDir()) {
 			f << "shareTempDir" << endl;
 		}
+		if (isShareHomeDir()) {
+			f << "shareHomeDir" << endl;
+		}
 		if (isUseLinuxAbi()) {
 			f << "useLinuxABI" << endl;
 		}
@@ -93,12 +98,23 @@ public:
 		useLinuxABI = useLinuxAbi;
 	}
 
+	bool isShareHomeDir() const {
+		return shareHomeDir;
+	}
+
+	void setShareHomeDir(bool shareHomeDir = false) {
+		this->shareHomeDir = shareHomeDir;
+	}
+
 private:
 	// allow X programs to run
 	bool allowX11Clients = false;
 
 	// share /tmp and /var/tmp with the main system, sadly needed for X11 and other progs
 	bool shareTempDir = false;
+
+	// share $HOME with the main system
+	bool shareHomeDir = false;
 
 	// use the Linux ABI
 	bool useLinuxABI = false;

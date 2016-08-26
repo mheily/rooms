@@ -42,6 +42,7 @@ extern "C" {
 #include "fileUtil.h"
 #include "jail_getid.h"
 #include "room.h"
+#include "setuidHelper.h"
 #include "zfsPool.h"
 
 Room::Room(const string& managerRoomDir, const string& name)
@@ -49,7 +50,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 	roomDir = managerRoomDir;
 	validateName(name);
 
-	ownerUid = PasswdEntry::getRealUid();
+	ownerUid = SetuidHelper::getActualUid();
 
 	PasswdEntry pwent(ownerUid);
 	ownerLogin = pwent.getLogin();
@@ -221,6 +222,7 @@ void Room::clone(const string& snapshot, const string& destRoom)
 {
 	log_debug("cloning room");
 
+	SetuidHelper::raisePrivileges();
 	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
@@ -228,11 +230,15 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	});
 
 	Room cloneRoom(roomDir, destRoom);
+	SetuidHelper::lowerPrivileges();
+	log_debug("clone complete");
 }
 
 void Room::create(const string& baseTarball)
 {
 	string cmd;
+
+	SetuidHelper::raisePrivileges();
 
 	log_debug("creating room");
 
@@ -271,7 +277,7 @@ void Room::create(const string& baseTarball)
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
 	});
 
-	roomOptions.writefile(roomDataDir + "/options.0");
+	syncRoomOptions();
 
 	if (useZfs) {
 		Shell::execute("/sbin/zfs", {
@@ -280,13 +286,22 @@ void Room::create(const string& baseTarball)
 		});
 	}
 
+	SetuidHelper::lowerPrivileges();
+
 	log_debug("room %s created", roomName.c_str());
+}
+
+void Room::syncRoomOptions()
+{
+	roomOptions.writefile(roomDataDir + "/options.0");
 }
 
 void Room::boot() {
 	int rv;
 
 	roomOptions.readfile(roomDataDir + "/options.0");
+
+	SetuidHelper::raisePrivileges();
 
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
@@ -312,12 +327,18 @@ void Room::boot() {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
 
+	if (roomOptions.isShareHomeDir()) {
+		PasswdEntry pwent(ownerUid);
+		Shell::execute("/sbin/mount", { "-t", "nullfs", pwent.getHome(), chrootDir + pwent.getHome() });
+	}
+
 	if (roomOptions.isUseLinuxAbi()) {
 		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
 		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
 		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
 		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
 	}
+	SetuidHelper::lowerPrivileges();
 }
 
 void Room::destroy()
@@ -325,6 +346,9 @@ void Room::destroy()
 	string cmd;
 
 	log_debug("destroying room at %s", chrootDir.c_str());
+
+	SetuidHelper::raisePrivileges();
+
 	if (chrootDir == "" || chrootDir == "/") {
 		throw std::runtime_error("bad chrootDir");
 	}
@@ -373,6 +397,13 @@ void Room::destroy()
 		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
 	}
 
+	if (roomOptions.isShareHomeDir()) {
+		if (roomOptions.isShareHomeDir()) {
+			PasswdEntry pwent(ownerUid);
+			Shell::execute("/sbin/umount", { chrootDir + pwent.getHome() });
+		}
+	}
+
 	if (jailExists()) {
 		log_debug("removing jail");
 		Shell::execute("/usr/sbin/jail", { "-r", jailName });
@@ -405,6 +436,8 @@ void Room::destroy()
 		Shell::execute("/bin/rm", {"-rf", chrootDir});
 	}
 
+	SetuidHelper::lowerPrivileges();
+
 	log_notice("room deleted");
 }
 
@@ -420,6 +453,8 @@ void Room::killAllProcesses()
 		log_debug("jail does not exist; skipping");
 		return;
 	}
+
+	SetuidHelper::raisePrivileges();
 
 	// Kill all programs still using the filesystem
 	int status;
@@ -450,6 +485,7 @@ void Room::killAllProcesses()
 		log_error("pkill failed; timeout reached");
 		throw std::runtime_error("processes will not die");
 	}
+	SetuidHelper::lowerPrivileges();
 }
 
 void Room::exportArchive()

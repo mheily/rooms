@@ -43,6 +43,7 @@ extern "C" {
 #include "fileUtil.h"
 #include "room.h"
 #include "roomManager.h"
+#include "setuidHelper.h"
 
 FILE *logfile = NULL;
 #include "logger.h"
@@ -58,6 +59,14 @@ static const std::vector<string> actions = {
 		"init", "list",
 		"export", "import",
 };
+
+// KLUDGE: horrible temporary storage for CLI options
+static struct {
+	bool allow_x11;
+	bool share_tempdir;
+	bool share_home;
+	/*string os_type;*/
+} roomOpt;
 
 static bool isValidAction(const string& s)
 {
@@ -92,6 +101,22 @@ static void printUsage(po::options_description desc) {
     std::cout << desc << std::endl;
 }
 
+static void apply_room_options(po::variables_map vm, Room room)
+{
+	RoomOptions ro = room.getRoomOptions();
+
+	if (vm.count("allow-x11")) {
+		ro.setAllowX11Clients(roomOpt.allow_x11);
+	}
+	if (vm.count("share-tempdir")) {
+		ro.setShareTempDir(roomOpt.share_tempdir);
+	}
+	if (vm.count("share-home")) {
+		ro.setShareHomeDir(roomOpt.share_home);
+	}
+	room.syncRoomOptions();
+}
+
 static void get_options(int argc, char *argv[])
 {
 	RoomManager mgr;
@@ -99,11 +124,6 @@ static void get_options(int argc, char *argv[])
 
 	string action;
 	string roomName = "";
-	struct {
-		bool allow_x11;
-		bool share_tempdir;
-		/*string os_type;*/
-	} roomOpt;
 	bool isVerbose;
 
 	po::options_description desc("Allowed options");
@@ -111,6 +131,7 @@ static void get_options(int argc, char *argv[])
 	    ("help", "produce help message")
 	    ("allow-x11", po::bool_switch(&roomOpt.allow_x11), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.share_tempdir), "mount the global /tmp and /var/tmp inside the room")
+		("share-home", po::bool_switch(&roomOpt.share_home), "mount the $HOME directory inside the room")
 	    ("verbose,v", po::bool_switch(&isVerbose)->default_value(false), "increase verbosity")
 	;
 
@@ -157,6 +178,10 @@ static void get_options(int argc, char *argv[])
 	    exit(0);
 	}
 
+	mgr.setVerbose(isVerbose);
+
+	SetuidHelper::lowerPrivileges();
+
 	// Special case: force bootstrapping as the first command
 	if (! mgr.isBootstrapComplete()) {
 		if (action == "init") {
@@ -168,20 +193,10 @@ static void get_options(int argc, char *argv[])
 		}
 	}
 
-
-
-	mgr.setVerbose(isVerbose);
-
 	// Get the room and allow overriding the room options via the CLI
 	if (roomName != "" && mgr.checkRoomExists(roomName)) {
 		Room room = mgr.getRoomByName(roomName);
-		RoomOptions ro = room.getRoomOptions();
-		if (vm.count("allow-x11")) {
-			ro.setAllowX11Clients(roomOpt.allow_x11);
-		}
-		if (vm.count("share-tempdir")) {
-			ro.setShareTempDir(roomOpt.share_tempdir);
-		}
+		apply_room_options(vm, room);
 	}
 
 	// Most actions require the name of an existing room
@@ -195,6 +210,8 @@ static void get_options(int argc, char *argv[])
 		mgr.listRooms();
 	} else if (action == "create") {
 		mgr.cloneRoom(roomName);
+		Room room = mgr.getRoomByName(roomName);
+		apply_room_options(vm, room);
 	} else if (action == "init") {
 		cout << "ERROR: the rooms subsystem has already been initialized\n";
 		exit(1);
@@ -227,6 +244,7 @@ int
 main(int argc, char *argv[])
 {
 	try {
+		SetuidHelper::checkPrivileges();
 		logfile = fopen("/dev/null", "w");
 		get_options(argc, argv);
 	} catch(const std::system_error& e) {
