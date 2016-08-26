@@ -74,7 +74,13 @@ void SetuidHelper::lowerPrivileges() {
 }
 
 void SetuidHelper::checkPrivileges() {
-	if (getuid() == geteuid()) {
+
+	// FIXME: what about the case where euid != 0 && uid != 0 ?
+	// the entire raise/lower will not work, and should throw
+	// exceptions.
+
+	//printf("started with euid=%d uid=%d\n", geteuid(), getuid());
+	if (geteuid() == 0 && getuid() == 0 && getenv("SUDO_UID")) {
 		const char* buf = getenv("SUDO_UID");
 		if (buf) {
 			// FIXME: assumes gid == uid
@@ -84,9 +90,9 @@ void SetuidHelper::checkPrivileges() {
 			throw std::runtime_error("Unable to parse SUDO_UID");
 		}
 	} else {
-		euid = geteuid();
-		egid = getegid();
-		printf("got %d %d\n", euid, egid);
+		euid = getuid();
+		egid = getgid();
+		//printf("got %d %d\n", euid, egid);
 	}
 
 	isInitialized = true;
