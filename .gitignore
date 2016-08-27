@@ -9,6 +9,5 @@ Makefile
 config.h
 config.log
 config.mk
-config.sub
 depends.mk
 vars.sh
