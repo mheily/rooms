@@ -23,7 +23,25 @@ static bool isLoweredPrivs = false;
 static uid_t euid = 999999999; // KLUDGE: hopefully an unused UID
 static gid_t egid = 999999999; // KLUDGE: hopefully an unused GID
 
+static bool debugModule = false;
+#define debug_printf(fmt,...) do { \
+	if (debugModule) { printf(fmt"\n", ## __VA_ARGS__); } \
+} while (0)
+
+static void debugPrintUid() {
+	if (debugModule) {
+		uid_t real, effective, saved;
+		if (getresuid(&real, &effective, &saved) < 0) {
+			throw std::system_error(errno, std::system_category());
+		}
+		printf("getresuid(2): real=%d effective=%d saved=%d\n", real, effective, saved);
+	}
+}
+
 void SetuidHelper::raisePrivileges() {
+	uid_t uid;
+	gid_t gid;
+
 	if (!isInitialized) {
 		throw std::logic_error("must call checkPrivileges() first");
 	}
@@ -32,15 +50,25 @@ void SetuidHelper::raisePrivileges() {
 		throw std::logic_error("privileges are not currently lowered");
 	}
 
-	log_debug("raising privileges");
+	uid = getuid();
+	gid = getgid();
 
-	if (seteuid(getuid()) < 0) {
+	debugPrintUid();
+
+	if (setresuid(0, 0, 0) < 0) {
+		throw std::system_error(errno, std::system_category());
+	}
+	debugPrintUid();
+
+	if (setegid(0) < 0) {
 		throw std::system_error(errno, std::system_category());
 	}
 
-	if (setegid(getgid()) < 0) {
-		throw std::system_error(errno, std::system_category());
+	if (geteuid() != 0) {
+		throw std::runtime_error("unable to regain priviliges");
 	}
+
+	debugPrintUid();
 
 	isLoweredPrivs = false;
 }
@@ -54,7 +82,7 @@ void SetuidHelper::lowerPrivileges() {
 		throw std::logic_error("privileges already lowered");
 	}
 
-	log_debug("lowering privileges (euid=%d)", euid);
+	log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
 
 	// TODO: should call getgroups(3) to save the current grouplist,
 	//    and restore the privileges later
@@ -70,6 +98,8 @@ void SetuidHelper::lowerPrivileges() {
 		throw std::system_error(errno, std::system_category());
 	}
 
+	debugPrintUid();
+
 	isLoweredPrivs = true;
 }
 
@@ -79,7 +109,8 @@ void SetuidHelper::checkPrivileges() {
 	// the entire raise/lower will not work, and should throw
 	// exceptions.
 
-	//printf("started with euid=%d uid=%d\n", geteuid(), getuid());
+	debugPrintUid();
+
 	if (geteuid() == 0 && getuid() == 0 && getenv("SUDO_UID")) {
 		const char* buf = getenv("SUDO_UID");
 		if (buf) {
@@ -93,6 +124,10 @@ void SetuidHelper::checkPrivileges() {
 		euid = getuid();
 		egid = getgid();
 		//printf("got %d %d\n", euid, egid);
+	}
+
+	if (setresuid(-1, -1, 0) < 0) {
+		throw std::system_error(errno, std::system_category());
 	}
 
 	isInitialized = true;

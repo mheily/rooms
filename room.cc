@@ -75,15 +75,10 @@ void Room::exec(std::vector<std::string> execVec)
 	}
 
 	// Strange things happen if you enter the jail with uid != euid,
-	// so lets become root all the way
-	if (setgid(0) < 0) {
-		log_errno("setgid(2)");
-		throw std::system_error(errno, std::system_category());
-	}
-	if (setuid(0) < 0) {
-		log_errno("setuid(2)");
-		throw std::system_error(errno, std::system_category());
-	}
+	// so lets do a sanity check. This should never happen.
+	//if (getuid() != geteuid()) {
+	//	throw std::runtime_error("uid mismatch");
+	//}
 
 	string x11_display = "DISPLAY=";
 	string x11_xauthority = "XAUTHORITY=";
@@ -126,6 +121,7 @@ void Room::exec(std::vector<std::string> execVec)
 			NULL
 	};
 
+	SetuidHelper::raisePrivileges();
 	if (execve("/usr/sbin/jexec", argsVec.data(), envp) < 0) {
 		log_errno("execve(2)");
 		throw std::system_error(errno, std::system_category());
