@@ -20,11 +20,18 @@ Features:
 1. Allows unprivileged users to create jails in a simple and safe manner
 2. Allows running X11 applications in jails
 
+# Requirements
+
+To build on FreeBSD, you will need:
+ * FreeBSD 10.3 or newer
+ * the boost-libs package
+
 # Installation
 
 ```
 make
 sudo make install
+room init
 ```
 
 # Usage

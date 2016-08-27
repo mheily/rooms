@@ -62,10 +62,8 @@ public:
 
 		int exit_status;
 		string child_stdout;
-		Shell::execute("/bin/sh", {
-				"-c",
-				"df -h " + path + " | tail -1 | sed 's,/.*,,'"
-		}, exit_status, child_stdout);
+		Shell::execute("/sbin/zfs", { "list", "-H", "-o", "name", "/" },
+			exit_status, child_stdout);
 		if (exit_status != 0 || child_stdout == "") {
 			throw std::runtime_error("unable to determine pool name");
 		}
