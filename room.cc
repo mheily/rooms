@@ -83,14 +83,13 @@ void Room::exec(std::vector<std::string> execVec)
 	string x11_display = "DISPLAY=";
 	string x11_xauthority = "XAUTHORITY=";
 	string dbus_address = "DBUS_SESSION_BUS_ADDRESS=";
-	string jail_username = "root";
-	string env_username = "USER=root";
+	string jail_username = ownerLogin;
+	string env_username = "USER=" + ownerLogin;
+	string env_home = "HOME=/usr/home/" + ownerLogin; //FIXME: hardcoded; should consult PasswdEntry instead
 	if (roomOptions.isAllowX11Clients()) {
 		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
 		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
 		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
-		jail_username = ownerLogin;
-		env_username = "USER=" + ownerLogin;
 	}
 
 	std::vector<char*> argsVec = {
@@ -110,11 +109,11 @@ void Room::exec(std::vector<std::string> execVec)
 	argsVec.push_back(NULL);
 
 	char* const envp[] = {
-			(char*)"HOME=/",
-			(char*)"SHELL=/bin/sh",
+			(char*)env_home.c_str(),
+			(char*)"SHELL=/bin/sh", //FIXME: should consult PasswdEntry
 			(char*)"PATH=/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin:/usr/local/bin",
 			(char*)"TERM=xterm",
-			(char*)"USER=root",
+			(char*)env_username.c_str(),
 			(char*)x11_display.c_str(),
 			(char*)x11_xauthority.c_str(),
 			(char*)dbus_address.c_str(),
