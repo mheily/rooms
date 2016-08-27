@@ -55,23 +55,5 @@ public:
 		return true;
 	}
 
-	static string getNameByPath(const string& path) {
-		if (!FileUtil::checkExists(path)) {
-			throw std::runtime_error("path does not exist: " + path);
-		}
-
-		int exit_status;
-		string child_stdout;
-		Shell::execute("/sbin/zfs", { "list", "-H", "-o", "name", "/" },
-			exit_status, child_stdout);
-		if (exit_status != 0 || child_stdout == "") {
-			throw std::runtime_error("unable to determine pool name");
-		}
-		string errorMsg;
-		if (!ZfsPool::validateName(child_stdout, errorMsg)) {
-			log_error("illegal pool name: %s", errorMsg.c_str());
-			throw std::runtime_error("invalid pool name");
-		}
-		return child_stdout;
-	}
+	static string getNameByPath(const string& path);
 };
