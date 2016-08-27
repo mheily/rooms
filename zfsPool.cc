@@ -49,7 +49,7 @@ string ZfsPool::getNameByPath(const string& path) {
 
 	// Get the top-level pool name by removing any child datasets
 	size_t pos = child_stdout.find('/');
-	if (pos > 0) {
+	if (pos != string::npos) {
 		child_stdout.erase(pos, string::npos);
 	}
 
