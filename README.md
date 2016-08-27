@@ -28,10 +28,19 @@ To build on FreeBSD, you will need:
 
 # Installation
 
+First, you will need to build and install the software.
+
 ```
-make
-sudo make install
-room init
+$ make
+$ sudo make install
+```
+
+Then, you will need to perform a one-time initialization
+of the rooms subsystem. This will create a dedicated dataset
+for storing rooms. The command to run is:
+
+```
+$ room init
 ```
 
 # Usage
