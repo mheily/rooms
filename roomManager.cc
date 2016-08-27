@@ -83,11 +83,13 @@ void RoomManager::bootstrap() {
 
 		if (useZfs) {
 			zpool = ZfsPool::getNameByPath("/");
+			SetuidHelper::raisePrivileges();
 			Shell::execute("/sbin/zfs", {
 					"create",
 					"-o", "canmount=on",
 					"-o", "mountpoint=/room",
 					zpool + "/room"});
+			SetuidHelper::lowerPrivileges();
 		} else {
 			FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
 		}
@@ -97,8 +99,10 @@ void RoomManager::bootstrap() {
 
 	if (!FileUtil::checkExists(getUserRoomDir())) {
 		if (useZfs) {
+			SetuidHelper::raisePrivileges();
 		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + ownerLogin });
+			SetuidHelper::lowerPrivileges();
 		} else {
 			FileUtil::mkdir_idempotent(roomDir + "/" + ownerLogin, 0700, 0, 0);
 		}
@@ -110,10 +114,11 @@ void RoomManager::bootstrap() {
 void RoomManager::downloadBase() {
 	if (!FileUtil::checkExists(baseTarball)) {
 		cout << "Downloading base.txz..\n";
-		string cmd = "fetch -o " + baseTarball + " " + baseUri;
-		if (system(cmd.c_str()) != 0) {
-			throw std::runtime_error("Download failed");
-		}
+		SetuidHelper::raisePrivileges();
+		Shell::execute("/usr/bin/fetch",
+				{ "-o", baseTarball, baseUri });
+		SetuidHelper::lowerPrivileges();
+                //FIXME: error checking for the above command
 	}
 }
 
