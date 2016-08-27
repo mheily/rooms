@@ -365,7 +365,9 @@ void Room::destroy()
 		}
 	}
 
+	SetuidHelper::lowerPrivileges();
 	killAllProcesses();
+	SetuidHelper::raisePrivileges();
 
 	log_debug("unmounting /dev again, now that all processes are gone");
 	if (unmount(string(chrootDir + "/dev").c_str(), MNT_FORCE) < 0) {
