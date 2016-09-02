@@ -14,24 +14,37 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#pragma once
+#include <iostream>
+#include <fstream>
 
-#include "namespaceImport.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
-// Options that can be controlled by the user
-struct RoomOptions {
-	// allow X programs to run
-	bool allowX11Clients = false;
+#include "roomOptions.h"
 
-	// share /tmp and /var/tmp with the main system, sadly needed for X11 and other progs
-	bool shareTempDir = false;
+namespace pt = boost::property_tree;
 
-	// share $HOME with the main system
-	bool shareHomeDir = false;
+void RoomOptions::load(const string &path)
+{
+	pt::ptree tree;
 
-	// use the Linux ABI
-	bool useLinuxABI = false;
+    pt::read_json(path, tree);
 
-	void load(const string& path);
-	void save(const string& path);
-};
+	allowX11Clients = tree.get("allowX11Clients", false);
+	shareTempDir = tree.get("shareTempDir", false);
+	shareHomeDir = tree.get("shareHomeDir", false);
+	useLinuxABI = tree.get("useLinuxABI", false);
+}
+
+
+void RoomOptions::save(const string &path)
+{
+    pt::ptree tree;
+
+    tree.put("allowX11Clients", allowX11Clients);
+    tree.put("shareTempDir", shareHomeDir);
+    tree.put("shareHomeDir", shareHomeDir);
+    tree.put("useLinuxABI", useLinuxABI);
+
+    pt::write_json(path, tree);
+}

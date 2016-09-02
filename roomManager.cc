@@ -60,6 +60,10 @@ bool RoomManager::isBootstrapComplete() {
 	return FileUtil::checkExists(dir);
 }
 
+bool RoomManager::doesBaseTemplateExist() {
+	return checkRoomExists(getBaseTemplateName());
+}
+
 void RoomManager::bootstrap() {
 	string zpool;
 
@@ -305,7 +309,7 @@ void RoomManager::createBaseTemplate() {
 
 	Room room(roomDir, base_template);
 	RoomOptions roomOpt = room.getRoomOptions();
-	roomOpt.setAllowX11Clients(true);
-	roomOpt.setShareTempDir(true);
+	roomOpt.allowX11Clients = true;
+	roomOpt.shareTempDir = true;
 	room.create(baseTarball);
 }

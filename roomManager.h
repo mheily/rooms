@@ -36,6 +36,8 @@ public:
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
+	bool doesBaseTemplateExist();
+	void createBaseTemplate();
 	void importRoom(const string& name);
 	void createRoom(const string& name);
 	void cloneRoom(const string& src, const string& dest);
@@ -80,5 +82,4 @@ private:
 
 	// templates
 	string getBaseTemplateName();
-	void createBaseTemplate();
 };

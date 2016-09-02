@@ -86,7 +86,7 @@ void Room::exec(std::vector<std::string> execVec)
 	string jail_username = ownerLogin;
 	string env_username = "USER=" + ownerLogin;
 	string env_home = "HOME=/usr/home/" + ownerLogin; //FIXME: hardcoded; should consult PasswdEntry instead
-	if (roomOptions.isAllowX11Clients()) {
+	if (roomOptions.allowX11Clients) {
 		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
 		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
 		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
@@ -288,15 +288,21 @@ void Room::create(const string& baseTarball)
 
 void Room::syncRoomOptions()
 {
-	roomOptions.writefile(roomDataDir + "/options.0");
+	SetuidHelper::raisePrivileges();
+
+	// FIXME: this really should not be done as root
+
+	roomOptions.save(roomDataDir + "/options.json");
+	SetuidHelper::lowerPrivileges();
 }
 
 void Room::boot() {
 	int rv;
 
-	roomOptions.readfile(roomDataDir + "/options.0");
-
 	SetuidHelper::raisePrivileges();
+
+	// FIXME: this really should not be done as root
+	roomOptions.load(roomDataDir + "/options.json");
 
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
@@ -317,17 +323,17 @@ void Room::boot() {
 		throw std::runtime_error("jail(1) failed");
 	}
 
-	if (roomOptions.isShareTempDir()) {
+	if (roomOptions.shareTempDir) {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	}
 
-	if (roomOptions.isShareHomeDir()) {
+	if (roomOptions.shareHomeDir) {
 		PasswdEntry pwent(ownerUid);
 		Shell::execute("/sbin/mount", { "-t", "nullfs", pwent.getHome(), chrootDir + pwent.getHome() });
 	}
 
-	if (roomOptions.isUseLinuxAbi()) {
+	if (roomOptions.useLinuxABI) {
 		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
 		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
 		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
@@ -372,7 +378,7 @@ void Room::destroy()
 		}
 	}
 
-	if (true || roomOptions.isShareTempDir()) {
+	if (true || roomOptions.shareTempDir) {
 		log_debug("unmounting /tmp");
 		if (unmount(string(chrootDir + "/tmp").c_str(), MNT_FORCE) < 0) {
 			if (errno != EINVAL) {
@@ -389,13 +395,13 @@ void Room::destroy()
 		}
 	}
 
-	if (roomOptions.isUseLinuxAbi()) {
+	if (roomOptions.useLinuxABI) {
 		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
 		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
 	}
 
-	if (roomOptions.isShareHomeDir()) {
-		if (roomOptions.isShareHomeDir()) {
+	if (roomOptions.shareHomeDir) {
+		if (roomOptions.shareHomeDir) {
 			PasswdEntry pwent(ownerUid);
 			Shell::execute("/sbin/umount", { chrootDir + pwent.getHome() });
 		}

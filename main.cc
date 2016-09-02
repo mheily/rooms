@@ -106,13 +106,13 @@ static void apply_room_options(po::variables_map vm, Room room)
 	RoomOptions ro = room.getRoomOptions();
 
 	if (vm.count("allow-x11")) {
-		ro.setAllowX11Clients(roomOpt.allow_x11);
+		ro.allowX11Clients = roomOpt.allow_x11;
 	}
 	if (vm.count("share-tempdir")) {
-		ro.setShareTempDir(roomOpt.share_tempdir);
+		ro.shareTempDir = roomOpt.share_tempdir;
 	}
 	if (vm.count("share-home")) {
-		ro.setShareHomeDir(roomOpt.share_home);
+		ro.shareHomeDir = roomOpt.share_home;
 	}
 	room.syncRoomOptions();
 }
@@ -209,6 +209,9 @@ static void get_options(int argc, char *argv[])
 	if (action == "list") {
 		mgr.listRooms();
 	} else if (action == "create") {
+		if (! mgr.doesBaseTemplateExist()) {
+			mgr.createBaseTemplate();
+		}
 		mgr.cloneRoom(roomName);
 		Room room = mgr.getRoomByName(roomName);
 		apply_room_options(vm, room);
