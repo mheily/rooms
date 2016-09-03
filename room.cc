@@ -66,8 +66,45 @@ Room::Room(const string& managerRoomDir, const string& name)
 	}
 }
 
+void Room::enterJail()
+{
+	SetuidHelper::raisePrivileges();
+
+	if (chdir(chrootDir.c_str()) < 0) {
+		log_errno("chdir(2) to `%s'", chrootDir.c_str());
+		throw std::system_error(errno, std::system_category());
+	}
+
+	if (chroot(chrootDir.c_str()) < 0) {
+		log_errno("chroot(2) to `%s'", chrootDir.c_str());
+		throw std::system_error(errno, std::system_category());
+	}
+
+#if __FreeBSD__
+	int jid = jail_getid(jailName.c_str());
+	if (jid < 0) {
+		throw std::runtime_error("unable to get jail ID");
+	}
+
+	if (jail_attach(jid) < 0) {
+		log_errno("jail_attach(2)");
+		throw std::system_error(errno, std::system_category());
+	}
+#endif
+
+	//FIXME: hardcoded; should consult PasswdEntry instead
+	string homedir = "/usr/home/" + ownerLogin;
+	if (chdir(homedir.c_str()) < 0) {
+		log_errno("chdir(2) to %s", homedir.c_str());
+		//throw std::system_error(errno, std::system_category());
+	}
+
+	SetuidHelper::dropPrivileges();
+}
+
 void Room::exec(std::vector<std::string> execVec)
 {
+	char *path = NULL;
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
 		log_debug("jail `%s' not running; will start it now", jailName.c_str());
@@ -92,15 +129,12 @@ void Room::exec(std::vector<std::string> execVec)
 		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
 	}
 
-	std::vector<char*> argsVec = {
-			(char*)"/usr/sbin/jexec",
-			(char*) "-U",
-			(char*) jail_username.c_str(),
-			(char*) jailName.c_str(),
-	};
+	std::vector<char*> argsVec;
 	if (execVec.size() == 0) {
-		argsVec.push_back((char*)"/bin/sh");
+		path = strdup("/bin/csh");
+		argsVec.push_back((char*)"-csh");
 	} else {
+		path = strdup(execVec[0].c_str());
 		for (string& s : execVec) {
 			char *tmp = strdup(s.c_str());
 			argsVec.push_back(tmp);
@@ -110,7 +144,7 @@ void Room::exec(std::vector<std::string> execVec)
 
 	char* const envp[] = {
 			(char*)env_home.c_str(),
-			(char*)"SHELL=/bin/sh", //FIXME: should consult PasswdEntry
+			(char*)"SHELL=/bin/csh", //FIXME: should consult PasswdEntry
 			(char*)"PATH=/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin:/usr/local/bin",
 			(char*)"TERM=xterm",
 			(char*)env_username.c_str(),
@@ -120,47 +154,15 @@ void Room::exec(std::vector<std::string> execVec)
 			NULL
 	};
 
-	SetuidHelper::raisePrivileges();
-	if (execve("/usr/sbin/jexec", argsVec.data(), envp) < 0) {
+	enterJail();
+
+	if (execve(path, argsVec.data(), envp) < 0) {
 		log_errno("execve(2)");
 		throw std::system_error(errno, std::system_category());
 	}
 	//NOTREACHED
 	log_errno("execve(2)");
 	throw std::runtime_error("exec failed");
-
-//DEADWOOD: easier to use jexec here, but this works for systems w/o jails
-#if 0
-	gid_t guestGid = (gid_t) guestUid;
-
-
-	if (chdir(chrootDir.c_str()) < 0) {
-		log_errno("chdir(2) to `%s'", chrootDir.c_str());
-		throw std::system_error(errno, std::system_category());
-	}
-	if (chroot(chrootDir.c_str()) < 0) {
-		log_errno("chroot(2) to `%s'", chrootDir.c_str());
-		throw std::system_error(errno, std::system_category());
-	}
-	if (setgroups(1, &guestGid) < 0) {
-		log_errno("setgroups(2)");
-		throw std::system_error(errno, std::system_category());
-	}
-	if (setgid(guestGid) < 0) {
-		log_errno("setgid(2)");
-		throw std::system_error(errno, std::system_category());
-	}
-	if (setuid(guestUid) < 0) {
-		log_errno("setuid(2)");
-		throw std::system_error(errno, std::system_category());
-	}
-	char *const args[] = { (char*)"/bin/sh", NULL };
-	if (execv("/bin/sh", args) < 0) {
-		log_errno("execv(2)");
-		throw std::system_error(errno, std::system_category());
-	}
-	abort();
-#endif
 }
 
 void Room::enter() {

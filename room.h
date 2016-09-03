@@ -94,6 +94,7 @@ private:
 		string tarballUri; // URI to the tarball for the root fs
 	} installOpts;*/
 
+	void enterJail();
 	bool jailExists();
 	void customizeWithoutRoot();
 	void validateName(const string& name);

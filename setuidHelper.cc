@@ -20,6 +20,7 @@
 
 static bool isInitialized = false;
 static bool isLoweredPrivs = false;
+static bool isDroppedPrivs = false;
 static uid_t euid = 999999999; // KLUDGE: hopefully an unused UID
 static gid_t egid = 999999999; // KLUDGE: hopefully an unused GID
 
@@ -41,6 +42,10 @@ static void debugPrintUid() {
 void SetuidHelper::raisePrivileges() {
 	uid_t uid;
 	gid_t gid;
+
+	if (isDroppedPrivs) {
+		throw std::logic_error("privileges are dropped");
+	}
 
 	if (!isInitialized) {
 		throw std::logic_error("must call checkPrivileges() first");
@@ -78,6 +83,10 @@ void SetuidHelper::lowerPrivileges() {
 		throw std::logic_error("must call checkPrivileges() first");
 	}
 
+	if (isDroppedPrivs) {
+		throw std::logic_error("privileges are dropped");
+	}
+
 	if (isLoweredPrivs) {
 		throw std::logic_error("privileges already lowered");
 	}
@@ -101,6 +110,34 @@ void SetuidHelper::lowerPrivileges() {
 	debugPrintUid();
 
 	isLoweredPrivs = true;
+}
+
+void SetuidHelper::dropPrivileges() {
+	if (!isInitialized) {
+		throw std::logic_error("must call checkPrivileges() first");
+	}
+
+	if (isDroppedPrivs) {
+		throw std::logic_error("privileges are already dropped");
+	}
+
+	log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
+
+	if (setgroups(0, NULL) < 0) {
+		throw std::system_error(errno, std::system_category());
+	}
+
+	if (setresgid(egid, egid, egid) < 0) {
+		throw std::system_error(errno, std::system_category());
+	}
+
+	if (setresuid(euid, euid, euid) < 0) {
+		throw std::system_error(errno, std::system_category());
+	}
+
+	debugPrintUid();
+	isLoweredPrivs = false;
+	isDroppedPrivs = true;
 }
 
 void SetuidHelper::checkPrivileges() {
