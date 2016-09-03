@@ -323,25 +323,24 @@ void Room::boot() {
 		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
 		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
 	}
-	if (getpwuid(ownerUid) == NULL) {
-		log_debug("updating /etc/passwd");
-		PasswdEntry pwent(ownerUid);
-		Shell::execute("/usr/sbin/pw", {
-				"-R",  chrootDir,
-				"user", "add",
-				"-u", std::to_string(ownerUid),
-				"-n", pwent.getLogin(),
-				"-c", pwent.getGecos(),
-				"-s", pwent.getShell(),
-				"-G", "wheel",
-				"-m"
-		});
-	}
+
+	log_debug("updating /etc/passwd");
+	PasswdEntry pwent(ownerUid);
+	Shell::execute("/usr/sbin/pw", {
+			"-R",  chrootDir,
+			"user", "add",
+			"-u", std::to_string(ownerUid),
+			"-n", pwent.getLogin(),
+			"-c", pwent.getGecos(),
+			"-s", pwent.getShell(),
+			"-G", "wheel",
+			"-m"
+	});
 
 	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
 	Shell::execute("/bin/sh", {
 			"-c",
-			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf"
+			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf status=none"
 	});
 
 	SetuidHelper::lowerPrivileges();
@@ -418,6 +417,23 @@ void Room::halt()
 	} else {
 		log_warning("jail(2) does not exist");
 	}
+
+
+	try {
+		PasswdEntry pwent(ownerUid);
+		Shell::execute("/usr/sbin/chroot", {
+				chrootDir,
+				"/usr/sbin/pw", "user", "del", "-u", std::to_string(ownerUid),
+		});
+	} catch (...) {
+		log_warning("unable to delete user account");
+	}
+
+	// KLUDGE: See issue #13 for a better idea.
+	Shell::execute("/usr/sbin/chroot", {
+			chrootDir,
+			"rm", "-f", "/etc/resolv.conf"
+	});
 
 	SetuidHelper::lowerPrivileges();
 
