@@ -77,7 +77,7 @@ void Room::enterJail()
 		throw std::runtime_error("unable to get jail ID");
 	}
 
-	SetuidHelper::logPrivileges();
+	//SetuidHelper::logPrivileges();
 
 	if (jail_attach(jid) < 0) {
 		log_errno("jail_attach(2) to jid %d", jid);
