@@ -249,24 +249,6 @@ void Room::create(const string& baseTarball)
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
-	PasswdEntry pwent(ownerUid);
-	Shell::execute("/usr/sbin/pw", {
-			"-R",  chrootDir,
-			"user", "add",
-			"-u", std::to_string(ownerUid),
-			"-n", pwent.getLogin(),
-			"-c", pwent.getGecos(),
-			"-s", pwent.getShell(),
-			"-G", "wheel",
-			"-m"
-	});
-
-	// KLUDGE: copy /etc/resolv.conf
-	Shell::execute("/bin/cp", {
-			"/etc/resolv.conf",
-			chrootDir + "/etc/resolv.conf"
-	});
-
 	// KLUDGE: install pkg(8)
 	Shell::execute("/usr/sbin/chroot", {
 			"-u", "root",
@@ -341,14 +323,35 @@ void Room::boot() {
 		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
 		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
 	}
+	if (getpwuid(ownerUid) == NULL) {
+		log_debug("updating /etc/passwd");
+		PasswdEntry pwent(ownerUid);
+		Shell::execute("/usr/sbin/pw", {
+				"-R",  chrootDir,
+				"user", "add",
+				"-u", std::to_string(ownerUid),
+				"-n", pwent.getLogin(),
+				"-c", pwent.getGecos(),
+				"-s", pwent.getShell(),
+				"-G", "wheel",
+				"-m"
+		});
+	}
+
+	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
+	Shell::execute("/bin/sh", {
+			"-c",
+			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf"
+	});
+
 	SetuidHelper::lowerPrivileges();
 }
 
-void Room::destroy()
+void Room::halt()
 {
 	string cmd;
 
-	log_debug("destroying room at %s", chrootDir.c_str());
+	log_debug("halting room `%s'", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
 
@@ -416,6 +419,18 @@ void Room::destroy()
 		log_warning("jail(2) does not exist");
 	}
 
+	SetuidHelper::lowerPrivileges();
+
+	log_notice("room `%s' has been halted", roomName.c_str());
+}
+
+void Room::destroy()
+{
+	string cmd;
+
+	log_debug("destroying room at %s", chrootDir.c_str());
+
+	SetuidHelper::raisePrivileges();
 	if (useZfs) {
 		// this races with "jail -r"
 		bool success = false;
@@ -441,9 +456,9 @@ void Room::destroy()
 		Shell::execute("/bin/rm", {"-rf", chrootDir});
 	}
 
-	SetuidHelper::lowerPrivileges();
+	log_notice("room has been destroyed");
 
-	log_notice("room deleted");
+	SetuidHelper::lowerPrivileges();
 }
 
 void Room::killAllProcesses()

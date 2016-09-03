@@ -54,6 +54,7 @@ public:
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
 	void boot();
+	void halt();
 	void destroy();
 	void enter();
 	void exec(std::vector<std::string> execVec);

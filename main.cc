@@ -56,7 +56,7 @@ namespace po = boost::program_options;
 
 static const std::vector<string> actions = {
 		"clone", "create", "destroy", "enter", "exec",
-		"init", "list",
+		"halt", "init", "list",
 		"export", "import",
 };
 
@@ -88,7 +88,7 @@ static pair<string, string> parseAction(const string& s)
 static void printUsage(po::options_description desc) {
 	std::cout <<
 		"Usage:\n\n"
-		"  room <name> [create|destroy|enter|export]\n"
+		"  room <name> [create|destroy|enter|export|halt]\n"
 		" -or-\n"
 		"  room <name> exec <command> [arguments]\n"
 		" -or-\n"
@@ -235,6 +235,8 @@ static void get_options(int argc, char *argv[])
 			exit(1);
 		}
 		mgr.getRoomByName(roomName).exec(execVec);
+	} else if (action == "halt") {
+		mgr.getRoomByName(roomName).halt();
 	} else {
 		cout << "ERROR: must specify an action\n";
 		printUsage(desc);
