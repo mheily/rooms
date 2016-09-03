@@ -153,7 +153,7 @@ void SetuidHelper::checkPrivileges() {
 		if (buf) {
 			// FIXME: assumes gid == uid
 			egid = euid = std::stoul(buf);
-			//printf("2 got %d %d\n", euid, egid);
+			//printf("2 got %d %d %d\n", euid, egid, getegid());
 		} else {
 			throw std::runtime_error("Unable to parse SUDO_UID");
 		}

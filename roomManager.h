@@ -33,6 +33,7 @@ public:
 		useZfs = ZfsPool::detectZfs();
 		ownerUid = SetuidHelper::getActualUid();
 		ownerLogin = PasswdEntry(ownerUid).getLogin();
+		openConfigHome();
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
@@ -46,6 +47,10 @@ public:
 	Room& getRoomByName(const string& name);
 	bool checkRoomExists(const string&);
 	void listRooms();
+
+	void parseConfig() {
+		//TODO: actually read a config file
+	}
 
 	bool isVerbose() const {
 		return verbose;
@@ -82,4 +87,7 @@ private:
 
 	// templates
 	string getBaseTemplateName();
+
+	int config_home_fd = -1; // descriptor opened to $HOME/.room
+	void openConfigHome();
 };

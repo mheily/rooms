@@ -314,3 +314,28 @@ void RoomManager::createBaseTemplate() {
 	roomOpt.shareTempDir = true;
 	room.create(baseTarball);
 }
+
+void RoomManager::openConfigHome()
+{
+	int fd;
+	string path = string(PasswdEntry(ownerUid).getHome()) + "/.room";
+	for (;;) {
+		fd = open(path.c_str(), O_RDONLY | O_NOFOLLOW | O_DIRECTORY | O_CLOEXEC);
+		if (fd < 0) {
+			if (errno == ENOENT) {
+				if (mkdir(path.c_str(), 0700) < 0) {
+					log_errno("mkdir(2) of %s", path.c_str());
+					throw std::system_error(errno, std::system_category());
+				} else {
+					continue;
+				}
+			} else {
+				log_errno("open(2) of %s", path.c_str());
+				throw std::system_error(errno, std::system_category());
+			}
+		} else {
+			break;
+		}
+	}
+	config_home_fd = fd;
+}

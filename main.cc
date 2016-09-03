@@ -181,6 +181,8 @@ static void get_options(int argc, char *argv[])
 
 	SetuidHelper::lowerPrivileges();
 
+	mgr.parseConfig();
+
 	// Special case: force bootstrapping as the first command
 	if (! mgr.isBootstrapComplete()) {
 		if (action == "init") {
