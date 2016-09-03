@@ -99,4 +99,6 @@ private:
 	bool jailExists();
 	void customizeWithoutRoot();
 	void validateName(const string& name);
+
+	void getJailName();
 };

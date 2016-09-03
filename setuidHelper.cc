@@ -58,14 +58,13 @@ void SetuidHelper::raisePrivileges() {
 	uid = getuid();
 	gid = getgid();
 
-	debugPrintUid();
+	log_debug("raising privileges");
 
 	if (setresuid(0, 0, 0) < 0) {
 		throw std::system_error(errno, std::system_category());
 	}
-	debugPrintUid();
 
-	if (setegid(0) < 0) {
+	if (setresgid(0, 0, 0) < 0) {
 		throw std::system_error(errno, std::system_category());
 	}
 
@@ -121,7 +120,7 @@ void SetuidHelper::dropPrivileges() {
 		throw std::logic_error("privileges are already dropped");
 	}
 
-	log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
+	log_debug("dropping privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
 
 	if (setgroups(0, NULL) < 0) {
 		throw std::system_error(errno, std::system_category());
@@ -175,3 +174,12 @@ uid_t SetuidHelper::getActualUid()
 {
 	return euid;
 }
+
+void SetuidHelper::logPrivileges()
+{
+	bool saved = debugModule;
+	debugModule = true;
+	debugPrintUid();
+	debugModule = saved;
+}
+

@@ -48,12 +48,13 @@ extern "C" {
 Room::Room(const string& managerRoomDir, const string& name)
 {
 	roomDir = managerRoomDir;
-	validateName(name);
-
 	ownerUid = SetuidHelper::getActualUid();
 
 	PasswdEntry pwent(ownerUid);
 	ownerLogin = pwent.getLogin();
+
+	validateName(name);
+	getJailName();
 
 	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
 	chrootDir = roomDataDir + "/root";
@@ -70,6 +71,19 @@ void Room::enterJail()
 {
 	SetuidHelper::raisePrivileges();
 
+#if __FreeBSD__
+	int jid = jail_getid(jailName.c_str());
+	if (jid < 0) {
+		throw std::runtime_error("unable to get jail ID");
+	}
+
+	SetuidHelper::logPrivileges();
+
+	if (jail_attach(jid) < 0) {
+		log_errno("jail_attach(2) to jid %d", jid);
+		throw std::system_error(errno, std::system_category());
+	}
+#else
 	if (chdir(chrootDir.c_str()) < 0) {
 		log_errno("chdir(2) to `%s'", chrootDir.c_str());
 		throw std::system_error(errno, std::system_category());
@@ -77,17 +91,6 @@ void Room::enterJail()
 
 	if (chroot(chrootDir.c_str()) < 0) {
 		log_errno("chroot(2) to `%s'", chrootDir.c_str());
-		throw std::system_error(errno, std::system_category());
-	}
-
-#if __FreeBSD__
-	int jid = jail_getid(jailName.c_str());
-	if (jid < 0) {
-		throw std::runtime_error("unable to get jail ID");
-	}
-
-	if (jail_attach(jid) < 0) {
-		log_errno("jail_attach(2)");
 		throw std::system_error(errno, std::system_category());
 	}
 #endif
@@ -111,11 +114,7 @@ void Room::exec(std::vector<std::string> execVec)
 		boot();
 	}
 
-	// Strange things happen if you enter the jail with uid != euid,
-	// so lets do a sanity check. This should never happen.
-	//if (getuid() != geteuid()) {
-	//	throw std::runtime_error("uid mismatch");
-	//}
+	enterJail();
 
 	string x11_display = "DISPLAY=";
 	string x11_xauthority = "XAUTHORITY=";
@@ -154,8 +153,6 @@ void Room::exec(std::vector<std::string> execVec)
 			NULL
 	};
 
-	enterJail();
-
 	if (execve(path, argsVec.data(), envp) < 0) {
 		log_errno("execve(2)");
 		throw std::system_error(errno, std::system_category());
@@ -178,16 +175,24 @@ bool Room::jailExists()
 	return (jid >= 0);
 }
 
+void Room::getJailName()
+{
+	jailName = "room_" + ownerLogin + "_";
+	for (std::string::iterator it = roomName.begin(); it != roomName.end(); ++it) {
+		if (*it == '.') {
+			jailName.push_back('^');
+		} else {
+			jailName.push_back(*it);
+		}
+	}
+}
+
 void Room::validateName(const string& name)
 {
 	string buf = name;
 	std::locale loc("C");
 
-	//FIXME: this function does too much.. should have a separate function
-	// for generating roomName and jailName
-	// Having all this here creates subtle ordering bugs.
 	roomName = name;
-	jailName = "room_" + ownerLogin + "_";
 
 	if (name.length() == 0) {
 		throw std::runtime_error("name cannot be empty");
@@ -203,11 +208,7 @@ void Room::validateName(const string& name)
 			throw std::runtime_error("NUL in name");
 		}
 		if (std::isalnum(*it, loc) || strchr("-_.", *it)) {
-			if (*it == '.') {
-				jailName.push_back('^');
-			} else {
-				jailName.push_back(*it);
-			}
+			continue;
 		} else {
 			cout << "Illegal character in name: " << *it << endl;
 			throw std::runtime_error("invalid character in name");
@@ -283,6 +284,8 @@ void Room::syncRoomOptions()
 void Room::boot() {
 	int rv;
 
+	log_debug("booting room: %s", roomName.c_str());
+
 	SetuidHelper::raisePrivileges();
 
 	Shell::execute("/usr/sbin/jail", {
@@ -324,18 +327,22 @@ void Room::boot() {
 		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
 	}
 
-	log_debug("updating /etc/passwd");
-	PasswdEntry pwent(ownerUid);
-	Shell::execute("/usr/sbin/pw", {
-			"-R",  chrootDir,
-			"user", "add",
-			"-u", std::to_string(ownerUid),
-			"-n", pwent.getLogin(),
-			"-c", pwent.getGecos(),
-			"-s", pwent.getShell(),
-			"-G", "wheel",
-			"-m"
-	});
+	try {
+		log_debug("updating /etc/passwd");
+		PasswdEntry pwent(ownerUid);
+		Shell::execute("/usr/sbin/pw", {
+				"-R",  chrootDir,
+				"user", "add",
+				"-u", std::to_string(ownerUid),
+				"-n", pwent.getLogin(),
+				"-c", pwent.getGecos(),
+				"-s", pwent.getShell(),
+				"-G", "wheel",
+				"-m"
+		});
+	} catch(...) {
+		log_warning("unable to create user account");
+	}
 
 	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
 	Shell::execute("/bin/sh", {

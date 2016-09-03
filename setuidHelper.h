@@ -25,5 +25,6 @@ public:
 	static void raisePrivileges();
 	static void checkPrivileges();
 	static void dropPrivileges();
+	static void logPrivileges();
 	static uid_t getActualUid();
 };
