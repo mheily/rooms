@@ -114,7 +114,6 @@ static void apply_room_options(po::variables_map vm, Room room)
 	if (vm.count("share-home")) {
 		ro.shareHomeDir = roomOpt.share_home;
 	}
-	room.syncRoomOptions();
 }
 
 static void get_options(int argc, char *argv[])

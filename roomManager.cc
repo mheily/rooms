@@ -131,6 +131,7 @@ Room& RoomManager::getRoomByName(const string& name) {
 	auto it = rooms.find(name);
 	if (it != rooms.end()) {
 	    Room* r = rooms[name];
+	    r->loadRoomOptions();
 	    return *r;
 	} else {
 		throw std::runtime_error("Room " + name + " does not exist");

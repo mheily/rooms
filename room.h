@@ -63,12 +63,21 @@ public:
 	void setOsType(const string& osType);
 
 	RoomOptions& getRoomOptions() {
+		if (! areRoomOptionsLoaded ) {
+			throw std::logic_error("options not loaded");
+		}
 		return roomOptions;
+	}
+
+	void loadRoomOptions() {
+		roomOptions.load(roomDataDir + "/options.json");
+		areRoomOptionsLoaded = true;
 	}
 
 	void syncRoomOptions();
 
 private:
+	bool areRoomOptionsLoaded = false;
 	RoomOptions roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir
 	string roomDataDir; // directory where this rooms data is stored

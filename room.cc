@@ -301,9 +301,6 @@ void Room::boot() {
 
 	SetuidHelper::raisePrivileges();
 
-	// FIXME: this really should not be done as root
-	roomOptions.load(roomDataDir + "/options.json");
-
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
 			"-c", "name=" + jailName,
@@ -324,8 +321,11 @@ void Room::boot() {
 	}
 
 	if (roomOptions.shareTempDir) {
+		log_debug("using a shared /tmp");
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
+	} else {
+		log_debug("using a private /tmp");
 	}
 
 	if (roomOptions.shareHomeDir) {

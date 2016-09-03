@@ -21,17 +21,18 @@
 // Options that can be controlled by the user
 struct RoomOptions {
 	// allow X programs to run
-	bool allowX11Clients = false;
+	bool allowX11Clients;
 
 	// share /tmp and /var/tmp with the main system, sadly needed for X11 and other progs
-	bool shareTempDir = false;
+	bool shareTempDir;
 
 	// share $HOME with the main system
-	bool shareHomeDir = false;
+	bool shareHomeDir;
 
 	// use the Linux ABI
-	bool useLinuxABI = false;
+	bool useLinuxABI;
 
 	void load(const string& path);
 	void save(const string& path);
+	void dump();
 };

@@ -21,6 +21,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include "roomOptions.h"
+#include "logger.h"
 
 namespace pt = boost::property_tree;
 
@@ -28,6 +29,7 @@ void RoomOptions::load(const string &path)
 {
 	pt::ptree tree;
 
+    log_debug("reading options from %s", path.c_str());
     pt::read_json(path, tree);
 
 	allowX11Clients = tree.get("allowX11Clients", false);
@@ -41,10 +43,17 @@ void RoomOptions::save(const string &path)
 {
     pt::ptree tree;
 
+    log_debug("writing options to %s", path.c_str());
+
     tree.put("allowX11Clients", allowX11Clients);
-    tree.put("shareTempDir", shareHomeDir);
+    tree.put("shareTempDir", shareTempDir);
     tree.put("shareHomeDir", shareHomeDir);
     tree.put("useLinuxABI", useLinuxABI);
 
     pt::write_json(path, tree);
+}
+
+void RoomOptions::dump()
+{
+	log_debug("share_tmp=%d", (int) shareTempDir);
 }
