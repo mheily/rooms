@@ -29,6 +29,7 @@ extern "C" {
 #include <getopt.h>
 #include <jail.h>
 #include <pwd.h>
+#include <sys/file.h>
 #include <sys/param.h>
 #include <sys/jail.h>
 #include <sys/mount.h>
@@ -337,5 +338,12 @@ void RoomManager::openConfigHome()
 			break;
 		}
 	}
+
+	/* Prevent multiple instances of room(1) from operating concurrently */
+	if (flock(fd, LOCK_EX) < 0) {
+		log_errno("flock(2)");
+		throw std::system_error(errno, std::system_category());
+	}
+
 	config_home_fd = fd;
 }
