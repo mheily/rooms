@@ -37,6 +37,7 @@ public:
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
+	void initUserRoomSpace();
 	bool doesBaseTemplateExist();
 	void createBaseTemplate();
 	void importRoom(const string& name);

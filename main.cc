@@ -194,6 +194,8 @@ static void get_options(int argc, char *argv[])
 		}
 	}
 
+	mgr.initUserRoomSpace();
+
 	// Get the room and allow overriding the room options via the CLI
 	if (roomName != "" && mgr.checkRoomExists(roomName)) {
 		Room room = mgr.getRoomByName(roomName);

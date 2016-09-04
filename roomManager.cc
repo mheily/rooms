@@ -56,9 +56,7 @@ string RoomManager::getUserRoomDir() {
 }
 
 bool RoomManager::isBootstrapComplete() {
-	string dir = getUserRoomDir();
-	log_debug("checking if %s exists", dir.c_str());
-	return FileUtil::checkExists(dir);
+	return FileUtil::checkExists(roomDir);
 }
 
 bool RoomManager::doesBaseTemplateExist() {
@@ -68,52 +66,52 @@ bool RoomManager::doesBaseTemplateExist() {
 void RoomManager::bootstrap() {
 	string zpool;
 
-	if (!FileUtil::checkExists(roomDir)) {
-
-//		for (;;) {
-//			cout << "Enter the ZFS pool that rooms will be stored in: ";
-//			cin >> zpool;
-//			string errorMsg;
-//			if (!validateZfsPoolName(zpool, errorMsg)) {
-//				cout << "Error: " << errorMsg << endl;
-//				continue;
-//			}
-//			int rv = Shell::execute("/sbin/zfs", {	"list", zpool }, rv);
-//			if (rv != 0) {
-//				cout << "Error: no such ZFS pool" << endl;
-//				continue;
-//			}
-//			break;
-//		}
-
-		if (useZfs) {
-			zpool = ZfsPool::getNameByPath("/");
-			SetuidHelper::raisePrivileges();
-			Shell::execute("/sbin/zfs", {
-					"create",
-					"-o", "canmount=on",
-					"-o", "mountpoint=/room",
-					zpool + "/room"});
-			SetuidHelper::lowerPrivileges();
-		} else {
-			FileUtil::mkdir_idempotent(roomDir, 0700, 0, 0);
-		}
-	} else {
-		zpool = ZfsPool::getNameByPath(roomDir);
+	if (!useZfs) {
+		throw std::logic_error("This utility requires ZFS");
 	}
 
+	if (FileUtil::checkExists(roomDir)) {
+		zpool = ZfsPool::getNameByPath(roomDir);
+	} else {
+		string defaultAnswer = ZfsPool::getNameByPath("/");
+		for (;;) {
+			cout << "Which ZFS pool should rooms will be stored in " <<
+					" (default: " + defaultAnswer + ")? ";
+			cin >> zpool;
+			string errorMsg;
+			if (!ZfsPool::validateName(zpool, errorMsg)) {
+				cout << "Error: " << errorMsg << endl;
+				continue;
+			}
+			int rv = Shell::execute("/sbin/zfs", {	"list", zpool }, rv);
+			if (rv != 0) {
+				cout << "Error: no such ZFS pool" << endl;
+				continue;
+			}
+			break;
+		}
+
+		SetuidHelper::raisePrivileges();
+		Shell::execute("/sbin/zfs", {
+						"create",
+						"-o", "canmount=on",
+						"-o", "mountpoint=/room",
+						zpool + "/room"});
+				SetuidHelper::lowerPrivileges();
+	}
+}
+
+void RoomManager::initUserRoomSpace()
+{
 	if (!FileUtil::checkExists(getUserRoomDir())) {
-		if (useZfs) {
+		string zpool = ZfsPool::getNameByPath(roomDir);
 			SetuidHelper::raisePrivileges();
 		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + ownerLogin });
 			SetuidHelper::lowerPrivileges();
-		} else {
-			FileUtil::mkdir_idempotent(roomDir + "/" + ownerLogin, 0700, 0, 0);
-		}
 	}
 
-	createBaseTemplate();
+	//FIXME: createBaseTemplate();
 }
 
 void RoomManager::downloadBase() {
