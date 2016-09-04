@@ -221,10 +221,13 @@ static void get_options(int argc, char *argv[])
 		exit(1);
 	} else if (action == "destroy") {
 		mgr.getRoomByName(roomName).destroy();
+#if 0
+		// not ready for prime time
 	} else if (action == "import") {
 		mgr.importRoom(roomName);
 	} else if (action == "export") {
 		mgr.getRoomByName(roomName).exportArchive();
+#endif
 	} else if (action == "enter") {
 		mgr.getRoomByName(roomName).enter();
 	} else if (action == "exec") {

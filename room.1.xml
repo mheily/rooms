@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<refentry id="room">
+
+<refmeta>
+<refentrytitle>room</refentrytitle>
+<manvolnum>1</manvolnum>
+</refmeta>
+
+<refnamediv>
+<refname>room</refname>
+<refpurpose>manage rooms</refpurpose>
+</refnamediv>
+
+<refsect1><title>SYNOPSIS</title>
+
+<para>
+<literallayout>
+<emphasis role="bold">room init</emphasis>
+<emphasis role="bold">room list</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
+</literallayout>
+</para>
+</refsect1>
+
+
+<refsect1><title>Description</title>
+<para>
+<command>room</command> manages jobs for jobd. Each job has a unique name.
+</para>
+
+<para>
+The following subcommands and options are available:
+</para>
+	
+<variablelist>
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room init</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Perform one-time initialization of the room subsystem. This command
+	must be run as root.
+	This will create the /room directory and various subdirectories underneath
+	/room. It will create a default FreeBSD template by downloading
+	base.tgz. 
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room list</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	List all existing rooms. The name of each room will be printed, one per line.
+			</para>
+		</listitem>
+	</varlistentry>
+
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Create a new room called <replaceable>name</replaceable> using the default template.
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Permanently delete the room called <replaceable>name</replaceable>. All processes running
+	in the room will be forcefully terminated. The data for the room will be removed.
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Invoke a login shell inside the room called <replaceable>name</replaceable>.
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Execute the given <replaceable>command</replaceable> inside the room called <replaceable>name</replaceable>.
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Terminate all processes inside the room called <replaceable>name</replaceable>,
+	unmount all mounted filesystems in the room, and destroy the associated jail. 
+			</para>
+		</listitem>
+	</varlistentry>	
+	
+</variablelist>
+
+</refsect1>
+
+<refsect1>
+	<title>ENVIRONMENT</title>
+	<para>
+	The <command>room</command> command does not rely on any environment variables.
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>EXIT STATUS</title>
+	<para>
+	The <command>room</command> command exits 0 on success, and >0 if an error occurs
+	</para>
+</refsect1>
+
+<!--
+<refsect1>
+	<title>SEE ALSO</title>
+	<para>
+	<citerefentry><refentrytitle>jobadm</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>jobcfg</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>jobd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>job</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	</para>
+</refsect1>
+-->
+
+<refsect1>
+	<title>AUTHORS</title>
+	<para>
+		Mark Heily &lt;mark@heily.com&gt;
+	</para>
+</refsect1>
+
+<!-- 
+<refsect1>
+	<title>BUGS</title>
+	
+	<para>
+	None yet.
+	</para>
+</refsect1>
+ -->
+
+</refentry>

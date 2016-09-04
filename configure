@@ -33,17 +33,24 @@ room_DEPENDS=""
 #        room_LDADD="${room_LDADD} -ljail"
 #fi
 
-#if [ -n "$manpage_generator" ] ; then
-#	custom_target 'room.8' 'room.8.xml' \
-#	        "${manpage_generator} room.8.xml > room.8"
-#	
-#	manpage 'room.8'
-#
-#	# TODO: move to doc/ directory
-#	#custom_target 'room.8.html' 'room.8.xml' \
-#	#        "${manpage_generator} room.8.xml | mandoc -mdoc -T html > room.8.html'
-#	
-#fi
+check_program 'docbook2man'
+check_program 'groff'
+if [ "$check_program_docbook2man" = "1" -a "$check_program_groff" = "1" ] ; then
+        make_define 'manpage_generator' 'docbook2man'
+        make_define 'manpage_formatter' 'groff'
+else
+        echo "**WARNING** manpages will not be generated; please install groff and docbook2X"
+fi
+
+if [ -n "$manpage_generator" ] ; then
+	custom_target 'room.1' 'room.1.xml' \
+	        "${manpage_generator} room.1.xml > room.1"
+	
+	manpage 'room.1'
+
+	custom_target 'room.1.html' 'room.1.xml' \
+	        "${manpage_generator} room.1.xml | ${manpage_formatter} -mdoc -T html > room.1.html"
+fi
 
 #TODO: add a valgrinding option:
 #make clean ; make all CFLAGS="-g -O0" && valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./launchd -fv 2>&1|less

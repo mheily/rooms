@@ -11,3 +11,7 @@ config.log
 config.mk
 depends.mk
 vars.sh
+
+# manpage
+*.1
+*.1.html
