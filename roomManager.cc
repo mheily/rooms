@@ -142,25 +142,14 @@ void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
 	Room room(roomDir, name);
-	createBaseTemplate();
 	room.create(baseTarball);
 }
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
-	if (useZfs) {
-		Room* srcRoom = new Room(roomDir, src);
-		srcRoom->clone("__initial", dest);
-		delete srcRoom;
-		enumerateRooms();
-	} else {
-		// XXX-FIXME assumes we are cloning a template
-		createRoom(dest);
-
-		// FIXME: below is untested
-		Room* r = new Room(roomDir, src);
-		rooms.insert(std::make_pair(dest, r));
-		abort(); // fix the above code later
-	}
+	Room* srcRoom = new Room(roomDir, src);
+	srcRoom->clone("__initial", dest); // FIXME: hardcoded snapshot name
+	delete srcRoom;
+	enumerateRooms();
 }
 
 void RoomManager::importRoom(const string& roomName) {

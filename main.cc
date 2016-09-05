@@ -68,7 +68,7 @@ static struct {
 	/*string os_type;*/
 } roomOpt;
 
-static bool isValidAction(const string& s)
+/*static bool isValidAction(const string& s)
 {
     return (std::any_of(actions.begin(), actions.end(),
     		[&s](string action){ return s == action; }));
@@ -83,10 +83,10 @@ static pair<string, string> parseAction(const string& s)
     } else {
         return make_pair(string(), string());
     }
-}
+}*/
 
 static void printUsage(po::options_description desc) {
-	std::cout <<
+/*	std::cout <<
 		"Usage:\n\n"
 		"  room <name> [create|destroy|enter|export|halt]\n"
 		" -or-\n"
@@ -96,7 +96,7 @@ static void printUsage(po::options_description desc) {
 		" -or-\n"
 		"  room [init|list]\n"
 		"\n"
-	<< std::endl;
+	<< std::endl;*/
 
     std::cout << desc << std::endl;
 }
@@ -126,6 +126,8 @@ static void get_options(int argc, char *argv[])
 	string baseArchiveUri;
 	bool isVerbose;
 
+	string popt0, popt1, popt2;
+
 	po::options_description desc("Allowed options");
 	desc.add_options()
 	    ("help", "produce help message")
@@ -139,6 +141,9 @@ static void get_options(int argc, char *argv[])
 	undocumented.add_options()
 	    ("action", po::value<string>(&action), "the action to perform")
 		("name", po::value<string>(&roomName), "the name of the room")
+		("popt0", po::value<string>(&popt0), "positional opt 0")
+		("popt1", po::value<string>(&popt1), "positional opt 1")
+		("popt2", po::value<string>(&popt2), "positional opt 2")
 	;
 
 	po::options_description install_opts("Options when installing");
@@ -172,9 +177,14 @@ static void get_options(int argc, char *argv[])
 		}
 	}
 
+	po::positional_options_description p;
+	p.add("popt0", 1);
+	p.add("popt1", 1);
+	p.add("popt2", 1);
+
 	po::variables_map vm;
 	po::store(po::command_line_parser(argc_before_exec, argv).
-			options(all).extra_parser(parseAction).run(),
+			options(all).positional(p).run(),
 			vm);
 	po::notify(vm);
 
@@ -213,27 +223,23 @@ static void get_options(int argc, char *argv[])
 		apply_room_options(vm, room);
 	}
 
-	// Most actions require the name of an existing room
-	if (roomName == "" && (action != "create" && action != "list" && action != "init")) {
-		cout << "ERROR: must specify the name of the room\n";
-		printUsage(desc);
-		exit(1);
-	}
-
-	if (action == "list") {
+	if (popt0 == "list") {
 		mgr.listRooms();
-	} else if (action == "create") {
+	} else if (popt0 == "clone") {
+		mgr.cloneRoom(popt1, popt2);
+	} else if (popt1 == "create") {
+		roomName = popt0;
 		if (! mgr.doesBaseTemplateExist()) {
 			mgr.createBaseTemplate();
 		}
 		mgr.cloneRoom(roomName);
 		Room room = mgr.getRoomByName(roomName);
 		apply_room_options(vm, room);
-	} else if (action == "init") {
+	} else if (popt0 == "init") {
 		cout << "ERROR: the rooms subsystem has already been initialized\n";
 		exit(1);
-	} else if (action == "destroy") {
-		mgr.getRoomByName(roomName).destroy();
+	} else if (popt1 == "destroy") {
+		mgr.getRoomByName(popt0).destroy();
 #if 0
 		// not ready for prime time
 	} else if (action == "import") {
@@ -241,11 +247,11 @@ static void get_options(int argc, char *argv[])
 	} else if (action == "export") {
 		mgr.getRoomByName(roomName).exportArchive();
 #endif
-	} else if (action == "enter") {
-		mgr.getRoomByName(roomName).enter();
-	} else if (action == "install") {
-		mgr.installRoom(roomName, baseArchiveUri);
-	} else if (action == "exec") {
+	} else if (popt1 == "enter") {
+		mgr.getRoomByName(popt0).enter();
+	} else if (popt1 == "install") {
+		mgr.installRoom(popt0, baseArchiveUri);
+	} else if (popt1 == "exec") {
 		std::vector<std::string> execVec;
 		for (int i = argc_before_exec; i < argc; i++) {
 			execVec.push_back(argv[i]);
@@ -254,11 +260,11 @@ static void get_options(int argc, char *argv[])
 			cout << "ERROR: must specify a command to execute\n";
 			exit(1);
 		}
-		mgr.getRoomByName(roomName).exec(execVec);
-	} else if (action == "halt") {
-		mgr.getRoomByName(roomName).halt();
+		mgr.getRoomByName(popt0).exec(execVec);
+	} else if (popt1 == "halt") {
+		mgr.getRoomByName(popt0).halt();
 	} else {
-		cout << "ERROR: must specify an action\n";
+		cout << "ERROR: must specify a valid action\n";
 		printUsage(desc);
 		exit(1);
 	}
