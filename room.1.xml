@@ -22,6 +22,7 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
+<emphasis role="bold">room install --name</emphasis> <replaceable>name</replaceable> <emphasis role="bold">--uri</emphasis> <replaceable>URI</replaceable>
 </literallayout>
 </para>
 </refsect1>
@@ -142,8 +143,38 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>	
 	
+	<varlistentry>
+		<term>
+<literallayout>
+	<emphasis role="bold">room install --name</emphasis> <replaceable>name</replaceable> <replaceable>--uri</replaceable>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Create a new room with a given <replaceable>name</replaceable> by downloading a
+	base.txz file from the given <replaceable>URI</replaceable>.
+			</para>
+		</listitem>
+	</varlistentry>	
+
 </variablelist>
 
+</refsect1>
+
+<refsect1>
+	<title>EXAMPLES</title>
+	<para>
+	The following example creates a new room named FreeBSD-10.3 by downloading
+	the base.txz file from the closest FreeBSD mirror. 
+	</para>
+	<programlisting>
+<![CDATA[
+$ uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room create --name FreeBSD-10.3 --uri $uri
+]]>
+	</programlisting>
+	
 </refsect1>
 
 <refsect1>

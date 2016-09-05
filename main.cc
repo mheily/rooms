@@ -56,7 +56,7 @@ namespace po = boost::program_options;
 
 static const std::vector<string> actions = {
 		"clone", "create", "destroy", "enter", "exec",
-		"halt", "init", "list",
+		"halt", "init", "install", "list",
 		"export", "import",
 };
 
@@ -123,6 +123,7 @@ static void get_options(int argc, char *argv[])
 
 	string action;
 	string roomName = "";
+	string baseArchiveUri;
 	bool isVerbose;
 
 	po::options_description desc("Allowed options");
@@ -140,6 +141,11 @@ static void get_options(int argc, char *argv[])
 		("name", po::value<string>(&roomName), "the name of the room")
 	;
 
+	po::options_description install_opts("Options when installing");
+	install_opts.add_options()
+	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
+	;
+
 	po::options_description clone_opts("Options when cloning:");
 	clone_opts.add_options()
 	    ("source", po::value<string>(&action), "the action to perform")
@@ -153,7 +159,7 @@ static void get_options(int argc, char *argv[])
 */
 
 	po::options_description all("Allowed options");
-	all.add(desc).add(undocumented).add(clone_opts);
+	all.add(desc).add(undocumented).add(clone_opts).add(install_opts);
 
 	// If this is an 'exec' command, ignore all subsequent arguments
 	// TODO: should add support for '--' so you could say:
@@ -173,7 +179,12 @@ static void get_options(int argc, char *argv[])
 	po::notify(vm);
 
 	if (vm.count("help")) {
-		printUsage(desc);
+		po::options_description helpinfo;
+		helpinfo.add(desc);
+		if (action == "install") {
+			helpinfo.add(install_opts);
+		}
+		printUsage(helpinfo);
 	    exit(0);
 	}
 
@@ -232,6 +243,8 @@ static void get_options(int argc, char *argv[])
 #endif
 	} else if (action == "enter") {
 		mgr.getRoomByName(roomName).enter();
+	} else if (action == "install") {
+		mgr.installRoom(roomName, baseArchiveUri);
 	} else if (action == "exec") {
 		std::vector<std::string> execVec;
 		for (int i = argc_before_exec; i < argc; i++) {

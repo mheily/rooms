@@ -108,6 +108,7 @@ void RoomManager::initUserRoomSpace()
 			SetuidHelper::raisePrivileges();
 		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + ownerLogin });
+		Shell::execute("/usr/sbin/chown", { ownerLogin, roomDir + "/" + ownerLogin});
 			SetuidHelper::lowerPrivileges();
 	}
 
@@ -344,4 +345,16 @@ void RoomManager::openConfigHome()
 	}
 
 	config_home_fd = fd;
+}
+
+void RoomManager::installRoom(const string& name, const string& archive)
+{
+	RoomInstallParams rip;
+
+	rip.name = name;
+	rip.roomDir = roomDir;
+	rip.installRoot = getUserRoomDir() + "/" + name;
+	rip.baseArchiveUri = archive;
+
+	Room::install(rip);
 }

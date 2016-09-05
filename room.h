@@ -46,10 +46,18 @@ extern "C" {
 extern FILE *logfile;
 #include "logger.h"
 
+struct RoomInstallParams {
+	string name;
+	string roomDir;
+	string installRoot;
+	string baseArchiveUri;
+};
+
 class Room {
 public:
 	Room(const string& managerRoomDir, const string& name);
 
+	static void install(const struct RoomInstallParams& rip);
 	void create(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
@@ -99,6 +107,6 @@ private:
 	bool jailExists();
 	void customizeWithoutRoot();
 	void validateName(const string& name);
-
+	void pushResolvConf();
 	void getJailName();
 };

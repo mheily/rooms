@@ -250,22 +250,35 @@ void Room::create(const string& baseTarball)
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
+	Shell::execute("/sbin/mount", {
+			"-t", "devfs", "-o", "ruleset=4", "devfs", chrootDir + "/dev",
+	});
+
+	pushResolvConf();
+
 	// KLUDGE: install pkg(8)
+	int rv;
 	Shell::execute("/usr/sbin/chroot", {
 			"-u", "root",
 			chrootDir,
 			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
-	});
+	}, rv);
+
+	Shell::execute("/sbin/umount", { chrootDir + "/dev" });
+
+	if (rv != 0) {
+		throw std::runtime_error("failed to bootstrap pkg");
+	}
+
+	SetuidHelper::lowerPrivileges();
 
 	syncRoomOptions();
 
-	if (useZfs) {
-		Shell::execute("/sbin/zfs", {
-				"snapshot",
-				roomDataset + "/" + roomName + "@__initial"
-		});
-	}
-
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", {
+			"snapshot",
+			roomDataset + "/" + roomName + "@__initial"
+	});
 	SetuidHelper::lowerPrivileges();
 
 	log_debug("room %s created", roomName.c_str());
@@ -344,11 +357,7 @@ void Room::boot() {
 		log_warning("unable to create user account");
 	}
 
-	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
-	Shell::execute("/bin/sh", {
-			"-c",
-			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf status=none"
-	});
+	pushResolvConf();
 
 	SetuidHelper::lowerPrivileges();
 }
@@ -460,7 +469,7 @@ void Room::destroy()
 		for (int i = 0; i < 5; i++) {
 			sleep(1);
 			int result;
-			Shell::execute("/sbin/zfs", { "destroy", roomDataset + "/" + roomName}, result);
+			Shell::execute("/sbin/zfs", { "destroy", "-r", roomDataset + "/" + roomName}, result);
 			if (result == 0) {
 				success = true;
 				break;
@@ -580,3 +589,30 @@ void Room::setOsType(const string& osType)
 	}
 }
 */
+
+void Room::install(const struct RoomInstallParams& rip)
+{
+	string tarball = rip.installRoot + "/_base.txz";
+
+	cout << "Installing " << rip.name;
+	Shell::execute("/usr/bin/fetch", {
+			"-o", tarball,
+			rip.baseArchiveUri,
+	});
+
+	Room room(rip.roomDir, rip.name);
+	room.create(tarball);
+	if (unlink(tarball.c_str()) < 0) {
+        log_errno("unlink(2)");
+        throw std::system_error(errno, std::system_category());
+	}
+}
+
+void Room::pushResolvConf()
+{
+	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
+	Shell::execute("/bin/sh", {
+			"-c",
+			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf status=none"
+	});
+}
