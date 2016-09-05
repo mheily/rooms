@@ -170,8 +170,8 @@ The following subcommands and options are available:
 	</para>
 	<programlisting>
 <![CDATA[
-$ uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
-$ room create --name FreeBSD-10.3 --uri $uri
+$ room install --name FreeBSD-10.3 \
+    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
 ]]>
 	</programlisting>
 	

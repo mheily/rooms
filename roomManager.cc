@@ -353,7 +353,7 @@ void RoomManager::installRoom(const string& name, const string& archive)
 
 	rip.name = name;
 	rip.roomDir = roomDir;
-	rip.installRoot = getUserRoomDir() + "/" + name;
+	rip.installRoot = getUserRoomDir();
 	rip.baseArchiveUri = archive;
 
 	Room::install(rip);
