@@ -77,6 +77,7 @@ static void get_options(int argc, char *argv[])
 	bool isVerbose;
 
 	string popt0, popt1, popt2;
+	string runAsUser;
 
 	po::options_description desc("Allowed options");
 	desc.add_options()
@@ -91,6 +92,11 @@ static void get_options(int argc, char *argv[])
 		("popt0", po::value<string>(&popt0), "positional opt 0")
 		("popt1", po::value<string>(&popt1), "positional opt 1")
 		("popt2", po::value<string>(&popt2), "positional opt 2")
+	;
+
+	po::options_description exec_opts("Options when --exec is used");
+	exec_opts.add_options()
+	    ("user,u", po::value<string>(&runAsUser), "the user to run the command as")
 	;
 
 	po::options_description install_opts("Options when installing");
@@ -114,14 +120,14 @@ static void get_options(int argc, char *argv[])
 */
 
 	po::options_description all("Allowed options");
-	all.add(desc).add(undocumented).add(clone_opts).add(install_opts);
+	all.add(desc).add(undocumented).add(clone_opts).add(install_opts).
+			add(exec_opts);
 
-	// If this is an 'exec' command, ignore all subsequent arguments
-	// TODO: should add support for '--' so you could say:
-	//     room foo exec -u some_user -- /bin/sh
+	// Ignore all subsequent arguments after '--'
+	// This is useful for exec() and the like.
 	int argc_before_exec = argc;
 	for (int i = 0; i < argc; i++) {
-		if (!strcmp(argv[i], "exec")) {
+		if (!strcmp(argv[i], "--")) {
 			argc_before_exec = i + 1;
 			break;
 		}
@@ -143,6 +149,8 @@ static void get_options(int argc, char *argv[])
 		helpinfo.add(desc);
 		if (popt0 == "install") {
 			helpinfo.add(install_opts);
+		} else if (popt0 == "exec") {
+			helpinfo.add(exec_opts);
 		}
 		printUsage(helpinfo);
 	    exit(0);
@@ -156,7 +164,7 @@ static void get_options(int argc, char *argv[])
 
 	// Special case: force bootstrapping as the first command
 	if (! mgr.isBootstrapComplete()) {
-		if (action == "init") {
+		if (popt0 == "init") {
 			mgr.bootstrap();
 			exit(0);
 		} else {
@@ -203,7 +211,7 @@ static void get_options(int argc, char *argv[])
 			cout << "ERROR: must specify a command to execute\n";
 			exit(1);
 		}
-		mgr.getRoomByName(popt0).exec(execVec);
+		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
 	} else if (popt1 == "halt") {
 		mgr.getRoomByName(popt0).halt();
 	} else {

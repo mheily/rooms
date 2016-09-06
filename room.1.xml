@@ -20,7 +20,7 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable>
 </literallayout>
@@ -30,7 +30,7 @@
 
 <refsect1><title>Description</title>
 <para>
-<command>room</command> manages jobs for jobd. Each job has a unique name.
+<command>room</command> (TODO overall description here).
 </para>
 
 <para>
@@ -117,13 +117,16 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
 </literallayout>
 		</term>
 	
 		<listitem>
 			<para>
 	Execute the given <replaceable>command</replaceable> inside the room called <replaceable>name</replaceable>.
+	By default, commands will be executes as the current user. To run commands as a different user
+	pass the <replaceable>-u</replaceable> or <replaceable>--user</replaceable> option along with the name or numeric ID of the user.
+	To avoid confusion, it is recommended to use -- to signify the start of the command(s) to be executed.
 			</para>
 		</listitem>
 	</varlistentry>	

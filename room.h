@@ -66,7 +66,7 @@ public:
 	void halt();
 	void destroy();
 	void enter();
-	void exec(std::vector<std::string> execVec);
+	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
 
 	// The following methods can be used after create() but before install()
@@ -104,7 +104,7 @@ private:
 		string tarballUri; // URI to the tarball for the root fs
 	} installOpts;*/
 
-	void enterJail();
+	void enterJail(const string& runAsUser);
 	bool jailExists();
 	void customizeWithoutRoot();
 	void validateName(const string& name);

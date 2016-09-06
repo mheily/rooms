@@ -67,7 +67,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 	}
 }
 
-void Room::enterJail()
+void Room::enterJail(const string& runAsUser)
 {
 	SetuidHelper::raisePrivileges();
 
@@ -102,11 +102,29 @@ void Room::enterJail()
 		//throw std::system_error(errno, std::system_category());
 	}
 
-	SetuidHelper::dropPrivileges();
+	if (runAsUser == ownerLogin) {
+		SetuidHelper::dropPrivileges();
+	} else {
+		// XXX-FIXME: assumes root here
+		log_debug("retaining root privs");
+	}
 }
 
-void Room::exec(std::vector<std::string> execVec)
+void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 {
+	string loginName;
+	string homeDir;
+	if (runAsUser == "") {
+		loginName = ownerLogin;
+	} else {
+		loginName = runAsUser;
+	}
+	if (loginName == "root") {
+		homeDir = "/root";
+	} else {
+		homeDir = "/usr/home/" + runAsUser; //FIXME: hardcoded; should consult PasswdEntry instead"
+	}
+
 	char *path = NULL;
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
@@ -114,14 +132,14 @@ void Room::exec(std::vector<std::string> execVec)
 		boot();
 	}
 
-	enterJail();
+	enterJail(loginName);
 
 	string x11_display = "DISPLAY=";
 	string x11_xauthority = "XAUTHORITY=";
 	string dbus_address = "DBUS_SESSION_BUS_ADDRESS=";
-	string jail_username = ownerLogin;
-	string env_username = "USER=" + ownerLogin;
-	string env_home = "HOME=/usr/home/" + ownerLogin; //FIXME: hardcoded; should consult PasswdEntry instead
+	string jail_username = loginName;
+	string env_username = "USER=" + loginName;
+	string env_home = "HOME=" + homeDir;
 	if (roomOptions.allowX11Clients) {
 		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
 		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
@@ -152,7 +170,6 @@ void Room::exec(std::vector<std::string> execVec)
 			(char*)dbus_address.c_str(),
 			NULL
 	};
-
 	if (execve(path, argsVec.data(), envp) < 0) {
 		log_errno("execve(2)");
 		throw std::system_error(errno, std::system_category());
@@ -164,8 +181,7 @@ void Room::exec(std::vector<std::string> execVec)
 
 void Room::enter() {
 	std::vector<std::string> argsVec;
-
-	Room::exec(argsVec);
+	Room::exec(argsVec, "");
 }
 
 bool Room::jailExists()
@@ -594,8 +610,8 @@ void Room::install(const struct RoomInstallParams& rip)
 {
 	string tarball = rip.installRoot + "/_base.txz";
 
-	cout << "Installing " << rip.name;
 	Shell::execute("/usr/bin/fetch", {
+			"-q",
 			"-o", tarball,
 			rip.baseArchiveUri,
 	});

@@ -75,7 +75,7 @@ void RoomManager::bootstrap() {
 	} else {
 		string defaultAnswer = ZfsPool::getNameByPath("/");
 		for (;;) {
-			cout << "Which ZFS pool should rooms will be stored in " <<
+			cout << "Which ZFS pool should rooms be stored in " <<
 					" (default: " + defaultAnswer + ")? ";
 			cin >> zpool;
 			string errorMsg;
