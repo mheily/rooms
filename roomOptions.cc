@@ -55,5 +55,6 @@ void RoomOptions::save(const string &path)
 
 void RoomOptions::dump()
 {
-	log_debug("share_tmp=%d", (int) shareTempDir);
+	cout << "share_tmp=" << shareTempDir << endl;
+	cout << "useLinuxABI=" << useLinuxABI << endl;
 }

@@ -51,6 +51,7 @@ struct RoomInstallParams {
 	string roomDir;
 	string installRoot;
 	string baseArchiveUri;
+	RoomOptions options;
 };
 
 class Room {

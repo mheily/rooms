@@ -22,7 +22,7 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
-<emphasis role="bold">room install --name</emphasis> <replaceable>name</replaceable> <emphasis role="bold">--uri</emphasis> <replaceable>URI</replaceable>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable>
 </literallayout>
 </para>
 </refsect1>
@@ -146,8 +146,7 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-	<emphasis role="bold">room install --name</emphasis> <replaceable>name</replaceable> <replaceable>--uri</replaceable>
-</literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable></literallayout>
 		</term>
 	
 		<listitem>
@@ -170,8 +169,7 @@ The following subcommands and options are available:
 	</para>
 	<programlisting>
 <![CDATA[
-$ room install --name FreeBSD-10.3 \
-    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room FreeBSD-10.3 install --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
 ]]>
 	</programlisting>
 	

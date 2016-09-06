@@ -40,7 +40,7 @@ public:
 	void initUserRoomSpace();
 	bool doesBaseTemplateExist();
 	void createBaseTemplate();
-	void installRoom(const string& name, const string& archive);
+	void installRoom(const string& name, const string& archive, const RoomOptions& options);
 	void importRoom(const string& name);
 	void createRoom(const string& name);
 	void cloneRoom(const string& src, const string& dest);

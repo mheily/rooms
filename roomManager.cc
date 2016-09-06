@@ -336,7 +336,7 @@ void RoomManager::openConfigHome()
 	config_home_fd = fd;
 }
 
-void RoomManager::installRoom(const string& name, const string& archive)
+void RoomManager::installRoom(const string& name, const string& archive, const RoomOptions& options)
 {
 	RoomInstallParams rip;
 
@@ -344,6 +344,7 @@ void RoomManager::installRoom(const string& name, const string& archive)
 	rip.roomDir = roomDir;
 	rip.installRoot = getUserRoomDir();
 	rip.baseArchiveUri = archive;
+	rip.options = roomOptions;
 
 	Room::install(rip);
 }

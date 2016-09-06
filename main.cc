@@ -60,64 +60,14 @@ static const std::vector<string> actions = {
 		"export", "import",
 };
 
-// KLUDGE: horrible temporary storage for CLI options
-static struct {
-	bool allow_x11;
-	bool share_tempdir;
-	bool share_home;
-	/*string os_type;*/
-} roomOpt;
-
-/*static bool isValidAction(const string& s)
-{
-    return (std::any_of(actions.begin(), actions.end(),
-    		[&s](string action){ return s == action; }));
-}
-
-static pair<string, string> parseAction(const string& s)
-{
-    if (isValidAction(s)) {
-    	return make_pair(string("action"), s);
-    } else if (globalMgr->checkRoomExists(s)) { // XXX-should validate name first
-        return make_pair(string("name"), s);
-    } else {
-        return make_pair(string(), string());
-    }
-}*/
-
 static void printUsage(po::options_description desc) {
-/*	std::cout <<
-		"Usage:\n\n"
-		"  room <name> [create|destroy|enter|export|halt]\n"
-		" -or-\n"
-		"  room <name> exec <command> [arguments]\n"
-		" -or-\n"
-		"  room import --name=<name>\n"
-		" -or-\n"
-		"  room [init|list]\n"
-		"\n"
-	<< std::endl;*/
-
+	std::cout << "Usage:\n\n";
     std::cout << desc << std::endl;
-}
-
-static void apply_room_options(po::variables_map vm, Room room)
-{
-	RoomOptions ro = room.getRoomOptions();
-
-	if (vm.count("allow-x11")) {
-		ro.allowX11Clients = roomOpt.allow_x11;
-	}
-	if (vm.count("share-tempdir")) {
-		ro.shareTempDir = roomOpt.share_tempdir;
-	}
-	if (vm.count("share-home")) {
-		ro.shareHomeDir = roomOpt.share_home;
-	}
 }
 
 static void get_options(int argc, char *argv[])
 {
+	RoomOptions roomOpt;
 	RoomManager mgr;
 	globalMgr = &mgr;
 
@@ -131,9 +81,6 @@ static void get_options(int argc, char *argv[])
 	po::options_description desc("Allowed options");
 	desc.add_options()
 	    ("help", "produce help message")
-	    ("allow-x11", po::bool_switch(&roomOpt.allow_x11), "allow running X11 clients")
-	    ("share-tempdir", po::bool_switch(&roomOpt.share_tempdir), "mount the global /tmp and /var/tmp inside the room")
-		("share-home", po::bool_switch(&roomOpt.share_home), "mount the $HOME directory inside the room")
 	    ("verbose,v", po::bool_switch(&isVerbose)->default_value(false), "increase verbosity")
 	;
 
@@ -149,6 +96,9 @@ static void get_options(int argc, char *argv[])
 	po::options_description install_opts("Options when installing");
 	install_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
+	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
+	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
+		("share-home", po::bool_switch(&roomOpt.shareHomeDir), "mount the $HOME directory inside the room")
 	;
 
 	po::options_description clone_opts("Options when cloning:");
@@ -191,7 +141,7 @@ static void get_options(int argc, char *argv[])
 	if (vm.count("help")) {
 		po::options_description helpinfo;
 		helpinfo.add(desc);
-		if (action == "install") {
+		if (popt0 == "install") {
 			helpinfo.add(install_opts);
 		}
 		printUsage(helpinfo);
@@ -217,12 +167,6 @@ static void get_options(int argc, char *argv[])
 
 	mgr.initUserRoomSpace();
 
-	// Get the room and allow overriding the room options via the CLI
-	if (roomName != "" && mgr.checkRoomExists(roomName)) {
-		Room room = mgr.getRoomByName(roomName);
-		apply_room_options(vm, room);
-	}
-
 	if (popt0 == "list") {
 		mgr.listRooms();
 	} else if (popt0 == "clone") {
@@ -234,7 +178,6 @@ static void get_options(int argc, char *argv[])
 		}
 		mgr.cloneRoom(roomName);
 		Room room = mgr.getRoomByName(roomName);
-		apply_room_options(vm, room);
 	} else if (popt0 == "init") {
 		cout << "ERROR: the rooms subsystem has already been initialized\n";
 		exit(1);
@@ -250,7 +193,7 @@ static void get_options(int argc, char *argv[])
 	} else if (popt1 == "enter") {
 		mgr.getRoomByName(popt0).enter();
 	} else if (popt1 == "install") {
-		mgr.installRoom(popt0, baseArchiveUri);
+		mgr.installRoom(popt0, baseArchiveUri, roomOpt);
 	} else if (popt1 == "exec") {
 		std::vector<std::string> execVec;
 		for (int i = argc_before_exec; i < argc; i++) {

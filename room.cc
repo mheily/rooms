@@ -601,6 +601,7 @@ void Room::install(const struct RoomInstallParams& rip)
 	});
 
 	Room room(rip.roomDir, rip.name);
+	room.roomOptions = rip.options;
 	room.create(tarball);
 	if (unlink(tarball.c_str()) < 0) {
         log_errno("unlink(2)");
