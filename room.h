@@ -51,12 +51,18 @@ struct RoomInstallParams {
 	string roomDir;
 	string installRoot;
 	string baseArchiveUri;
+	bool isTemplate;
 	RoomOptions options;
 };
 
 class Room {
 public:
-	Room(const string& managerRoomDir, const string& name);
+	Room(const string& managerRoomDir, const string& name, const string& type);
+
+	// Legacy form; before the introduction of template v.s. instance
+	Room(const string& managerRoomDir, const string& name) {
+		Room(managerRoomDir, name, "instance");
+	}
 
 	static void install(const struct RoomInstallParams& rip);
 	void create(const string& baseTarball);
@@ -98,6 +104,7 @@ private:
 	string ownerLogin; // the login name from passwd(5) for the jail owner
 	string parentDataset; // the parent of roomDataset
 	string roomDataset; // the name of the ZFS dataset for the room
+	string zpoolName; // the ZFS pool the room lives in
 	bool useZfs; // if true, create ZFS rooms
 
 /*	struct {

@@ -45,7 +45,7 @@ extern "C" {
 #include "setuidHelper.h"
 #include "zfsPool.h"
 
-Room::Room(const string& managerRoomDir, const string& name)
+Room::Room(const string& managerRoomDir, const string& name, const string& type)
 {
 	roomDir = managerRoomDir;
 	ownerUid = SetuidHelper::getActualUid();
@@ -53,17 +53,21 @@ Room::Room(const string& managerRoomDir, const string& name)
 	PasswdEntry pwent(ownerUid);
 	ownerLogin = pwent.getLogin();
 
+	if (type != "instance" && type != "template") {
+		throw std::logic_error("invalid type");
+	}
+
 	validateName(name);
 	getJailName();
 
-	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
+	roomDataDir = roomDir + "/" + ownerLogin + "/" + type + "/" + name;
 	chrootDir = roomDataDir + "/root";
 	useZfs = ZfsPool::detectZfs();
 	if (useZfs) {
-		string zpoolName = ZfsPool::getNameByPath(roomDir);
+		zpoolName = ZfsPool::getNameByPath(roomDir);
 		//FIXME: these are two names for the same thing now..
-		parentDataset = zpoolName + "/room/" + ownerLogin;
-		roomDataset = zpoolName + "/room/" + ownerLogin;
+		parentDataset = zpoolName + "/room/" + ownerLogin + "/" + type;
+		roomDataset = zpoolName + "/room/" + ownerLogin + "/" + type;
 	}
 }
 
@@ -240,7 +244,7 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
-			parentDataset + "/" + destRoom
+			zpoolName + "/room/" + ownerLogin + "/instance/" + destRoom
 	});
 
 	Room cloneRoom(roomDir, destRoom);
@@ -256,13 +260,8 @@ void Room::create(const string& baseTarball)
 
 	log_debug("creating room");
 
-	if (useZfs) {
-		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName});
-		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
-	} else {
-		FileUtil::mkdir_idempotent(roomDataDir, 0700, ownerUid, (gid_t) ownerUid);
-		FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
-	}
+	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
+	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
@@ -610,19 +609,25 @@ void Room::install(const struct RoomInstallParams& rip)
 {
 	string tarball = rip.installRoot + "/_base.txz";
 
-	Shell::execute("/usr/bin/fetch", {
-			"-q",
-			"-o", tarball,
-			rip.baseArchiveUri,
-	});
+	if (!FileUtil::checkExists(tarball)) {
+		Shell::execute("/usr/bin/fetch", {
+				"-q",
+				"-o", tarball,
+				rip.baseArchiveUri,
+		});
+	}
 
-	Room room(rip.roomDir, rip.name);
+	string type = (rip.isTemplate ? "template" : "instance");
+	Room room(rip.roomDir, rip.name, type);
 	room.roomOptions = rip.options;
 	room.create(tarball);
+	// FIXME: disabled for testing
+#if 0
 	if (unlink(tarball.c_str()) < 0) {
         log_errno("unlink(2)");
         throw std::system_error(errno, std::system_category());
 	}
+#endif
 }
 
 void Room::pushResolvConf()
