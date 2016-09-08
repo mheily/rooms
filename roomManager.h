@@ -27,13 +27,15 @@
 extern FILE *logfile;
 #include "logger.h"
 
+#include "roomManagerUserOptions.h"
+
 class RoomManager {
 public:
 	RoomManager() {
 		useZfs = ZfsPool::detectZfs();
 		ownerUid = SetuidHelper::getActualUid();
 		ownerLogin = PasswdEntry(ownerUid).getLogin();
-		openConfigHome();
+		userOptionsPath = string(PasswdEntry(ownerUid).getHome()) + "/.room/config.json";
 	}
 	void bootstrap();
 	bool isBootstrapComplete();
@@ -50,9 +52,7 @@ public:
 	bool checkRoomExists(const string&);
 	void listRooms();
 
-	void parseConfig() {
-		//TODO: actually read a config file
-	}
+	void parseConfig();
 
 	bool isVerbose() const {
 		return verbose;
@@ -74,6 +74,8 @@ private:
 	bool useZfs;
 	uid_t ownerUid;
 	RoomOptions roomOptions;
+	RoomManagerUserOptions userOptions;
+	string userOptionsPath;
 	string ownerLogin;
 	string baseTarball = "/var/cache/room-base.txz";
 	//string baseUri = "http://ftp.freebsd.org/pub/FreeBSD/releases/amd64/11.0-BETA1/base.txz";
@@ -92,4 +94,6 @@ private:
 
 	int config_home_fd = -1; // descriptor opened to $HOME/.room
 	void openConfigHome();
+	void generateUserConfig();
+
 };

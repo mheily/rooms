@@ -24,6 +24,9 @@
 #include <streambuf>
 #include <unordered_set>
 
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+
 extern "C" {
 #include <dirent.h>
 #include <getopt.h>
@@ -304,6 +307,8 @@ void RoomManager::createBaseTemplate() {
 	room.create(baseTarball);
 }
 
+// The only useful thing this does now is create ~/.room
+// DEADWOOD: C++ and Boost doesnt like dealing with raw FDs
 void RoomManager::openConfigHome()
 {
 	int fd;
@@ -327,7 +332,8 @@ void RoomManager::openConfigHome()
 		}
 	}
 
-	/* Prevent multiple instances of room(1) from operating concurrently */
+	/* Prevent a single user from running multiple instances of room(1) concurrently */
+	// TODO: we probably should lock globally, not per-user
 	if (flock(fd, LOCK_EX) < 0) {
 		log_errno("flock(2)");
 		throw std::system_error(errno, std::system_category());
@@ -347,4 +353,23 @@ void RoomManager::installRoom(const string& name, const string& archive, const R
 	rip.options = roomOptions;
 
 	Room::install(rip);
+}
+
+void RoomManager::generateUserConfig() {
+	if (config_home_fd < 0) {
+		openConfigHome();
+	}
+	userOptions.save(userOptionsPath);
+}
+
+void RoomManager::parseConfig()
+{
+	if (config_home_fd < 0) {
+		openConfigHome();
+	}
+	if (FileUtil::checkExists(userOptionsPath)) {
+		userOptions.load(userOptionsPath);
+	} else {
+		generateUserConfig();
+	}
 }
