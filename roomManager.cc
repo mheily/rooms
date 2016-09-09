@@ -130,17 +130,6 @@ void RoomManager::initUserRoomSpace()
 	//FIXME: createBaseTemplate();
 }
 
-void RoomManager::downloadBase() {
-	if (!FileUtil::checkExists(baseTarball)) {
-		cout << "Downloading base.txz..\n";
-		SetuidHelper::raisePrivileges();
-		Shell::execute("/usr/bin/fetch",
-				{ "-o", baseTarball, baseUri });
-		SetuidHelper::lowerPrivileges();
-                //FIXME: error checking for the above command
-	}
-}
-
 Room& RoomManager::getRoomByName(const string& name) {
 	enumerateRooms();
 	auto it = rooms.find(name);
@@ -304,15 +293,21 @@ void RoomManager::createBaseTemplate() {
 		return;
 	}
 
-	downloadBase();
-
 	log_debug("creating base template: %s", base_template.c_str());
 
-	Room room(roomDir, base_template, "template");
-	RoomOptions roomOpt = room.getRoomOptions();
+	RoomOptions roomOpt;
 	roomOpt.allowX11Clients = true;
 	roomOpt.shareTempDir = true;
-	room.create(baseTarball);
+
+	RoomInstallParams rip;
+	rip.name = "FreeBSD-10.3";
+	rip.roomDir = roomDir;
+	rip.installRoot = getUserRoomDir();
+	rip.baseArchiveUri = "ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz";
+	rip.isTemplate = true;
+	rip.options = roomOptions;
+
+	Room::install(rip);
 }
 
 // The only useful thing this does now is create ~/.room

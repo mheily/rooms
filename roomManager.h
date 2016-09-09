@@ -84,7 +84,6 @@ private:
 	string roomDir = "/room";
 
 	void enumerateRooms();
-	void downloadBase();
 	void createRoomDir();
 	string getUserRoomDir();
 	string getUserRoomDataset();
