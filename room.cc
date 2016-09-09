@@ -312,6 +312,11 @@ void Room::syncRoomOptions()
 void Room::start() {
 	int rv;
 
+	if (jail_getid(jailName.c_str()) >= 0) {
+		log_debug("room already started");
+		return;
+	}
+
 	log_debug("booting room: %s", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
