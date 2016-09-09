@@ -234,36 +234,32 @@ void RoomManager::enumerateRooms() {
 // FIXME: make this use this->rooms instead
 void RoomManager::listRooms() {
 	enumerateRooms();
-	if (rooms.empty()) {
-		// FIXME: will never happen b/c bootstrap ensures the directory exists
-		std::cerr << "No rooms exist. Run 'room create' to create a room."
-				<< endl;
-	} else {
-		DIR* dir;
-		struct dirent* dp;
 
-		// FIXME: everything below here is redundant w/ enumerateRooms()
-		dir = opendir(string(getUserRoomDir() + "/instance").c_str());
-		if (dir == NULL) {
-			log_errno("opendir(3)");
-			throw std::system_error(errno, std::system_category());
-		}
+	DIR* dir;
+	struct dirent* dp;
 
-		std::vector<string> roomVec;
-		while ((dp = readdir(dir)) != NULL) {
-			if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
-				continue;
-			}
-			roomVec.push_back(string(dp->d_name));
-		}
-		closedir(dir);
-
-		std::sort(roomVec.begin(), roomVec.end());
-
-		for (string& s : roomVec) {
-			cout << s << endl;
-		}
+	// FIXME: everything below here is redundant w/ enumerateRooms()
+	dir = opendir(string(getUserRoomDir() + "/instance").c_str());
+	if (dir == NULL) {
+		log_errno("opendir(3)");
+		throw std::system_error(errno, std::system_category());
 	}
+
+	std::vector<string> roomVec;
+	while ((dp = readdir(dir)) != NULL) {
+		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
+			continue;
+		}
+		roomVec.push_back(string(dp->d_name));
+	}
+	closedir(dir);
+
+	std::sort(roomVec.begin(), roomVec.end());
+
+	for (string& s : roomVec) {
+		cout << s << endl;
+	}
+
 }
 
 string RoomManager::getUserRoomDataset() {
