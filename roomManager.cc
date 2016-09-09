@@ -76,6 +76,8 @@ void RoomManager::bootstrap() {
 	if (FileUtil::checkExists(roomDir)) {
 		zpool = ZfsPool::getNameByPath(roomDir);
 	} else {
+		// DISABLED: interactivity is annoying
+#if 0
 		string defaultAnswer = ZfsPool::getNameByPath("/");
 		for (;;) {
 			cout << "Which ZFS pool should rooms be stored in " <<
@@ -93,6 +95,9 @@ void RoomManager::bootstrap() {
 			}
 			break;
 		}
+#else
+		zpool = ZfsPool::getNameByPath("/");
+#endif
 
 		SetuidHelper::raisePrivileges();
 		Shell::execute("/sbin/zfs", {

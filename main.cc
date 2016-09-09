@@ -165,13 +165,7 @@ static void get_options(int argc, char *argv[])
 
 	// Special case: force bootstrapping as the first command
 	if (! mgr.isBootstrapComplete()) {
-		if (popt0 == "init") {
-			mgr.bootstrap();
-			exit(0);
-		} else {
-			cout << "ERROR: please run 'room init' to initialize the rooms subsystem\n";
-			exit(1);
-		}
+		mgr.bootstrap();
 	}
 
 	mgr.initUserRoomSpace();
