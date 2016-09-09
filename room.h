@@ -68,8 +68,8 @@ public:
 	void create(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
-	void boot();
-	void halt();
+	void start();
+	void stop();
 	void destroy();
 	void enter();
 	void exec(std::vector<std::string> execVec, const string& runAsUser);

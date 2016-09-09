@@ -56,7 +56,8 @@ namespace po = boost::program_options;
 
 static const std::vector<string> actions = {
 		"clone", "create", "destroy", "enter", "exec",
-		"halt", "init", "install", "list",
+		"stop", "start",
+		"init", "install", "list",
 		"export", "import",
 };
 
@@ -212,8 +213,10 @@ static void get_options(int argc, char *argv[])
 			exit(1);
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
-	} else if (popt1 == "halt") {
-		mgr.getRoomByName(popt0).halt();
+	} else if (popt1 == "start") {
+		mgr.getRoomByName(popt0).start();
+	} else if (popt1 == "stop") {
+		mgr.getRoomByName(popt0).stop();
 	} else {
 		cout << "ERROR: must specify a valid action\n";
 		printUsage(desc);

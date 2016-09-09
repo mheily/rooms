@@ -133,7 +133,7 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
 		log_debug("jail `%s' not running; will start it now", jailName.c_str());
-		boot();
+		start();
 	}
 
 	enterJail(loginName);
@@ -309,7 +309,7 @@ void Room::syncRoomOptions()
 	SetuidHelper::lowerPrivileges();
 }
 
-void Room::boot() {
+void Room::start() {
 	int rv;
 
 	log_debug("booting room: %s", roomName.c_str());
@@ -377,11 +377,11 @@ void Room::boot() {
 	SetuidHelper::lowerPrivileges();
 }
 
-void Room::halt()
+void Room::stop()
 {
 	string cmd;
 
-	log_debug("halting room `%s'", roomName.c_str());
+	log_debug("stopping room `%s'", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
 
@@ -468,7 +468,7 @@ void Room::halt()
 
 	SetuidHelper::lowerPrivileges();
 
-	log_notice("room `%s' has been halted", roomName.c_str());
+	log_notice("room `%s' has been stopped", roomName.c_str());
 }
 
 void Room::destroy()
