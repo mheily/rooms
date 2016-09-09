@@ -24,15 +24,10 @@ err() {
 
 cleanup() {
 	for name in `$ROOM list | grep -v FreeBSD` ; do
-		echo "halting $room"
-		$ROOM $name halt || err "halt failed"
-		echo "destroying $room"
 		$ROOM $name destroy || err "destroy failed"
 	done
 	
-	$ROOM FreeBSD-10.3 destroy
-	sudo zfs destroy tank/room/`whoami`
-	sudo zfs destroy tank/room
+	sudo zfs destroy -Rr tank/room
 	sudo rmdir /room
 	test -d /room && err "cleanup failed"
 }
