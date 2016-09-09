@@ -21,7 +21,8 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable>
 </literallayout>
 </para>
@@ -134,7 +135,23 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">halt</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Start up a room with the given <replaceable>name</replaceable>.
+	Currently, this will mount filesystems and create a jail. In the future,
+	support will be added for starting programs automatically within the room. 
+			</para>
+		</listitem>
+	</varlistentry>	
+	
+		<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 </literallayout>
 		</term>
 	
