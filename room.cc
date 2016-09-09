@@ -477,6 +477,10 @@ void Room::destroy()
 
 	log_debug("destroying room at %s", chrootDir.c_str());
 
+	if (jail_getid(jailName.c_str()) >= 0) {
+		stop();
+	}
+
 	SetuidHelper::raisePrivileges();
 	if (useZfs) {
 		// this races with "jail -r"
