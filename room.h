@@ -51,19 +51,12 @@ struct RoomInstallParams {
 	string roomDir;
 	string installRoot;
 	string baseArchiveUri;
-	bool isTemplate;
 	RoomOptions options;
 };
 
 class Room {
 public:
-	Room(const string& managerRoomDir, const string& name, const string& type);
-
-	// Legacy form; before the introduction of template v.s. instance
-	Room(const string& managerRoomDir, const string& name) {
-		Room(managerRoomDir, name, "instance");
-	}
-
+	Room(const string& managerRoomDir, const string& name);
 	static void install(const struct RoomInstallParams& rip);
 	void create(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);

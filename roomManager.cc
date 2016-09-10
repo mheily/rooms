@@ -116,12 +116,6 @@ void RoomManager::initUserRoomSpace()
 		SetuidHelper::raisePrivileges();
 		Shell::execute("/sbin/zfs",
 				{ "create", zpool + "/room/" + ownerLogin });
-		Shell::execute("/sbin/zfs",
-				{ "create", zpool + "/room/" + ownerLogin + "/instance" });
-		Shell::execute("/sbin/zfs",
-				{ "create", zpool + "/room/" + ownerLogin + "/template" });
-		Shell::execute("/sbin/zfs",
-				{ "create", zpool + "/room/" + ownerLogin + "/data" });
 		Shell::execute("/usr/sbin/chown",
 				{ "-R", ownerLogin, roomDir + "/" + ownerLogin });
 		SetuidHelper::lowerPrivileges();
@@ -150,7 +144,7 @@ void RoomManager::createRoom(const string& name) {
 }
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
-	Room* srcRoom = new Room(roomDir, src, "template");
+	Room* srcRoom = new Room(roomDir, src);
 	srcRoom->clone("__initial", dest); // FIXME: hardcoded snapshot name
 	delete srcRoom;
 	enumerateRooms();
@@ -200,8 +194,8 @@ void RoomManager::enumerateRooms() {
 		throw std::logic_error("tried to list rooms before bootstrapping");
 	}
 
-	log_debug("scanning rooms in %s/instance", getUserRoomDir().c_str());
-	dir = opendir(string(getUserRoomDir() + "/instance").c_str());
+	log_debug("scanning rooms in %s", getUserRoomDir().c_str());
+	dir = opendir(getUserRoomDir().c_str());
 	if (dir == NULL) {
 		log_errno("opendir(3)");
 		throw std::system_error(errno, std::system_category());
@@ -219,41 +213,25 @@ void RoomManager::enumerateRooms() {
 			continue;
 		}
 
-		Room* r = new Room(roomDir, roomName, "instance");
+		Room* r = new Room(roomDir, roomName);
 		rooms.insert(std::make_pair(roomName, r));
 	}
 	closedir(dir);
 }
 
-// FIXME: make this use this->rooms instead
 void RoomManager::listRooms() {
 	enumerateRooms();
 
-	DIR* dir;
-	struct dirent* dp;
-
-	// FIXME: everything below here is redundant w/ enumerateRooms()
-	dir = opendir(string(getUserRoomDir() + "/instance").c_str());
-	if (dir == NULL) {
-		log_errno("opendir(3)");
-		throw std::system_error(errno, std::system_category());
+	// Generate a sorted list of room names
+	std::vector<string> room_names;
+	for (auto room : rooms) {
+	    room_names.push_back(room.first);
 	}
+	std::sort(room_names.begin(), room_names.end());
 
-	std::vector<string> roomVec;
-	while ((dp = readdir(dir)) != NULL) {
-		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
-			continue;
-		}
-		roomVec.push_back(string(dp->d_name));
-	}
-	closedir(dir);
-
-	std::sort(roomVec.begin(), roomVec.end());
-
-	for (string& s : roomVec) {
+	for (string& s : room_names) {
 		cout << s << endl;
 	}
-
 }
 
 string RoomManager::getUserRoomDataset() {
@@ -264,12 +242,8 @@ string RoomManager::getUserRoomDataset() {
 	}
 }
 
-bool RoomManager::checkTemplateExists(const string& name) {
-	return FileUtil::checkExists(getUserRoomDir() + "/template/" + name);
-}
-
 bool RoomManager::checkRoomExists(const string& name) {
-	return FileUtil::checkExists(getUserRoomDir() + "/instance/" + name);
+	return FileUtil::checkExists(getUserRoomDir() + "/" + name);
 }
 
 string RoomManager::getBaseTemplateName() {
@@ -289,7 +263,7 @@ string RoomManager::getBaseTemplateName() {
 void RoomManager::createBaseTemplate() {
 	string base_template = getBaseTemplateName();
 
-	if (checkTemplateExists(base_template)) {
+	if (checkRoomExists(base_template)) {
 		return;
 	}
 
@@ -304,7 +278,6 @@ void RoomManager::createBaseTemplate() {
 	rip.roomDir = roomDir;
 	rip.installRoot = getUserRoomDir();
 	rip.baseArchiveUri = "ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz";
-	rip.isTemplate = true;
 	rip.options = roomOptions;
 
 	Room::install(rip);
@@ -353,7 +326,6 @@ void RoomManager::installRoom(const string& name, const string& archive, const R
 	rip.roomDir = roomDir;
 	rip.installRoot = getUserRoomDir();
 	rip.baseArchiveUri = archive;
-	rip.isTemplate = true; //FIXME: assumes only templates will be installed
 	rip.options = roomOptions;
 
 	Room::install(rip);

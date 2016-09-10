@@ -50,7 +50,6 @@ public:
 	void destroyRoom(const string& name);
 	Room& getRoomByName(const string& name);
 	bool checkRoomExists(const string&);
-	bool checkTemplateExists(const string& name);
 	void listRooms();
 
 	void parseConfig();

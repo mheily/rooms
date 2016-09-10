@@ -45,7 +45,7 @@ extern "C" {
 #include "setuidHelper.h"
 #include "zfsPool.h"
 
-Room::Room(const string& managerRoomDir, const string& name, const string& type)
+Room::Room(const string& managerRoomDir, const string& name)
 {
 	roomDir = managerRoomDir;
 	ownerUid = SetuidHelper::getActualUid();
@@ -53,21 +53,17 @@ Room::Room(const string& managerRoomDir, const string& name, const string& type)
 	PasswdEntry pwent(ownerUid);
 	ownerLogin = pwent.getLogin();
 
-	if (type != "instance" && type != "template") {
-		throw std::logic_error("invalid type");
-	}
-
 	validateName(name);
 	getJailName();
 
-	roomDataDir = roomDir + "/" + ownerLogin + "/" + type + "/" + name;
+	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
 	chrootDir = roomDataDir + "/root";
 	useZfs = ZfsPool::detectZfs();
 	if (useZfs) {
 		zpoolName = ZfsPool::getNameByPath(roomDir);
 		//FIXME: these are two names for the same thing now..
-		parentDataset = zpoolName + "/room/" + ownerLogin + "/" + type;
-		roomDataset = zpoolName + "/room/" + ownerLogin + "/" + type;
+		parentDataset = zpoolName + "/room/" + ownerLogin;
+		roomDataset = zpoolName + "/room/" + ownerLogin;
 	}
 }
 
@@ -244,7 +240,7 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	Shell::execute("/sbin/zfs", {
 			"clone",
 			roomDataset + "/" + roomName + "@" + snapshot,
-			zpoolName + "/room/" + ownerLogin + "/instance/" + destRoom
+			zpoolName + "/room/" + ownerLogin + "/" + destRoom
 	});
 
 	Room cloneRoom(roomDir, destRoom);
@@ -626,8 +622,7 @@ void Room::install(const struct RoomInstallParams& rip)
 		});
 	}
 
-	string type = (rip.isTemplate ? "template" : "instance");
-	Room room(rip.roomDir, rip.name, type);
+	Room room(rip.roomDir, rip.name);
 	room.roomOptions = rip.options;
 	room.create(tarball);
 	// FIXME: disabled for testing
