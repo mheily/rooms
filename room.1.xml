@@ -30,7 +30,9 @@
 
 <refsect1><title>Description</title>
 <para>
-<command>room</command> (TODO overall description here).
+The <command>room</command> command is the management utility
+for rooms. Rooms are a simplified form of containers that are
+built on top of ZFS and FreeBSD jails.
 </para>
 
 <para>
