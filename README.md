@@ -16,6 +16,9 @@ Pay close attention to this part of the license:
 
 # Overview
 
+Rooms are a distributed form of containers that are based on
+ZFS and FreeBSD jails.
+
 Features:
 1. Allows unprivileged users to create jails in a simple and safe manner
 2. Allows running X11 applications in jails
@@ -35,25 +38,11 @@ $ make
 $ sudo make install
 ```
 
-Then, you will need to perform a one-time initialization
-of the rooms subsystem. This will create a dedicated dataset
-for storing rooms. The command to run is:
-
-```
-$ room init
-```
-
 # Usage
 
-TODO fill out this section.
+See the room(1) manual page for information about using the room command.
 
 # Examples
-
-Initialize the rooms subsystem. This only needs to be done once, the first
-time you use the room(1) command.
-	```
-	$ room init
-	```
 
 Create a new room called 'hello_world'.
 	```
@@ -62,11 +51,11 @@ Create a new room called 'hello_world'.
 
 Enter the room. This will launch a shell inside the room.
 	```
-	$ room hello_world create
+	$ room hello_world enter
 	```
 
-Install the 'xclock' program.
-	```
+Install the 'xclock' program inside the room.
+	```	
 	$ su -
 	# pkg install -y xclock
 	# exit
