@@ -340,6 +340,8 @@ void Room::start() {
 		return;
 	}
 
+	PasswdEntry pwent(ownerUid);
+
 	log_debug("booting room: %s", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
@@ -369,11 +371,32 @@ void Room::start() {
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
 	} else {
 		log_debug("using a private /tmp");
+		Shell::execute("/sbin/mount", {
+				"-t", "nullfs",
+				roomDataDir + "/local/tmp",
+				chrootDir + "/tmp" });
+		Shell::execute("/sbin/mount", {
+				"-t", "nullfs",
+				roomDataDir + "/local/tmp",
+				chrootDir + "/var/tmp" });
 	}
 
+	Shell::execute("/usr/sbin/chroot", {
+		chrootDir,
+		"mkdir", "-p", pwent.getHome(),
+	});
 	if (roomOptions.shareHomeDir) {
-		PasswdEntry pwent(ownerUid);
-		Shell::execute("/sbin/mount", { "-t", "nullfs", pwent.getHome(), chrootDir + pwent.getHome() });
+		log_debug("using a shared /home");
+		Shell::execute("/sbin/mount", {
+				"-t", "nullfs",
+				pwent.getHome(),
+				chrootDir + pwent.getHome() });
+	} else {
+		log_debug("using a private /home");
+		Shell::execute("/sbin/mount", {
+				"-t", "nullfs",
+				roomDataDir + "/local/home",
+				chrootDir + pwent.getHome() });
 	}
 
 	if (roomOptions.useLinuxABI) {
@@ -407,6 +430,7 @@ void Room::start() {
 
 void Room::stop()
 {
+	PasswdEntry pwent(ownerUid);
 	string cmd;
 
 	log_debug("stopping room `%s'", roomName.c_str());
@@ -455,6 +479,14 @@ void Room::stop()
 				log_errno("unmount(2)");
 				throw std::system_error(errno, std::system_category());
 			}
+		}
+	}
+
+	log_debug("unmounting /home");
+	if (unmount(string(chrootDir + pwent.getHome()).c_str(), MNT_FORCE) < 0) {
+		if (errno != EINVAL) {
+			log_errno("unmount(2)");
+			throw std::system_error(errno, std::system_category());
 		}
 	}
 
