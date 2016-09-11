@@ -140,7 +140,8 @@ void RoomManager::createRoom(const string& name) {
 	log_debug("creating room");
 
 	Room room(roomDir, name);
-	room.create(baseTarball);
+	room.createEmpty();
+	room.extractTarball(baseTarball);
 }
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {

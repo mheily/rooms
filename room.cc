@@ -241,31 +241,33 @@ void Room::clone(const string& snapshot, const string& destRoom)
 {
 	log_debug("cloning room");
 
-	SetuidHelper::raisePrivileges();
-	Shell::execute("/sbin/zfs", {
-			"clone",
-			roomDataset + "/" + roomName + "@" + snapshot,
-			zpoolName + "/room/" + ownerLogin + "/" + destRoom
-	});
-
 	Room cloneRoom(roomDir, destRoom);
+	cloneRoom.createEmpty();
+
+	// Replace the empty "share" dataset with a clone of the original
+	string src = roomDataset + "/" + roomName + "/share@" + snapshot;
+	string dest = zpoolName + "/room/" + ownerLogin + "/" + destRoom + "/share";
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", { "destroy", dest });
+	Shell::execute("/sbin/zfs", { "clone", src, dest });
 	SetuidHelper::lowerPrivileges();
 
-	// Assume that when cloning a template, we don't want the new room
-	// to be hidden.
+	// Copy the options.json file
+	Shell::execute("/bin/cp", { roomOptionsPath, cloneRoom.roomOptionsPath});
+	cloneRoom.loadRoomOptions();
+
+	// Assume that newly cloned rooms should not be hidden.
 	cloneRoom.getRoomOptions().isHidden = false;
 	cloneRoom.syncRoomOptions();
 
 	log_debug("clone complete");
 }
 
-void Room::create(const string& baseTarball)
+// Create an empty room, ready for share/ to be populated
+void Room::createEmpty()
 {
-	string cmd;
-
+	log_debug("creating an empty room");
 	SetuidHelper::raisePrivileges();
-
-	log_debug("creating room");
 
 	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
 
@@ -277,6 +279,17 @@ void Room::create(const string& baseTarball)
 	FileUtil::mkdir_idempotent(roomDataDir + "/local", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/home", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/tmp", 0700, ownerUid, ownerGid);
+
+	SetuidHelper::lowerPrivileges();
+}
+
+void Room::extractTarball(const string& baseTarball)
+{
+	string cmd;
+
+	SetuidHelper::raisePrivileges();
+
+	log_debug("creating room");
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
@@ -307,7 +320,7 @@ void Room::create(const string& baseTarball)
 	SetuidHelper::raisePrivileges();
 	Shell::execute("/sbin/zfs", {
 			"snapshot",
-			roomDataset + "/" + roomName + "@__initial"
+			roomDataset + "/" + roomName + "/share@__initial"
 	});
 	SetuidHelper::lowerPrivileges();
 
@@ -638,7 +651,8 @@ void Room::install(const struct RoomInstallParams& rip)
 
 	Room room(rip.roomDir, rip.name);
 	room.roomOptions = rip.options;
-	room.create(tarball);
+	room.createEmpty();
+	room.extractTarball(tarball);
 
 	room.syncRoomOptions();
 
