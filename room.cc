@@ -100,11 +100,10 @@ void Room::enterJail(const string& runAsUser)
 	}
 #endif
 
-	//FIXME: hardcoded; should consult PasswdEntry instead
-	string homedir = "/usr/home/" + ownerLogin;
-	if (chdir(homedir.c_str()) < 0) {
-		log_errno("chdir(2) to %s", homedir.c_str());
-		//throw std::system_error(errno, std::system_category());
+	PasswdEntry pwent(ownerUid);
+	if (chdir(pwent.getHome()) < 0) {
+		log_errno("chdir(2) to %s", pwent.getHome());
+		throw std::system_error(errno, std::system_category());
 	}
 
 	if (runAsUser == ownerLogin) {

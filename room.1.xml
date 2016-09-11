@@ -66,6 +66,8 @@ The following subcommands and options are available:
 		<listitem>
 			<para>
 	Create a new room called <replaceable>name</replaceable> using the default template.
+	If there is no default template, one will be created automatically using a minimal
+	install of FreeBSD 10.3.
 			</para>
 		</listitem>
 	</varlistentry>

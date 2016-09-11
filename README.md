@@ -28,15 +28,28 @@ Features:
 To build on FreeBSD, you will need:
  * FreeBSD 10.3 or newer
  * the boost-libs package
+ * the groff and docbook2X packages
 
 # Installation
 
-First, you will need to build and install the software.
+Install the required packages:
 
-```
-$ make
-$ sudo make install
-```
+	```
+	sudo pkg install -y groff docbook2X
+	```
+
+Run the configuration script:
+
+	```
+	./configure
+	```
+
+To build and install the software, run the following:
+
+	```
+	$ make
+	$ sudo make install
+	```
 
 # Usage
 
