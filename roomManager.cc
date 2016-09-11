@@ -227,7 +227,9 @@ void RoomManager::listRooms() {
 	// Generate a sorted list of room names
 	std::vector<string> room_names;
 	for (auto room : rooms) {
-	    room_names.push_back(room.first);
+		if (! room.second->getRoomOptions().isHidden) {
+			room_names.push_back(room.first);
+		}
 	}
 	std::sort(room_names.begin(), room_names.end());
 
@@ -271,17 +273,14 @@ void RoomManager::createBaseTemplate() {
 
 	log_debug("creating base template: %s", base_template.c_str());
 
-	RoomOptions roomOpt;
-	roomOpt.allowX11Clients = true;
-	roomOpt.shareTempDir = true;
-	roomOpt.isHidden = true;
-
 	RoomInstallParams rip;
 	rip.name = "FreeBSD-10.3";
 	rip.roomDir = roomDir;
 	rip.installRoot = getUserRoomDir();
 	rip.baseArchiveUri = "ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz";
-	rip.options = roomOptions;
+	rip.options.allowX11Clients = true;
+	rip.options.shareTempDir = true;
+	rip.options.isHidden = true;
 
 	Room::install(rip);
 }

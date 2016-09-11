@@ -623,8 +623,11 @@ void Room::install(const struct RoomInstallParams& rip)
 	}
 
 	Room room(rip.roomDir, rip.name);
-	room.roomOptions = rip.options;
 	room.create(tarball);
+
+	room.roomOptions = rip.options;
+	room.syncRoomOptions();
+
 	// FIXME: disabled for testing
 #if 0
 	if (unlink(tarball.c_str()) < 0) {
