@@ -316,12 +316,7 @@ void Room::create(const string& baseTarball)
 
 void Room::syncRoomOptions()
 {
-	SetuidHelper::raisePrivileges();
-
-	// FIXME: this really should not be done as root
-
 	roomOptions.save(roomOptionsPath);
-	SetuidHelper::lowerPrivileges();
 }
 
 void Room::start() {
