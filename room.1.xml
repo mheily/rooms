@@ -16,13 +16,12 @@
 <para>
 <literallayout>
 <emphasis role="bold">room list</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable>
 </literallayout>
 </para>
 </refsect1>
@@ -65,9 +64,12 @@ The following subcommands and options are available:
 	
 		<listitem>
 			<para>
-	Create a new room called <replaceable>name</replaceable> using the default template.
-	If there is no default template, one will be created automatically using a minimal
-	install of FreeBSD 10.3.
+	Create a new room called <replaceable>name</replaceable>.
+	If the <replaceable>--uri</replaceable> option is provided, the URI will be
+	downloaded and extracted into the root filesystem of the room.
+	If no URI is provided, the default template will be used. 
+	If there is no default template, one will be created automatically 
+	using a minimal	installation of FreeBSD 10.3.
 			</para>
 		</listitem>
 	</varlistentry>
@@ -149,20 +151,6 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>	
 	
-	<varlistentry>
-		<term>
-<literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">install --uri</emphasis> <replaceable>URI</replaceable></literallayout>
-		</term>
-	
-		<listitem>
-			<para>
-	Create a new room with a given <replaceable>name</replaceable> by downloading a
-	base.txz file from the given <replaceable>URI</replaceable>.
-			</para>
-		</listitem>
-	</varlistentry>	
-
 </variablelist>
 
 </refsect1>
@@ -175,7 +163,7 @@ The following subcommands and options are available:
 	</para>
 	<programlisting>
 <![CDATA[
-$ room FreeBSD-10.3 install --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room FreeBSD-10.3 create --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
 ]]>
 	</programlisting>
 	

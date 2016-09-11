@@ -57,7 +57,7 @@ namespace po = boost::program_options;
 static const std::vector<string> actions = {
 		"clone", "create", "destroy", "enter", "exec",
 		"stop", "start",
-		"init", "install", "list",
+		"init", "list",
 		"export", "import",
 };
 
@@ -80,7 +80,7 @@ static void get_options(int argc, char *argv[])
 	string popt0, popt1, popt2;
 	string runAsUser;
 
-	po::options_description desc("Allowed options");
+	po::options_description desc("Miscellaneous options");
 	desc.add_options()
 	    ("help", "produce help message")
 	    ("verbose,v", po::bool_switch(&isVerbose)->default_value(false), "increase verbosity")
@@ -95,20 +95,20 @@ static void get_options(int argc, char *argv[])
 		("popt2", po::value<string>(&popt2), "positional opt 2")
 	;
 
-	po::options_description exec_opts("Options when --exec is used");
+	po::options_description exec_opts("Options when using exec");
 	exec_opts.add_options()
 	    ("user,u", po::value<string>(&runAsUser), "the user to run the command as")
 	;
 
-	po::options_description install_opts("Options when installing");
-	install_opts.add_options()
+	po::options_description create_opts("Options when creating");
+	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
 	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
 		("share-home", po::bool_switch(&roomOpt.shareHomeDir), "mount the $HOME directory inside the room")
 	;
 
-	po::options_description clone_opts("Options when cloning:");
+	po::options_description clone_opts("Options when cloning");
 	clone_opts.add_options()
 	    ("source", po::value<string>(&action), "the action to perform")
 	;
@@ -120,9 +120,9 @@ static void get_options(int argc, char *argv[])
 	;
 */
 
-	po::options_description all("Allowed options");
-	all.add(desc).add(undocumented).add(clone_opts).add(install_opts).
-			add(exec_opts);
+	po::options_description all("All options");
+	all.add(undocumented).add(clone_opts).add(create_opts).
+			add(exec_opts).add(desc);
 
 	// Ignore all subsequent arguments after 'exec'
 	int argc_before_exec = argc;
@@ -157,12 +157,12 @@ static void get_options(int argc, char *argv[])
 
 	if (vm.count("help")) {
 		po::options_description helpinfo;
-		helpinfo.add(desc);
-		if (popt0 == "install") {
-			helpinfo.add(install_opts);
+		if (popt0 == "create") {
+			helpinfo.add(create_opts);
 		} else if (popt0 == "exec") {
 			helpinfo.add(exec_opts);
 		}
+		helpinfo.add(desc);
 		printUsage(helpinfo);
 	    exit(0);
 	}
@@ -186,10 +186,14 @@ static void get_options(int argc, char *argv[])
 		mgr.cloneRoom(popt1, popt2);
 	} else if (popt1 == "create") {
 		roomName = popt0;
-		if (! mgr.doesBaseTemplateExist()) {
-			mgr.createBaseTemplate();
+		if (baseArchiveUri != "") {
+			mgr.installRoom(roomName, baseArchiveUri, roomOpt);
+		} else {
+			if (! mgr.doesBaseTemplateExist()) {
+				mgr.createBaseTemplate();
+			}
+			mgr.cloneRoom(roomName);
 		}
-		mgr.cloneRoom(roomName);
 		Room room = mgr.getRoomByName(roomName);
 	} else if (popt0 == "init") {
 		cout << "ERROR: the rooms subsystem has already been initialized\n";
@@ -205,8 +209,6 @@ static void get_options(int argc, char *argv[])
 #endif
 	} else if (popt1 == "enter") {
 		mgr.getRoomByName(popt0).enter();
-	} else if (popt1 == "install") {
-		mgr.installRoom(popt0, baseArchiveUri, roomOpt);
 	} else if (popt1 == "exec") {
 		std::vector<std::string> execVec;
 		for (int i = argc_before_exec; i < argc; i++) {
