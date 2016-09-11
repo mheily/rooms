@@ -20,6 +20,10 @@
 
 // Options that can be controlled by the user
 struct RoomOptions {
+
+	// If true, the room will be hidden from the output of "room list"
+	bool isHidden = false;
+
 	// allow X programs to run
 	bool allowX11Clients = false;
 

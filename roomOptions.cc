@@ -36,6 +36,7 @@ void RoomOptions::load(const string &path)
 	shareTempDir = tree.get("shareTempDir", false);
 	shareHomeDir = tree.get("shareHomeDir", false);
 	useLinuxABI = tree.get("useLinuxABI", false);
+	isHidden = tree.get("isHidden", false);
 }
 
 
@@ -49,6 +50,7 @@ void RoomOptions::save(const string &path)
     tree.put("shareTempDir", shareTempDir);
     tree.put("shareHomeDir", shareHomeDir);
     tree.put("useLinuxABI", useLinuxABI);
+    tree.put("isHidden", isHidden);
 
     pt::write_json(path, tree);
 }

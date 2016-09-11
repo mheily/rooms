@@ -612,7 +612,7 @@ void Room::setOsType(const string& osType)
 
 void Room::install(const struct RoomInstallParams& rip)
 {
-	string tarball = rip.installRoot + "/_base.txz";
+	string tarball = "/tmp/base.txz"; //XXX-FIXME insecure tempdir use
 
 	if (!FileUtil::checkExists(tarball)) {
 		Shell::execute("/usr/bin/fetch", {

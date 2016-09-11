@@ -206,6 +206,7 @@ void RoomManager::enumerateRooms() {
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
 			continue;
 		}
+
 		string roomName = string(dp->d_name);
 
 		auto it = rooms.find(roomName);
@@ -214,6 +215,7 @@ void RoomManager::enumerateRooms() {
 		}
 
 		Room* r = new Room(roomDir, roomName);
+		r->loadRoomOptions();
 		rooms.insert(std::make_pair(roomName, r));
 	}
 	closedir(dir);
@@ -272,6 +274,7 @@ void RoomManager::createBaseTemplate() {
 	RoomOptions roomOpt;
 	roomOpt.allowX11Clients = true;
 	roomOpt.shareTempDir = true;
+	roomOpt.isHidden = true;
 
 	RoomInstallParams rip;
 	rip.name = "FreeBSD-10.3";
