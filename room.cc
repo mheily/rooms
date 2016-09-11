@@ -45,6 +45,8 @@ extern "C" {
 #include "setuidHelper.h"
 #include "zfsPool.h"
 
+extern char **environ;
+
 Room::Room(const string& managerRoomDir, const string& name)
 {
 	roomDir = managerRoomDir;
@@ -116,6 +118,8 @@ void Room::enterJail(const string& runAsUser)
 
 void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 {
+	PasswdEntry pwent(ownerUid);
+	static char *clean_environment = NULL;
 	string loginName;
 	string homeDir;
 	if (runAsUser == "") {
@@ -126,7 +130,7 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 	if (loginName == "root") {
 		homeDir = "/root";
 	} else {
-		homeDir = "/usr/home/" + runAsUser; //FIXME: hardcoded; should consult PasswdEntry instead"
+		homeDir = pwent.getHome();
 	}
 
 	char *path = NULL;
@@ -138,17 +142,7 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 
 	enterJail(loginName);
 
-	string x11_display = "DISPLAY=";
-	string x11_xauthority = "XAUTHORITY=";
-	string dbus_address = "DBUS_SESSION_BUS_ADDRESS=";
 	string jail_username = loginName;
-	string env_username = "USER=" + loginName;
-	string env_home = "HOME=" + homeDir;
-	if (roomOptions.allowX11Clients) {
-		if (getenv("DISPLAY")) x11_display += getenv("DISPLAY");
-		if (getenv("XAUTHORITY")) x11_xauthority += getenv("XAUTHORITY");
-		if (getenv("DBUS_SESSION_BUS_ADDRESS")) dbus_address += getenv("DBUS_SESSION_BUS_ADDRESS");
-	}
 
 	std::vector<char*> argsVec;
 	if (execVec.size() == 0) {
@@ -163,24 +157,32 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 	}
 	argsVec.push_back(NULL);
 
-	char* const envp[] = {
-			(char*)env_home.c_str(),
-			(char*)"SHELL=/bin/csh", //FIXME: should consult PasswdEntry
-			(char*)"PATH=/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin:/usr/local/bin",
-			(char*)"TERM=xterm",
-			(char*)env_username.c_str(),
-			(char*)x11_display.c_str(),
-			(char*)x11_xauthority.c_str(),
-			(char*)dbus_address.c_str(),
-			NULL
-	};
-	if (execve(path, argsVec.data(), envp) < 0) {
-		log_errno("execve(2)");
+	char *env_display;
+	char *env_xauthority;
+	char *env_dbus;
+	if (roomOptions.allowX11Clients) {
+		env_display = getenv("DISPLAY");
+		env_xauthority = getenv("XAUTHORITY");
+		env_dbus = getenv("DBUS_SESSION_BUS_ADDRESS");
+	}
+
+	environ = &clean_environment;
+	setenv("HOME", homeDir.c_str(), 1);
+	setenv("SHELL", "/bin/csh", 1); //FIXME: should consult PasswdEntry
+	setenv("PATH", "/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin:/usr/local/bin", 1);
+	setenv("TERM", "xterm", 1);
+	setenv("USER", loginName.c_str(), 1);
+
+	if (roomOptions.allowX11Clients) {
+		if (env_display) setenv("DISPLAY", env_display, 1);
+		if (env_xauthority) setenv("XAUTHORITY", env_xauthority, 1);
+		if (env_dbus) setenv("DBUS_SESSION_BUS_ADDRESS", env_dbus, 1);
+	}
+
+	if (execvp(path, argsVec.data()) < 0) {
+		log_errno("execvp(2)");
 		throw std::system_error(errno, std::system_category());
 	}
-	//NOTREACHED
-	log_errno("execve(2)");
-	throw std::runtime_error("exec failed");
 }
 
 void Room::enter() {

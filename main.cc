@@ -124,13 +124,23 @@ static void get_options(int argc, char *argv[])
 	all.add(desc).add(undocumented).add(clone_opts).add(install_opts).
 			add(exec_opts);
 
-	// Ignore all subsequent arguments after '--'
-	// This is useful for exec() and the like.
+	// Ignore all subsequent arguments after 'exec'
 	int argc_before_exec = argc;
+	bool found = false;
 	for (int i = 0; i < argc; i++) {
-		if (!strcmp(argv[i], "--")) {
+		if (!strcmp(argv[i], "exec")) {
+			found = true;
 			argc_before_exec = i + 1;
 			break;
+		}
+	}
+	// If there is 'exec' and '--', use the '--' as a delimiter
+	if (found) {
+		for (int i = 0; i < argc; i++) {
+			if (!strcmp(argv[i], "--")) {
+				argc_before_exec = i + 1;
+				break;
+			}
 		}
 	}
 
