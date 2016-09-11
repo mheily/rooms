@@ -98,6 +98,7 @@ private:
 	string parentDataset; // the parent of roomDataset
 	string roomDataset; // the name of the ZFS dataset for the room
 	string zpoolName; // the ZFS pool the room lives in
+	string roomOptionsPath; // The path to the room options.json file
 	bool useZfs; // if true, create ZFS rooms
 
 /*	struct {

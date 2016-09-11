@@ -65,6 +65,10 @@ Room::Room(const string& managerRoomDir, const string& name)
 		parentDataset = zpoolName + "/room/" + ownerLogin;
 		roomDataset = zpoolName + "/room/" + ownerLogin;
 	}
+	roomOptionsPath = roomDataDir + "/options.json";
+	if (FileUtil::checkExists(roomOptionsPath)) {
+		loadRoomOptions();
+	}
 }
 
 void Room::enterJail(const string& runAsUser)
@@ -245,6 +249,12 @@ void Room::clone(const string& snapshot, const string& destRoom)
 
 	Room cloneRoom(roomDir, destRoom);
 	SetuidHelper::lowerPrivileges();
+
+	// Assume that when cloning a template, we don't want the new room
+	// to be hidden.
+	cloneRoom.getRoomOptions().isHidden = false;
+	cloneRoom.syncRoomOptions();
+
 	log_debug("clone complete");
 }
 
@@ -301,7 +311,7 @@ void Room::syncRoomOptions()
 
 	// FIXME: this really should not be done as root
 
-	roomOptions.save(roomDataDir + "/options.json");
+	roomOptions.save(roomOptionsPath);
 	SetuidHelper::lowerPrivileges();
 }
 
@@ -623,9 +633,9 @@ void Room::install(const struct RoomInstallParams& rip)
 	}
 
 	Room room(rip.roomDir, rip.name);
+	room.roomOptions = rip.options;
 	room.create(tarball);
 
-	room.roomOptions = rip.options;
 	room.syncRoomOptions();
 
 	// FIXME: disabled for testing
