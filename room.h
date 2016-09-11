@@ -79,7 +79,7 @@ public:
 	}
 
 	void loadRoomOptions() {
-		roomOptions.load(roomDataDir + "/options.json");
+		roomOptions.load(roomOptionsPath);
 		areRoomOptionsLoaded = true;
 	}
 
@@ -94,6 +94,7 @@ private:
 	string roomName;  // name of this room
 	string jailName;  // name of the jail
 	uid_t ownerUid; // the uid of the jail owner
+	gid_t ownerGid; // the gid of the jail owner
 	string ownerLogin; // the login name from passwd(5) for the jail owner
 	string parentDataset; // the parent of roomDataset
 	string roomDataset; // the name of the ZFS dataset for the room

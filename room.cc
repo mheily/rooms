@@ -49,6 +49,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 {
 	roomDir = managerRoomDir;
 	ownerUid = SetuidHelper::getActualUid();
+	ownerGid = (gid_t) ownerUid; // FIXME: bad assumption
 
 	PasswdEntry pwent(ownerUid);
 	ownerLogin = pwent.getLogin();
@@ -57,7 +58,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 	getJailName();
 
 	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
-	chrootDir = roomDataDir + "/root";
+	chrootDir = roomDataDir + "/share/root";
 	useZfs = ZfsPool::detectZfs();
 	if (useZfs) {
 		zpoolName = ZfsPool::getNameByPath(roomDir);
@@ -65,7 +66,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 		parentDataset = zpoolName + "/room/" + ownerLogin;
 		roomDataset = zpoolName + "/room/" + ownerLogin;
 	}
-	roomOptionsPath = roomDataDir + "/options.json";
+	roomOptionsPath = roomDataDir + "/etc/options.json";
 	if (FileUtil::checkExists(roomOptionsPath)) {
 		loadRoomOptions();
 	}
@@ -267,7 +268,15 @@ void Room::create(const string& baseTarball)
 	log_debug("creating room");
 
 	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
-	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, (gid_t) ownerUid);
+
+	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName + "/share"});
+	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, ownerGid);
+
+	FileUtil::mkdir_idempotent(roomDataDir + "/etc", 0700, ownerUid, ownerGid);
+
+	FileUtil::mkdir_idempotent(roomDataDir + "/local", 0700, ownerUid, ownerGid);
+	FileUtil::mkdir_idempotent(roomDataDir + "/local/home", 0700, ownerUid, ownerGid);
+	FileUtil::mkdir_idempotent(roomDataDir + "/local/tmp", 0700, ownerUid, ownerGid);
 
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 
