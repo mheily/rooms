@@ -19,14 +19,16 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
-FIXME: document below
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable><!--
+
+FIXME: implement and document these
+
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> create
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> destroy
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot list</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> <emphasis role="bold">rollback</emphasis>
-FIXME: document above
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
+
+ --><emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 </literallayout>
 </para>
