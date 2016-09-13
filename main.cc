@@ -77,7 +77,7 @@ static void get_options(int argc, char *argv[])
 	string baseArchiveUri;
 	bool isVerbose;
 
-	string popt0, popt1, popt2;
+	string popt0, popt1, popt2, popt3;
 	string runAsUser;
 
 	po::options_description desc("Miscellaneous options");
@@ -93,6 +93,7 @@ static void get_options(int argc, char *argv[])
 		("popt0", po::value<string>(&popt0), "positional opt 0")
 		("popt1", po::value<string>(&popt1), "positional opt 1")
 		("popt2", po::value<string>(&popt2), "positional opt 2")
+		("popt3", po::value<string>(&popt3), "positional opt 3")
 	;
 
 	po::options_description exec_opts("Options when using exec");
@@ -148,6 +149,7 @@ static void get_options(int argc, char *argv[])
 	p.add("popt0", 1);
 	p.add("popt1", 1);
 	p.add("popt2", 1);
+	p.add("popt3", 1);
 
 	po::variables_map vm;
 	po::store(po::command_line_parser(argc_before_exec, argv).
@@ -219,6 +221,20 @@ static void get_options(int argc, char *argv[])
 			exit(1);
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
+	} else if (popt1 == "snapshot") {
+		/*
+       room name snapshot snapshot-name create
+       room name snapshot snapshot-name destroy
+       room name snapshot list
+       room name snapshot snapshot-name rollback
+		 */
+		if (popt2 == "list") {
+			cout << "snaplist";
+		} else {
+			string snapName = popt2;
+			string action = popt3;
+			cout << "snap: " << snapName << " action: " << action;
+		}
 	} else if (popt1 == "start") {
 		mgr.getRoomByName(popt0).start();
 	} else if (popt1 == "stop") {
