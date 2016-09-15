@@ -127,10 +127,6 @@ void SetuidHelper::dropPrivileges() {
 		throw std::logic_error("privileges are already dropped");
 	}
 
-	if (!isLoweredPrivs) {
-		throw std::logic_error("privileges must be lowered before dropping them");
-	}
-
 	log_debug("dropping privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
 
 	if (setgroups(0, NULL) < 0) {
