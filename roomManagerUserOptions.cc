@@ -41,6 +41,7 @@ void RoomManagerUserOptions::save(const string &path) {
 
 	log_debug("writing options to %s", path.c_str());
 
+	tree.put("rooms.api_version", "0");
 	tree.put("permissions.default.allow_x11", allowX11Clients);
 	tree.put("permissions.default.share_tempdir", shareTempDir);
 	tree.put("permissions.default.share_home", shareHomeDir);

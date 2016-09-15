@@ -32,9 +32,9 @@ void RoomOptions::load(const string &path)
     log_debug("reading options from %s", path.c_str());
     pt::read_json(path, tree);
 
-	allowX11Clients = tree.get("allowX11Clients", false);
-	shareTempDir = tree.get("shareTempDir", false);
-	shareHomeDir = tree.get("shareHomeDir", false);
+	allowX11Clients = tree.get("permissions.allowX11Clients", false);
+	shareTempDir = tree.get("permissions.shareTempDir", false);
+	shareHomeDir = tree.get("permissions.shareHomeDir", false);
 	useLinuxABI = tree.get("useLinuxABI", false);
 	isHidden = tree.get("isHidden", false);
 }
@@ -46,9 +46,10 @@ void RoomOptions::save(const string &path)
 
     log_debug("writing options to %s", path.c_str());
 
-    tree.put("allowX11Clients", allowX11Clients);
-    tree.put("shareTempDir", shareTempDir);
-    tree.put("shareHomeDir", shareHomeDir);
+    tree.put("rooms.api_version", "0");
+    tree.put("permissions.allowX11Clients", allowX11Clients);
+    tree.put("permissions.shareTempDir", shareTempDir);
+    tree.put("permissions.shareHomeDir", shareHomeDir);
     tree.put("useLinuxABI", useLinuxABI);
     tree.put("isHidden", isHidden);
 
