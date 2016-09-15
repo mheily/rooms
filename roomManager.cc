@@ -140,6 +140,7 @@ void RoomManager::initUserRoomSpace()
 			"set", "mountpoint=" + path,
 			zpool + "/room/" + ownerLogin
 	});
+	FileUtil::rmdir(tempdir);
 	SetuidHelper::lowerPrivileges();
 }
 
