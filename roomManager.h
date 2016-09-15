@@ -34,7 +34,11 @@ public:
 	RoomManager() {
 		useZfs = ZfsPool::detectZfs();
 		ownerUid = SetuidHelper::getActualUid();
+		ownerGid = ownerUid; // FIXME: bad assumption
 		ownerLogin = PasswdEntry(ownerUid).getLogin();
+		if (ownerLogin.length() == 0 || ownerLogin[0] == '.') {
+			throw std::runtime_error("invalid user name");
+		}
 		userOptionsPath = string(PasswdEntry(ownerUid).getHome()) + "/.room/config.json";
 	}
 	void bootstrap();
@@ -68,11 +72,17 @@ public:
 		}
 	}
 
+	const string& getTempdir() const {
+		static const string tempdir = "/room/.tmp";
+		return tempdir;
+	}
+
 private:
 	std::map<std::string, Room*> rooms;
 	bool verbose = false;
 	bool useZfs;
 	uid_t ownerUid;
+	gid_t ownerGid;
 	RoomOptions roomOptions;
 	RoomManagerUserOptions userOptions;
 	string userOptionsPath;

@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <sys/stat.h>
+
 #include "namespaceImport.h"
 #include "logger.h"
 #include "setuidHelper.h"
@@ -23,6 +25,7 @@ static bool isLoweredPrivs = false;
 static bool isDroppedPrivs = false;
 static uid_t euid = 999999999; // KLUDGE: hopefully an unused UID
 static gid_t egid = 999999999; // KLUDGE: hopefully an unused GID
+static mode_t saved_umask = S_IWGRP|S_IWOTH;
 
 static bool debugModule = false;
 #define debug_printf(fmt,...) do { \
@@ -55,6 +58,7 @@ void SetuidHelper::raisePrivileges() {
 		throw std::logic_error("privileges are not currently lowered");
 	}
 
+	saved_umask = umask(S_IWGRP|S_IWOTH);
 	uid = getuid();
 	gid = getgid();
 
@@ -108,6 +112,9 @@ void SetuidHelper::lowerPrivileges() {
 
 	debugPrintUid();
 
+	(void) umask(saved_umask);
+
+
 	isLoweredPrivs = true;
 }
 
@@ -118,6 +125,10 @@ void SetuidHelper::dropPrivileges() {
 
 	if (isDroppedPrivs) {
 		throw std::logic_error("privileges are already dropped");
+	}
+
+	if (!isLoweredPrivs) {
+		throw std::logic_error("privileges must be lowered before dropping them");
 	}
 
 	log_debug("dropping privileges (current: uid=%d, euid=%d)", getuid(), geteuid());

@@ -72,8 +72,15 @@ public:
 		}
 	}
 
+	static void mkdir(const string& path, mode_t mode) {
+		if (::mkdir(path.c_str(), mode) != 0) {
+			log_errno("mkdir(2) of `%s'", path.c_str());
+			throw std::system_error(errno, std::system_category());
+		}
+	}
+
 	static void mkdir_idempotent(const string& path, mode_t mode, uid_t uid, gid_t gid) {
-		if (mkdir(path.c_str(), mode) != 0) {
+		if (::mkdir(path.c_str(), mode) != 0) {
 			if (errno == EEXIST) {
 				return;
 			}

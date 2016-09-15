@@ -99,29 +99,48 @@ void RoomManager::bootstrap() {
 		zpool = ZfsPool::getNameByPath("/");
 #endif
 
+
 		SetuidHelper::raisePrivileges();
+
 		Shell::execute("/sbin/zfs", {
 						"create",
 						"-o", "canmount=on",
 						"-o", "mountpoint=/room",
 						zpool + "/room"});
-				SetuidHelper::lowerPrivileges();
+
+		FileUtil::chmod("/room", 0755);
+		FileUtil::mkdir(getTempdir(), 0700);
+
+		SetuidHelper::lowerPrivileges();
 	}
 }
 
 void RoomManager::initUserRoomSpace()
 {
-	if (!FileUtil::checkExists(getUserRoomDir())) {
-		string zpool = ZfsPool::getNameByPath(roomDir);
-		SetuidHelper::raisePrivileges();
-		Shell::execute("/sbin/zfs",
-				{ "create", zpool + "/room/" + ownerLogin });
-		Shell::execute("/usr/sbin/chown",
-				{ "-R", ownerLogin, roomDir + "/" + ownerLogin });
-		SetuidHelper::lowerPrivileges();
+	if (FileUtil::checkExists(getUserRoomDir())) {
+		return;
 	}
 
-	//FIXME: createBaseTemplate();
+	string tempdir = getTempdir() + "/user." + ownerLogin;
+
+	string zpool = ZfsPool::getNameByPath(roomDir);
+	SetuidHelper::raisePrivileges();
+
+	Shell::execute("/sbin/zfs",	{
+			"create",
+			"-o", "mountpoint=" + tempdir,
+			zpool + "/room/" + ownerLogin
+	});
+
+	FileUtil::chmod(tempdir, 0750);
+	FileUtil::chgrp(tempdir, ownerGid);
+
+	string path = "/room/" + ownerLogin;
+	Shell::execute("/sbin/zfs",	{
+			"set", "mountpoint=" + path,
+			zpool + "/room/" + ownerLogin
+	});
+	SetuidHelper::lowerPrivileges();
 }
 
 Room& RoomManager::getRoomByName(const string& name) {
@@ -196,10 +215,13 @@ void RoomManager::enumerateRooms() {
 	}
 
 	log_debug("scanning rooms in %s", getUserRoomDir().c_str());
+	SetuidHelper::raisePrivileges();
 	dir = opendir(getUserRoomDir().c_str());
+	int saved_errno = errno;
+	SetuidHelper::lowerPrivileges();
 	if (dir == NULL) {
-		log_errno("opendir(3)");
-		throw std::system_error(errno, std::system_category());
+		log_errno("opendir(3)"); // BUG: will report the wrong errno
+		throw std::system_error(saved_errno, std::system_category());
 	}
 
 	std::vector<string> roomVec;
