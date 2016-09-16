@@ -166,7 +166,7 @@ void RoomManager::createRoom(const string& name) {
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
 	Room* srcRoom = new Room(roomDir, src);
-	srcRoom->clone("__initial", dest); // FIXME: hardcoded snapshot name
+	srcRoom->clone(srcRoom->getLatestSnapshot(), dest);
 	delete srcRoom;
 	enumerateRooms();
 }
@@ -193,6 +193,13 @@ void RoomManager::importRoom(const string& roomName) {
 		std::cerr << "failed to destroy snapshot: " << snapName << endl;
 		exit(1);
 	}
+}
+
+void RoomManager::receiveRoom(const string& name)
+{
+	SetuidHelper::raisePrivileges();
+	Subprocess proc;
+	proc.execve("/sbin/zfs", { "receive", getUserRoomDataset() + "/" + name });
 }
 
 void RoomManager::cloneRoom(const string& dest) {

@@ -19,16 +19,13 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable><!--
-
-FIXME: implement and document these
-
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> create
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> destroy
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot list</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> <emphasis role="bold">rollback</emphasis>
-
- --><emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">receive</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">send</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 </literallayout>
 </para>
@@ -143,6 +140,39 @@ The following subcommands and options are available:
 			</para>
 		</listitem>
 	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">receive</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Create a room with the given <replaceable>name</replaceable> from
+	a streaming archive provided over standard input. The archive must
+	be created by running the "room send" command. 
+	This behaves similar to the "zfs receive" command. 
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">send</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Create a streaming archive of a room with the given <replaceable>name</replaceable> and 
+	send it to standard output. This behaves similar to the "zfs send" command. 
+			</para>
+		</listitem>
+	</varlistentry>	
+
 	
 		<varlistentry>
 		<term>
@@ -171,7 +201,17 @@ The following subcommands and options are available:
 	</para>
 	<programlisting>
 <![CDATA[
-$ room FreeBSD-10.3 create --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room FreeBSD-10.3 create \
+    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+]]>
+	</programlisting>
+
+	<para>
+	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
+	</para>
+	<programlisting>
+<![CDATA[
+$ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 ]]>
 	</programlisting>
 	
@@ -210,14 +250,17 @@ $ room FreeBSD-10.3 create --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd6
 	</para>
 </refsect1>
 
-<!-- 
 <refsect1>
 	<title>BUGS</title>
 	
 	<para>
-	None yet.
+	Sending and receiving rooms will not work as expected if you are operating on
+	rooms which are cloned from the base template. For best results,	only send rooms that are created via "room create --uri=base.txz". 
+	</para>
+	
+	<para>
+	The snapshot subcommands are not documented in this manual page.
 	</para>
 </refsect1>
- -->
 
 </refentry>

@@ -31,6 +31,8 @@ public:
 	int child_stdout;
 	int exitStatus;
 
+	void execve(const char* path, const std::vector<std::string>& args);
+
 	void execute(const char *path, const std::vector<std::string>& args);
 	int waitForExit();
 

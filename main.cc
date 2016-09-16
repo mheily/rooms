@@ -54,13 +54,6 @@ using std::pair;
 
 namespace po = boost::program_options;
 
-static const std::vector<string> actions = {
-		"clone", "create", "destroy", "enter", "exec",
-		"stop", "start",
-		"init", "list",
-		"export", "import",
-};
-
 static void printUsage(po::options_description desc) {
 	std::cout << "Usage:\n\n";
     std::cout << desc << std::endl;
@@ -221,20 +214,27 @@ static void get_options(int argc, char *argv[])
 			exit(1);
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
+	} else if (popt1 == "receive" || popt1 == "recv") {
+		mgr.receiveRoom(popt0);
 	} else if (popt1 == "snapshot") {
-		/*
-       room name snapshot snapshot-name create
-       room name snapshot snapshot-name destroy
-       room name snapshot list
-       room name snapshot snapshot-name rollback
-		 */
 		if (popt2 == "list") {
-			cout << "snaplist";
+			mgr.getRoomByName(popt0).printSnapshotList();
 		} else {
+			Room room = mgr.getRoomByName(popt0);
+
 			string snapName = popt2;
 			string action = popt3;
-			cout << "snap: " << snapName << " action: " << action;
+			if (action == "create") {
+				room.snapshotCreate(snapName);
+			} else if (action == "destroy") {
+				room.snapshotDestroy(snapName);
+			} else {
+				cout << "ERROR: invalid syntax\n";
+				exit(1);
+			}
 		}
+	} else if (popt1 == "send") {
+		mgr.getRoomByName(popt0).send();
 	} else if (popt1 == "start") {
 		mgr.getRoomByName(popt0).start();
 	} else if (popt1 == "stop") {

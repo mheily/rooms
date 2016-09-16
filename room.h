@@ -62,12 +62,16 @@ public:
 	void extractTarball(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
+	void snapshotCreate(const string& name);
+	void snapshotDestroy(const string& name);
 	void start();
 	void stop();
 	void destroy();
 	void enter();
+	void send();
 	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
+	void printSnapshotList();
 
 	// The following methods can be used after create() but before install()
 	void setOsType(const string& osType);
@@ -85,6 +89,8 @@ public:
 	}
 
 	void syncRoomOptions();
+
+	string getLatestSnapshot();
 
 private:
 	bool areRoomOptionsLoaded = false;
@@ -113,4 +119,5 @@ private:
 	void validateName(const string& name);
 	void pushResolvConf();
 	void getJailName();
+	string generateSnapshotName();
 };

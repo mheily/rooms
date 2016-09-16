@@ -146,7 +146,7 @@ void Subprocess::execute(const char *path, const std::vector<std::string>& args)
 			close(pd[1]);
 			close(pd[0]);
 		}
-		if (execve(path, argv.data(), envp) < 0) {
+		if (::execve(path, argv.data(), envp) < 0) {
 			log_errno("execve(2)");
 			throw std::runtime_error("execve failed");
 		}
@@ -174,4 +174,32 @@ int Subprocess::waitForExit() {
 	exitStatus = WEXITSTATUS(status);
 
 	return exitStatus;
+}
+
+void Subprocess::execve(const char* path, const std::vector<std::string>& args)
+{
+	// Convert from string to char*
+	std::vector<char*> argv;
+	argv.push_back(const_cast<char*>(path));
+	for (auto it = args.begin(); it != args.end(); ++it) {
+		argv.push_back(const_cast<char*>(it->c_str()));
+	}
+	argv.push_back(NULL);
+
+	char* const envp[] = {
+			(char*)"HOME=/",
+			(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
+			(char*)"LANG=C",
+			(char*)"LC_ALL=C",
+			(char*)"TERM=vt220",
+			(char*)"LOGNAME=root",
+			(char*)"USER=root",
+			(char*)"SHELL=/bin/sh",
+			NULL
+	};
+
+	if (::execve(path, argv.data(), envp) < 0) {
+		log_errno("execve(2)");
+		throw std::runtime_error("execve failed");
+	}
 }

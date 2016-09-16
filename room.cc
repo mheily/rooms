@@ -261,6 +261,8 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	cloneRoom.getRoomOptions().isHidden = false;
 	cloneRoom.syncRoomOptions();
 
+	cloneRoom.snapshotCreate(snapshot);
+
 	log_debug("clone complete");
 }
 
@@ -318,12 +320,7 @@ void Room::extractTarball(const string& baseTarball)
 
 	syncRoomOptions();
 
-	SetuidHelper::raisePrivileges();
-	Shell::execute("/sbin/zfs", {
-			"snapshot",
-			roomDataset + "/" + roomName + "/share@__initial"
-	});
-	SetuidHelper::lowerPrivileges();
+	snapshotCreate(generateSnapshotName());
 
 	log_debug("room %s created", roomName.c_str());
 }
@@ -331,6 +328,45 @@ void Room::extractTarball(const string& baseTarball)
 void Room::syncRoomOptions()
 {
 	roomOptions.save(roomOptionsPath);
+}
+
+void Room::send() {
+	SetuidHelper::raisePrivileges();
+
+	Subprocess proc;
+	proc.execve("/sbin/zfs", { "send", "-R",
+			string(roomDataset + "/" + roomName + "@" + getLatestSnapshot()),
+	});
+}
+
+void Room::snapshotCreate(const string& name)
+{
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", {
+		"snapshot", "-r",
+		roomDataset + "/" + roomName + "@" + name,
+	});
+	SetuidHelper::lowerPrivileges();
+}
+
+void Room::snapshotDestroy(const string& name)
+{
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", {
+		"destroy", "-r",
+		roomDataset + "/" + roomName + "@" + name,
+	});
+	SetuidHelper::lowerPrivileges();
+}
+
+void Room::printSnapshotList()
+{
+	// FIXME: would like to avoid this popen, for better security
+	string cmd = "zfs list -H -r -d 1 -t snapshot -o name -s creation " +
+			roomDataset + "/" + roomName + " | sed 's/.*@//'";
+
+	Subprocess proc;
+	proc.execve("/bin/sh", { "-c", cmd });
 }
 
 void Room::start() {
@@ -705,4 +741,26 @@ void Room::pushResolvConf()
 			"-c",
 			"cat /etc/resolv.conf | chroot " + chrootDir + " dd of=/etc/resolv.conf status=none"
 	});
+}
+
+// Generate a reasonably unique and meaningful ZFS snapshot name.
+string Room::generateSnapshotName()
+{
+	const char *format = "%Y-%m-%d.%H:%M:%S.UTC%z";
+	char buf[100];
+
+	std::time_t t = std::time(NULL);
+	if (!std::strftime(buf, sizeof(buf), format, std::localtime(&t))) {
+		throw std::runtime_error("strftime failed");
+	}
+	return string(buf) + "_P" + std::to_string(getpid());
+}
+
+string Room::getLatestSnapshot()
+{
+	// FIXME: would like to avoid this popen, for better security
+	string cmd = "zfs list -H -r -d 1 -t snapshot -o name -s creation " +
+			roomDataset + "/" + roomName + " | tail -1 | sed 's/.*@//'";
+
+	return Shell::popen_readline(cmd);
 }

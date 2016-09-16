@@ -51,6 +51,7 @@ public:
 	void createRoom(const string& name);
 	void cloneRoom(const string& src, const string& dest);
 	void cloneRoom(const string& dest);
+	void receiveRoom(const string& name);
 	void destroyRoom(const string& name);
 	Room& getRoomByName(const string& name);
 	bool checkRoomExists(const string&);
