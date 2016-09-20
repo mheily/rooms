@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section xml:lang="en" xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">
+
+<title>Usage</title>
+<para>
+See the room(1) manual page for information about using the room command.
+</para>
+
+<sect2><title>Examples</title></sect2>
+
+<orderedlist>
+<listitem>
+<para>Create a new room called 'hello_world'.</para>
+<programlisting>
+$ room hello_world create
+</programlisting>
+</listitem>
+
+<listitem>
+<para>Enter the room. This will launch a shell inside the room.</para>
+<programlisting>
+$ room hello_world enter
+</programlisting>
+</listitem>
+
+<listitem>
+<para>Install the 'xclock' program inside the room.</para>
+<programlisting>
+hello_world$ su -
+hello_world# pkg install -y xclock
+hello_world# exit
+</programlisting>
+</listitem>
+
+<listitem>
+<para>
+Run the 'xclock' program inside the room. It should display a small clock on your desktop.
+</para>
+<programlisting>
+hello_world$ xclock
+</programlisting>
+</listitem>
+
+<listitem>
+<para>
+When you are done, exit the shell, and destroy the room.
+</para>
+<programlisting>
+hello_world$ exit
+$ room hello_world destroy
+</programlisting>
+</listitem>
+
+
+</orderedlist>
+</section>

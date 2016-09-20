@@ -1,0 +1,123 @@
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>room</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="apa.html" title="Appendix A. Manual pages"><link rel="prev" href="apa.html" title="Appendix A. Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">room</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apa.html">Prev</a> </td><th width="60%" align="center">Appendix A. Manual pages</th><td width="20%" align="right"> </td></tr></table><hr></div><div class="refentry" title="room"><a name="room"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>room — manage rooms</p></div><div class="refsect1" title="SYNOPSIS"><a name="idp61228536"></a><h2>SYNOPSIS</h2><p>
+</p><div class="literallayout"><p><br>
+<span class="bold"><strong>room list</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>create</strong></span> [--uri <em class="replaceable"><code>URI</code></em>]<br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>destroy</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>enter</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>exec</strong></span> [-u <em class="replaceable"><code>user</code></em>] <span class="bold"><strong>--</strong></span> <em class="replaceable"><code>command [arguments]</code></em><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot</strong></span> <em class="replaceable"><code>snapshot-name</code></em> create<br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot</strong></span> <em class="replaceable"><code>snapshot-name</code></em> destroy<br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot list</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>receive</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>send</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>start</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>stop</strong></span><br>
+</p></div><p>
+</p></div><div class="refsect1" title="Description"><a name="idp61243896"></a><h2>Description</h2><p>
+The <span class="command"><strong>room</strong></span> command is the management utility
+for rooms. Rooms are a simplified form of containers that are
+built on top of ZFS and FreeBSD jails.
+</p><p>
+The following subcommands and options are available:
+</p><div class="variablelist"><dl><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room list</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	List all existing rooms. The name of each room will be printed, one per line.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>create</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Create a new room called <em class="replaceable"><code>name</code></em>.
+	If the <em class="replaceable"><code>--uri</code></em> option is provided, the URI will be
+	downloaded and extracted into the root filesystem of the room.
+	If no URI is provided, the default template will be used. 
+	If there is no default template, one will be created automatically 
+	using a minimal	installation of FreeBSD 10.3.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>destroy</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Permanently delete the room called <em class="replaceable"><code>name</code></em>. All processes running
+	in the room will be forcefully terminated. The data for the room will be removed.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>enter</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Invoke a login shell inside the room called <em class="replaceable"><code>name</code></em>.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>exec</strong></span> [-u <em class="replaceable"><code>user</code></em>] <span class="bold"><strong>--</strong></span> <em class="replaceable"><code>command [arguments]</code></em><br>
+</p></div>
+		</span></dt><dd><p>
+	Execute the given <em class="replaceable"><code>command</code></em> inside the room called <em class="replaceable"><code>name</code></em>.
+	By default, commands will be executes as the current user. To run commands as a different user
+	pass the <em class="replaceable"><code>-u</code></em> or <em class="replaceable"><code>--user</code></em> option along with the name or numeric ID of the user.
+	To avoid confusion, it is recommended to use -- to signify the start of the command(s) to be executed.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>start</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Start up a room with the given <em class="replaceable"><code>name</code></em>.
+	Currently, this will mount filesystems and create a jail. In the future,
+	support will be added for starting programs automatically within the room. 
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>receive</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Create a room with the given <em class="replaceable"><code>name</code></em> from
+	a streaming archive provided over standard input. The archive must
+	be created by running the "room send" command. 
+	This behaves similar to the "zfs receive" command. 
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>send</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Create a streaming archive of a room with the given <em class="replaceable"><code>name</code></em> and 
+	send it to standard output. This behaves similar to the "zfs send" command. 
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>stop</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+	Terminate all processes inside the room called <em class="replaceable"><code>name</code></em>,
+	unmount all mounted filesystems in the room, and destroy the associated jail. 
+			</p></dd></dl></div></div><div class="refsect1" title="EXAMPLES"><a name="idp61252856"></a><h2>EXAMPLES</h2><p>
+	The following example creates a new room named FreeBSD-10.3 by downloading
+	the base.txz file from the closest FreeBSD mirror. 
+	</p><pre class="programlisting">
+
+$ room FreeBSD-10.3 create \
+    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+
+	</pre><p>
+	The following example creates a TrueOS room named 'TrueOS'.
+	</p><pre class="programlisting">
+	
+$ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
+
+	</pre><p>
+	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
+	</p><pre class="programlisting">
+
+$ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
+
+	</pre></div><div class="refsect1" title="ENVIRONMENT"><a name="idp61254904"></a><h2>ENVIRONMENT</h2><p>
+	The <span class="command"><strong>room</strong></span> command does not rely on any environment variables.
+	</p></div><div class="refsect1" title="EXIT STATUS"><a name="idp61255928"></a><h2>EXIT STATUS</h2><p>
+	The <span class="command"><strong>room</strong></span> command exits 0 on success, and &gt;0 if an error occurs
+	</p></div><div class="refsect1" title="AUTHORS"><a name="idp61257080"></a><h2>AUTHORS</h2><p>
+		Mark Heily &lt;mark@heily.com&gt;
+	</p></div><div class="refsect1" title="BUGS"><a name="idp61257720"></a><h2>BUGS</h2><p>
+	Sending and receiving rooms will not work as expected if you are operating on
+	rooms which are cloned from the base template. For best results,	only send rooms that are created via "room create --uri=base.txz". 
+	</p><p>
+	The snapshot subcommands are not documented in this manual page.
+	</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apa.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="apa.html">Up</a></td><td width="40%" align="right"> </td></tr><tr><td width="40%" align="left" valign="top">Appendix A. Manual pages </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> </td></tr></table></div></body></html>
