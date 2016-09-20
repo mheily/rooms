@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section xml:lang="en" xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">
+
+<title>Comparison with other container systems</title>
+<para>
+This section compares the Rooms system with other similar tools.
+Because the Rooms system is very new, some of the ideas here are not
+fully implemented yet, but the intent is there.
+</para>
+
+<para>
+	Rooms are easier to use than traditional FreeBSD jails because rooms
+	provide a higher-level abstraction for expressing one's intent and desires
+	about the container rather than having to engineer a precise solution
+	and apply the corresponding jail configuration. Using room permissions,
+	you can easily control what parts of the host system are shared with
+	the container.
+</para>
+
+<para>
+	When compared to iocage, rooms have a design that is more network-centric
+	and allow you to share containers in much the same way as you can share a Git
+	repository on GitHub. Rooms are structured so that local data is kept
+	separate from shared data, so that when a new version or upgraded
+	version of a room is available, you can install the updated software
+	without overwriting your custom data.
+</para>
+
+<para>
+	So to clarify, everything that you can do with rooms as possible to do
+	with jails and iocage if you 2 Tinker with the low-level details and
+	have a do it yourself mentality. Where it gets more interesting is when
+	you want to share containers with the public, or pull from a public
+	repository of containers. The design of traditional FreeBSD jails and
+	iocage will not help you share a container.
+</para>
+
+<para>
+	Another unique feature of rooms is that it is built as a library rather than a
+	free-standing executable. This allows other software to work with rooms
+	without having to fork() and exec() another program. (NOTE: the library is not ready for general use yet)
+</para>
+
+<para>
+	Rooms also have a different approach to security than tools like iocage
+	and
+	ezjail. The room command is a setuid-root binary that is actively
+	hardened against the user, and tries to make it difficult for the
+	user
+	to perform actions that might compromise the security of the whole
+	system. The benefit of this is that users can be given permission to
+	create their own containers. By contrast, think what would happen if
+	you gave users the ability to
+	create jails using iocage. They could
+	easily use the exec_prestart
+	option to run arbitrary commands as root in
+	the host system.
+</para>
+
+<para>
+	Another advantage of using rooms is that they will be integrated with the jobd
+	service manager, so you will be able to launch jobs in the host system
+	that run inside of a container. There will be various control knobs
+	within the job configuration file to configure how the container works.
+	None of	the existing jail managers will have this level of integration with
+	jobd, so you will have to live with traditional mechanisms like rc(8) and cron(8).
+</para>
+
+<para>
+	Rooms are also portable in a way that jail managers are not. A room is
+	described at a higher level of abstraction than a jail, so it should be
+	possible to implement rooms on a variety of different operating
+	systems. On Linux, you would use cgroups to implement resource
+	partitioning. On Solaris based systems, you would use zones. Having a
+	container mechanism that works across multiple Unix variants is a
+	compelling idea.
+</para>
+
+<!-- 
+TODO: summarize
+	- portable
+	- secure enough to allow unprivileged users to create containers
+	- version control system features
+	- ease of use, especially when creating hybrid containers
+-->
+</section>

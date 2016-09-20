@@ -69,6 +69,11 @@ Allow users to run X11 applications in jails
 </chapter>
 
 <chapter>
+<title>Design</title>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="comparison.xml" />
+</chapter>
+
+<chapter>
 <title>Installation</title>
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="building.xml" />
 </chapter>
