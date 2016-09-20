@@ -35,7 +35,7 @@ To build on FreeBSD, you will need:
 Install the required packages:
 
 	```
-	sudo pkg install -y groff docbook2X
+	sudo pkg install -y groff docbook2X jing xmlto
 	```
 
 Run the configuration script:

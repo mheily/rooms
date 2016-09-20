@@ -207,6 +207,15 @@ $ room FreeBSD-10.3 create \
 	</programlisting>
 
 	<para>
+	The following example creates a TrueOS room named 'TrueOS'.
+	</para>
+	<programlisting>
+	<![CDATA[
+$ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
+]]>
+	</programlisting>
+	
+	<para>
 	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
 	</para>
 	<programlisting>

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>             
+<book xmlns="http://docbook.org/ns/docbook" 
+        xmlns:xi="http://www.w3.org/2001/XInclude"
+        xmlns:xlink="http://www.w3.org/1999/xlink" 
+        version="5.0" xml:lang="en_US">
+<info>
+<title>Rooms</title>
+<subtitle>A container system</subtitle>
+<date>April 23, 2016 </date>
+<author>
+<personname>
+<firstname>Mark</firstname><surname>Heily</surname>
+</personname>
+</author>
+  <copyright>
+    <year>2016</year>
+    <holder>Mark Heily</holder>
+</copyright>
+<legalnotice>
+<para>
+	Permission to use, copy, modify, and/or distribute this document for
+	any purpose with or without fee is hereby granted, provided that the
+	above copyright notice and this permission notice appear in all copies.
+</para>
+<para>
+	THIS DOCUMENT IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+	WARRANTIES WITH REGARD TO THIS DOCUMENT INCLUDING ALL IMPLIED
+	WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR
+	BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES
+	OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+	WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+	ARISING OUT OF OR IN CONNECTION WITH THE USE OF THIS DOCUMENT.
+</para>
+</legalnotice>
+
+</info>
+
+<chapter>
+
+<title>Overview</title>
+<section><title>Synopsis</title>
+<para>TODO put introduction here</para>
+</section>
+<!-- 
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-terminology.xml" />
+ -->
+</chapter>
+
+<chapter>
+<title>Design of the Job Framework</title>
+<!-- <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-design.xml" />  -->
+</chapter>
+
+<chapter>
+	<title>Designing tools that use the Job Framework</title>
+<!--  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-service_manager.xml" />  -->	
+</chapter>
+
+-->
+<appendix><title>Manual pages</title>
+<para>The manual pages for all commands are included below.</para>
+<!--  
+	Here's the best template I could find for writing manpages in DocBook:
+			http://www.tldp.org/HOWTO/DocBook-Install/using.html  
+-->
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../room.1.xml" />
+</appendix>
+</book>
