@@ -28,8 +28,11 @@ build-html:
 build-html-nochunks:
 	$(XMLTO) -o html-nochunks html-nochunks book.xml
 
-preview: clean build-html-nochunks
+preview-nochunks: clean build-html-nochunks
 	firefox --new-window ./html-nochunks/book.html
+
+preview: clean build-html
+	firefox --new-window ./html/index.html
 
 publish:
 	cp html/*.html $(GH_PAGES_CHECKOUT)

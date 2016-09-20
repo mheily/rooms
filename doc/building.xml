@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section xml:lang="en" xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">
+
+<title>Building from source</title>
+<para>
+This section describes how to build the Rooms project from source. 
+</para>
+
+To build the software, you will need, at a minimum:
+<itemizedlist>
+<listitem><para>
+FreeBSD 10.3 or newer
+</para></listitem>
+<listitem><para>
+the boost-libs package
+</para></listitem>
+<listitem><para>
+a Git client
+</para></listitem>
+</itemizedlist>
+
+In order to build the manual pages, you will also need, at a minimum:
+<itemizedlist>
+<listitem><para>
+groff, docbook2X
+</para></listitem>
+<listitem><para>
+The following packages are needed to build the DocBook-based website:
+ jing, xmlto
+</para></listitem>
+</itemizedlist>
+
+<sect2><title>Installation procedures</title>
+<orderedlist>
+<listitem>
+<para>Install the required packages.</para>
+<programlisting>
+$ sudo pkg install -y git groff docbook2X jing xmlto
+</programlisting>
+</listitem>
+
+<listitem>
+<para>Download the source code.</para>
+<programlisting>
+$ git https://github.com/mheily/rooms.git
+</programlisting>
+</listitem>
+
+<listitem>
+<para>Change into the directory with the source code.</para>
+<programlisting>
+$ cd rooms
+</programlisting>
+</listitem>
+
+
+<listitem>
+<para>
+Run the configuration script.
+</para>
+<programlisting>
+$ ./configure
+</programlisting>
+</listitem>
+
+<listitem>
+<para>
+Build the software and manual pages.
+</para>
+<programlisting>
+$ make
+</programlisting>
+</listitem>
+
+<listitem>
+<para>
+Install the software.
+</para>
+<programlisting>
+$ sudo make install
+</programlisting>
+</listitem>
+</orderedlist>
+</sect2>
+</section>

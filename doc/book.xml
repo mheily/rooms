@@ -38,8 +38,30 @@
 <chapter>
 
 <title>Overview</title>
-<section><title>Synopsis</title>
-<para>TODO put introduction here</para>
+
+<section><title>Introduction</title>
+<para>
+Rooms are a distributed form of containers that are based on
+ZFS and FreeBSD jails.
+</para>
+
+<para>
+Features:
+</para>
+
+<itemizedlist>
+<listitem>
+	<para>
+	Allow unprivileged users to create jails in a simple and safe manner.
+	</para>
+</listitem>
+
+<listitem>
+<para>
+Allow users to run X11 applications in jails
+</para>
+</listitem>
+</itemizedlist>
 </section>
 <!-- 
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-terminology.xml" />
@@ -47,16 +69,15 @@
 </chapter>
 
 <chapter>
-<title>Design of the Job Framework</title>
-<!-- <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-design.xml" />  -->
+<title>Installation</title>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="building.xml" />
 </chapter>
 
 <chapter>
-	<title>Designing tools that use the Job Framework</title>
-<!--  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-service_manager.xml" />  -->	
+<title>Usage</title>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="usage.xml" />
 </chapter>
 
--->
 <appendix><title>Manual pages</title>
 <para>The manual pages for all commands are included below.</para>
 <!--  

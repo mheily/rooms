@@ -19,10 +19,6 @@ Pay close attention to this part of the license:
 Rooms are a distributed form of containers that are based on
 ZFS and FreeBSD jails.
 
-Features:
-1. Allows unprivileged users to create jails in a simple and safe manner
-2. Allows running X11 applications in jails
-
 # Requirements
 
 To build on FreeBSD, you will need:
