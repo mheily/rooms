@@ -19,64 +19,7 @@ Pay close attention to this part of the license:
 Rooms are a distributed form of containers that are based on
 ZFS and FreeBSD jails.
 
-# Requirements
+# More information
 
-To build on FreeBSD, you will need:
- * FreeBSD 10.3 or newer
- * the boost-libs package
- * the groff and docbook2X packages
-
-# Installation
-
-Install the required packages:
-
-	```
-	sudo pkg install -y groff docbook2X jing xmlto
-	```
-
-Run the configuration script:
-
-	```
-	./configure
-	```
-
-To build and install the software, run the following:
-
-	```
-	$ make
-	$ sudo make install
-	```
-
-# Usage
-
-See the room(1) manual page for information about using the room command.
-
-# Examples
-
-Create a new room called 'hello_world'.
-	```
-	$ room hello_world create
-	```
-
-Enter the room. This will launch a shell inside the room.
-	```
-	$ room hello_world enter
-	```
-
-Install the 'xclock' program inside the room.
-	```	
-	$ su -
-	# pkg install -y xclock
-	# exit
-	``
-
-Run the 'xclock' program. It should display a small clock on your desktop.
-	```
-	$ xclock
-	```
-
-When you are done, exit the shell, and destroy the room.
-	```
-	$ exit
-	$ room hello_world destroy
-	```
+For more information about building and using this software,
+see https://mheily.github.io/rooms

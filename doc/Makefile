@@ -15,7 +15,6 @@
 #
 
 XMLTO=xmlto --skip-validation
-GH_PAGES_CHECKOUT=../../../jobd-gh-pages
 
 all: clean check build-html build-html-nochunks
 	
@@ -35,8 +34,9 @@ preview: clean build-html
 	firefox --new-window ./html/index.html
 
 publish:
-	cp html/*.html $(GH_PAGES_CHECKOUT)
-	cd $(GH_PAGES_CHECKOUT) && git commit -a -m'Regenerate handbook' && git push origin gh-pages
+	rm -f ../docs/*.html
+	cp html/*.html ../docs/
+	cd ../docs && git commit -m'Regenerate GitHub pages HTML' *.html
 
 clean:
 	rm -rf html html-nochunks
