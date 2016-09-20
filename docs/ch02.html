@@ -1,67 +1,82 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 2. Installation</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch01.html" title="Chapter 1. Overview"><link rel="next" href="ch03.html" title="Chapter 3. Usage"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 2. Installation"><div class="titlepage"><div><div><h2 class="title"><a name="idp60819832"></a>Chapter 2. Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch02.html#idp61192824">Building from source</a></span></dt></dl></div>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 2. Design</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch01.html" title="Chapter 1. Overview"><link rel="next" href="ch03.html" title="Chapter 3. Installation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Design</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 2. Design"><div class="titlepage"><div><div><h2 class="title"><a name="idp61230584"></a>Chapter 2. Design</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch02.html#idp61230840">Comparison with other container systems</a></span></dt></dl></div>
 
-<div lang="en" class="section" title="Building from source"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp61192824"></a>Building from source</h2></div></div></div>
+<div lang="en" class="section" title="Comparison with other container systems"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp61230840"></a>Comparison with other container systems</h2></div></div></div>
 
 
 <p>
-This section describes how to build the Rooms project from source. 
+This section compares the Rooms system with other similar tools.
+Because the Rooms system is very new, some of the ideas here are not
+fully implemented yet, but the intent is there.
 </p>
 
-To build the software, you will need, at a minimum:
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
-FreeBSD 10.3 or newer
-</p></li><li class="listitem"><p>
-the boost-libs package
-</p></li><li class="listitem"><p>
-a Git client
-</p></li></ul></div>
+<p>
+	Rooms are easier to use than traditional FreeBSD jails because rooms
+	provide a higher-level abstraction for expressing one's intent and desires
+	about the container rather than having to engineer a precise solution
+	and apply the corresponding jail configuration. Using room permissions,
+	you can easily control what parts of the host system are shared with
+	the container.
+</p>
 
-In order to build the manual pages, you will also need, at a minimum:
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
-groff, docbook2X
-</p></li><li class="listitem"><p>
-The following packages are needed to build the DocBook-based website:
- jing, xmlto
-</p></li></ul></div>
+<p>
+	When compared to iocage, rooms have a design that is more network-centric
+	and allow you to share containers in much the same way as you can share a Git
+	repository on GitHub. Rooms are structured so that local data is kept
+	separate from shared data, so that when a new version or upgraded
+	version of a room is available, you can install the updated software
+	without overwriting your custom data.
+</p>
 
-<div class="sect2" title="Installation procedures"><div class="titlepage"><div><div><h3 class="title"><a name="idp61197304"></a>Installation procedures</h3></div></div></div>
-<div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-<p>Install the required packages.</p>
-<pre class="programlisting">
-$ sudo pkg install -y git groff docbook2X jing xmlto
-</pre>
-</li><li class="listitem">
-<p>Download the source code.</p>
-<pre class="programlisting">
-$ git https://github.com/mheily/rooms.git
-</pre>
-</li><li class="listitem">
-<p>Change into the directory with the source code.</p>
-<pre class="programlisting">
-$ cd rooms
-</pre>
-</li><li class="listitem">
 <p>
-Run the configuration script.
+	So to clarify, everything that you can do with rooms as possible to do
+	with jails and iocage if you 2 Tinker with the low-level details and
+	have a do it yourself mentality. Where it gets more interesting is when
+	you want to share containers with the public, or pull from a public
+	repository of containers. The design of traditional FreeBSD jails and
+	iocage will not help you share a container.
 </p>
-<pre class="programlisting">
-$ ./configure
-</pre>
-</li><li class="listitem">
+
 <p>
-Build the software and manual pages.
+	Another unique feature of rooms is that it is built as a library rather than a
+	free-standing executable. This allows other software to work with rooms
+	without having to fork() and exec() another program. (NOTE: the library is not ready for general use yet)
 </p>
-<pre class="programlisting">
-$ make
-</pre>
-</li><li class="listitem">
+
 <p>
-Install the software.
+	Rooms also have a different approach to security than tools like iocage
+	and
+	ezjail. The room command is a setuid-root binary that is actively
+	hardened against the user, and tries to make it difficult for the
+	user
+	to perform actions that might compromise the security of the whole
+	system. The benefit of this is that users can be given permission to
+	create their own containers. By contrast, think what would happen if
+	you gave users the ability to
+	create jails using iocage. They could
+	easily use the exec_prestart
+	option to run arbitrary commands as root in
+	the host system.
 </p>
-<pre class="programlisting">
-$ sudo make install
-</pre>
-</li></ol></div>
+
+<p>
+	Another advantage of using rooms is that they will be integrated with the jobd
+	service manager, so you will be able to launch jobs in the host system
+	that run inside of a container. There will be various control knobs
+	within the job configuration file to configure how the container works.
+	None of	the existing jail managers will have this level of integration with
+	jobd, so you will have to live with traditional mechanisms like rc(8) and cron(8).
+</p>
+
+<p>
+	Rooms are also portable in a way that jail managers are not. A room is
+	described at a higher level of abstraction than a jail, so it should be
+	possible to implement rooms on a variety of different operating
+	systems. On Linux, you would use cgroups to implement resource
+	partitioning. On Solaris based systems, you would use zones. Having a
+	container mechanism that works across multiple Unix variants is a
+	compelling idea.
+</p>
+
+
 </div>
-</div>
-</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 1. Overview </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 3. Usage</td></tr></table></div></body></html>
+</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 1. Overview </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 3. Installation</td></tr></table></div></body></html>

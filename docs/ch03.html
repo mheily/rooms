@@ -1,46 +1,67 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 3. Usage</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch02.html" title="Chapter 2. Installation"><link rel="next" href="apa.html" title="Appendix A. Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 3. Usage</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="apa.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 3. Usage"><div class="titlepage"><div><div><h2 class="title"><a name="idp61217784"></a>Chapter 3. Usage</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch03.html#idp61218040">Usage</a></span></dt></dl></div>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 3. Installation</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch02.html" title="Chapter 2. Design"><link rel="next" href="ch04.html" title="Chapter 4. Usage"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 3. Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 3. Installation"><div class="titlepage"><div><div><h2 class="title"><a name="idp61235192"></a>Chapter 3. Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch03.html#idp61235448">Building from source</a></span></dt></dl></div>
 
-<div lang="en" class="section" title="Usage"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp61218040"></a>Usage</h2></div></div></div>
+<div lang="en" class="section" title="Building from source"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp61235448"></a>Building from source</h2></div></div></div>
 
 
 <p>
-See the room(1) manual page for information about using the room command.
+This section describes how to build the Rooms project from source. 
 </p>
 
-<div class="sect2" title="Examples"><div class="titlepage"><div><div><h3 class="title"><a name="idp61219192"></a>Examples</h3></div></div></div></div>
+To build the software, you will need, at a minimum:
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+FreeBSD 10.3 or newer
+</p></li><li class="listitem"><p>
+the boost-libs package
+</p></li><li class="listitem"><p>
+a Git client
+</p></li></ul></div>
 
+In order to build the manual pages, you will also need, at a minimum:
+<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+groff, docbook2X
+</p></li><li class="listitem"><p>
+The following packages are needed to build the DocBook-based website:
+ jing, xmlto
+</p></li></ul></div>
+
+<div class="sect2" title="Installation procedures"><div class="titlepage"><div><div><h3 class="title"><a name="idp61239928"></a>Installation procedures</h3></div></div></div>
 <div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
-<p>Create a new room called 'hello_world'.</p>
+<p>Install the required packages.</p>
 <pre class="programlisting">
-$ room hello_world create
+$ sudo pkg install -y git groff docbook2X jing xmlto
 </pre>
 </li><li class="listitem">
-<p>Enter the room. This will launch a shell inside the room.</p>
+<p>Download the source code.</p>
 <pre class="programlisting">
-$ room hello_world enter
+$ git https://github.com/mheily/rooms.git
 </pre>
 </li><li class="listitem">
-<p>Install the 'xclock' program inside the room.</p>
+<p>Change into the directory with the source code.</p>
 <pre class="programlisting">
-hello_world$ su -
-hello_world# pkg install -y xclock
-hello_world# exit
-</pre>
-</li><li class="listitem">
-<p>
-Run the 'xclock' program inside the room. It should display a small clock on your desktop.
-</p>
-<pre class="programlisting">
-hello_world$ xclock
+$ cd rooms
 </pre>
 </li><li class="listitem">
 <p>
-When you are done, exit the shell, and destroy the room.
+Run the configuration script.
 </p>
 <pre class="programlisting">
-hello_world$ exit
-$ room hello_world destroy
+$ ./configure
+</pre>
+</li><li class="listitem">
+<p>
+Build the software and manual pages.
+</p>
+<pre class="programlisting">
+$ make
+</pre>
+</li><li class="listitem">
+<p>
+Install the software.
+</p>
+<pre class="programlisting">
+$ sudo make install
 </pre>
 </li></ol></div>
 </div>
-</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="apa.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Installation </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Appendix A. Manual pages</td></tr></table></div></body></html>
+</div>
+</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Design </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 4. Usage</td></tr></table></div></body></html>
