@@ -46,6 +46,12 @@ ZFS and FreeBSD jails.
 </para>
 
 <para>
+For the current status, release information, and the list of known bugs,
+see the 
+<ulink url="https://github.com/mheily/rooms"><citetitle>GitHub project page</citetitle></ulink>.
+</para>
+
+<para>
 Features:
 </para>
 
@@ -63,6 +69,12 @@ Allow users to run X11 applications in jails
 </listitem>
 </itemizedlist>
 </section>
+
+<para>
+The <link linkend='room.1'>room(1)</link> manpage describes these features
+in more detail.
+</para>
+
 <!-- 
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sect1-terminology.xml" />
  -->
