@@ -211,8 +211,7 @@ The following subcommands and options are available:
 <refsect1>
 	<title>EXAMPLES</title>
 	<para>
-	The following example creates a new room named FreeBSD-10.3 by downloading
-	the base.txz file from the closest FreeBSD mirror. 
+	The following example creates a base template using FreeBSD-10.3.
 	</para>
 	<programlisting>
 <![CDATA[
