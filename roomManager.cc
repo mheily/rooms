@@ -166,6 +166,7 @@ void RoomManager::createRoom(const string& name) {
 
 void RoomManager::cloneRoom(const string& src, const string& dest) {
 	Room* srcRoom = new Room(roomDir, src);
+	log_debug("cloning room: source=%s destination=%s", src.c_str(), dest.c_str());
 	srcRoom->clone(srcRoom->getLatestSnapshot(), dest);
 	delete srcRoom;
 	enumerateRooms();

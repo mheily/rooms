@@ -101,4 +101,11 @@ public:
 			throw std::system_error(errno, std::system_category());
 		}
 	}
+
+	static void unmount(const string& path) {
+		if (::unmount(path.c_str(), 0) < 0) {
+			log_errno("unmount(2) of `%s'", path.c_str());
+			throw std::system_error(errno, std::system_category());
+		}
+	}
 };

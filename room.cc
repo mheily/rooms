@@ -499,6 +499,8 @@ void Room::stop()
 	PasswdEntry pwent(ownerUid);
 	string cmd;
 
+	int unmount_flags = 0; // Future: might support MNT_FORCE
+
 	log_debug("stopping room `%s'", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
@@ -511,20 +513,10 @@ void Room::stop()
 		throw std::runtime_error("room does not exist");
 	}
 
-	log_debug("unmounting /dev");
-	if (unmount(string(chrootDir + "/dev").c_str(), MNT_FORCE) < 0) {
-		if (errno != EINVAL) {
-			log_errno("unmount(2)");
-			throw std::system_error(errno, std::system_category());
-		}
-	}
-
-	SetuidHelper::lowerPrivileges();
 	killAllProcesses();
-	SetuidHelper::raisePrivileges();
 
-	log_debug("unmounting /dev again, now that all processes are gone");
-	if (unmount(string(chrootDir + "/dev").c_str(), MNT_FORCE) < 0) {
+	log_debug("unmounting /dev");
+	if (unmount(string(chrootDir + "/dev").c_str(), unmount_flags) < 0) {
 		if (errno != EINVAL) {
 			log_errno("unmount(2)");
 			throw std::system_error(errno, std::system_category());
@@ -533,14 +525,14 @@ void Room::stop()
 
 	if (true || roomOptions.shareTempDir) {
 		log_debug("unmounting /tmp");
-		if (unmount(string(chrootDir + "/tmp").c_str(), MNT_FORCE) < 0) {
+		if (unmount(string(chrootDir + "/tmp").c_str(), unmount_flags) < 0) {
 			if (errno != EINVAL) {
 				log_errno("unmount(2)");
 				throw std::system_error(errno, std::system_category());
 			}
 		}
 		log_debug("unmounting /var/tmp");
-		if (unmount(string(chrootDir + "/var/tmp").c_str(), MNT_FORCE) < 0) {
+		if (unmount(string(chrootDir + "/var/tmp").c_str(), unmount_flags) < 0) {
 			if (errno != EINVAL) {
 				log_errno("unmount(2)");
 				throw std::system_error(errno, std::system_category());
@@ -549,7 +541,7 @@ void Room::stop()
 	}
 
 	log_debug("unmounting /home");
-	if (unmount(string(chrootDir + pwent.getHome()).c_str(), MNT_FORCE) < 0) {
+	if (unmount(string(chrootDir + pwent.getHome()).c_str(), unmount_flags) < 0) {
 		if (errno != EINVAL) {
 			log_errno("unmount(2)");
 			throw std::system_error(errno, std::system_category());
@@ -609,9 +601,14 @@ void Room::destroy()
 
 	SetuidHelper::raisePrivileges();
 	if (useZfs) {
-		// this races with "jail -r"
+
+		log_debug("unmounting root filesystem");
+		FileUtil::unmount(roomDataDir + "/share");
+		FileUtil::unmount(roomDataDir);
+
+		// this used to race with "jail -r", but doesn't anymore
 		bool success = false;
-		for (int i = 0; i < 5; i++) {
+		for (int i = 0; i < 2; i++) {
 			sleep(1);
 			int result;
 			Shell::execute("/sbin/zfs", { "destroy", "-r", roomDataset + "/" + roomName}, result);
@@ -624,13 +621,6 @@ void Room::destroy()
 			log_error("unable to destroy the ZFS dataset");
 			throw std::runtime_error("unable to destroy the ZFS dataset");
 		}
-
-	} else {
-		// remove the immutable flag
-		Shell::execute("/bin/chflags", {"-R", "noschg", chrootDir});
-
-		// remove all files (this makes me nervous)
-		Shell::execute("/bin/rm", {"-rf", chrootDir});
 	}
 
 	log_notice("room has been destroyed");
@@ -638,6 +628,7 @@ void Room::destroy()
 	SetuidHelper::lowerPrivileges();
 }
 
+// Must be called w/ elevated privileges
 void Room::killAllProcesses()
 {
 	log_debug("killing all processes for room %s", roomName.c_str());
@@ -651,38 +642,10 @@ void Room::killAllProcesses()
 		return;
 	}
 
-	SetuidHelper::raisePrivileges();
-
-	// Kill all programs still using the filesystem
-	int status;
-	Shell::execute("/bin/pkill", { "-9", "-j", std::to_string(jid)}, status);
-	if (status > 1) {
-		log_error("pkill failed with status %d", status);
-		throw std::runtime_error("pkill failed");
+	if (jail_remove(jid) < 0) {
+		log_errno("jail_remove(2)");
+        throw std::system_error(errno, std::system_category());
 	}
-
-	bool timeout = true;
-	for (int i = 0 ; i < 60; i++) {
-		int status;
-		Shell::execute("/bin/pgrep", { "-q", "-j", std::to_string(jid) }, status);
-		if (status > 1) {
-			log_error("pkill failed");
-			throw std::runtime_error("pkill failed");
-		}
-		if (status == 0) {
-			log_debug("waiting for processes to die");
-			sleep(1);
-		}
-		if (status == 1) {
-			timeout = false;
-			break;
-		}
-	}
-	if (timeout) {
-		log_error("pkill failed; timeout reached");
-		throw std::runtime_error("processes will not die");
-	}
-	SetuidHelper::lowerPrivileges();
 }
 
 void Room::exportArchive()

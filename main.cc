@@ -178,7 +178,7 @@ static void get_options(int argc, char *argv[])
 	if (popt0 == "list") {
 		mgr.listRooms();
 	} else if (popt1 == "clone") {
-		mgr.cloneRoom(popt0, popt2);
+		mgr.cloneRoom(popt2, popt0);
 	} else if (popt1 == "create") {
 		roomName = popt0;
 		if (baseArchiveUri != "") {
