@@ -16,6 +16,7 @@
 <para>
 <literallayout>
 <emphasis role="bold">room list</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
@@ -59,6 +60,20 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>
 
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Clone an existing room named <replaceable>source</replaceable> to 
+	create a new room called <replaceable>name</replaceable>.
+			</para>
+		</listitem>
+	</varlistentry>
 
 	<varlistentry>
 		<term>
