@@ -286,6 +286,42 @@ void Room::createEmpty()
 	SetuidHelper::lowerPrivileges();
 }
 
+// Run FreeBSD-specific postinstall actions
+void Room::postinstallFreeBSD()
+{
+	// KLUDGE: install pkg(8)
+	int rv;
+	Shell::execute("/usr/sbin/chroot", {
+			"-u", "root",
+			chrootDir,
+			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
+	}, rv);
+	if (rv != 0) {
+		throw std::runtime_error("failed to bootstrap pkg");
+	}
+
+	// Enable remote package installation
+	Shell::execute("/usr/sbin/chroot", {
+			"-u", "root",
+			chrootDir,
+			"sed", "-i", "-e", "s/enabled: no/enabled: yes/",
+			"/etc/pkg/FreeBSD.conf",
+	}, rv);
+	if (rv != 0) {
+		throw std::runtime_error("failed to update pkg.conf");
+	}
+
+	// Download package catalog
+	Shell::execute("/usr/sbin/chroot", {
+			"-u", "root",
+			chrootDir,
+			"pkg", "update",
+	}, rv);
+	if (rv != 0) {
+		throw std::runtime_error("failed to run: pkg update");
+	}
+}
+
 void Room::extractTarball(const string& baseTarball)
 {
 	string cmd;
@@ -301,20 +337,13 @@ void Room::extractTarball(const string& baseTarball)
 	});
 
 	pushResolvConf();
-
-	// KLUDGE: install pkg(8)
-	int rv;
-	Shell::execute("/usr/sbin/chroot", {
-			"-u", "root",
-			chrootDir,
-			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
-	}, rv);
-
-	Shell::execute("/sbin/umount", { chrootDir + "/dev" });
-
-	if (rv != 0) {
-		throw std::runtime_error("failed to bootstrap pkg");
+	try {
+		postinstallFreeBSD();
+	} catch (...) {
+		Shell::execute("/sbin/umount", { chrootDir + "/dev" });
+		throw std::runtime_error("postinstall script failed");
 	}
+	Shell::execute("/sbin/umount", { chrootDir + "/dev" });
 
 	SetuidHelper::lowerPrivileges();
 
@@ -708,7 +737,7 @@ void Room::setOsType(const string& osType)
 
 void Room::install(const struct RoomInstallParams& rip)
 {
-	string tarball = "/tmp/base.txz"; //XXX-FIXME insecure tempdir use
+	string tarball = "/room/.tmp/base.txz"; //XXX-FIXME insecure tempdir use
 
 	if (!FileUtil::checkExists(tarball)) {
 		Shell::execute("/usr/bin/fetch", {

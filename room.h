@@ -119,5 +119,6 @@ private:
 	void validateName(const string& name);
 	void pushResolvConf();
 	void getJailName();
+	void postinstallFreeBSD();
 	string generateSnapshotName();
 };
