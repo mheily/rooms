@@ -193,6 +193,9 @@ static void get_options(int argc, char *argv[])
 			mgr.cloneRoom(roomName);
 		}
 		Room room = mgr.getRoomByName(roomName);
+	} else if (popt1 == "configure") {
+		Room room = mgr.getRoomByName(popt0);
+		room.editConfiguration();
 	} else if (popt0 == "init") {
 		cout << "ERROR: the rooms subsystem has already been initialized\n";
 		exit(1);

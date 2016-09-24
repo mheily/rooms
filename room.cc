@@ -722,6 +722,23 @@ void Room::install(const struct RoomInstallParams& rip)
 	room.syncRoomOptions();
 }
 
+void Room::editConfiguration()
+{
+	SetuidHelper::raisePrivileges();
+	SetuidHelper::dropPrivileges();
+	char* editor = getenv("EDITOR");
+	if (!editor) {
+		editor = strdup("vi");
+	}
+	string options_file = roomDataDir + "/etc/options.json";
+	char *oarg = strdup(options_file.c_str());
+	char *args[] = { editor, oarg, NULL };
+	if (execvp(editor, args) < 0) {
+		cout << editor << " " << options_file;
+		throw std::system_error(errno, std::system_category());
+	}
+}
+
 void Room::pushResolvConf()
 {
 	// KLUDGE: copy /etc/resolv.conf. See issue #13 for a better idea.
