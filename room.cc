@@ -698,32 +698,28 @@ void Room::setOsType(const string& osType)
 }
 */
 
+void Room::downloadTarball(const string& uri, const string& path)
+{
+	string tarball = roomDataDir + "/base.txz";
+	log_debug("downloading %s", uri.c_str());
+	Shell::execute("/usr/bin/fetch", { "-q", "-o", path, uri });
+}
+
+void Room::installFromArchive(const string& uri)
+{
+	string tarball = roomDataDir + "/local/tmp/base.txz";
+	downloadTarball(uri, tarball);
+	extractTarball(tarball);
+	FileUtil::unlink(tarball);
+}
+
 void Room::install(const struct RoomInstallParams& rip)
 {
-	string tarball = "/room/.tmp/base.txz"; //XXX-FIXME insecure tempdir use
-
-	if (!FileUtil::checkExists(tarball)) {
-		Shell::execute("/usr/bin/fetch", {
-				"-q",
-				"-o", tarball,
-				rip.baseArchiveUri,
-		});
-	}
-
 	Room room(rip.roomDir, rip.name);
 	room.roomOptions = rip.options;
 	room.createEmpty();
-	room.extractTarball(tarball);
-
+	room.installFromArchive(rip.baseArchiveUri);
 	room.syncRoomOptions();
-
-	// FIXME: disabled for testing
-#if 0
-	if (unlink(tarball.c_str()) < 0) {
-        log_errno("unlink(2)");
-        throw std::system_error(errno, std::system_category());
-	}
-#endif
 }
 
 void Room::pushResolvConf()

@@ -59,6 +59,8 @@ public:
 	Room(const string& managerRoomDir, const string& name);
 	static void install(const struct RoomInstallParams& rip);
 	void createEmpty();
+	void installFromArchive(const string& uri);
+	void downloadTarball(const string& uri, const string& path);
 	void extractTarball(const string& baseTarball);
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
