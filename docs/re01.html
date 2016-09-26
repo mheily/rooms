@@ -1,4 +1,4 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>room</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="apa.html" title="Appendix&#160;A.&#160;Manual pages"><link rel="prev" href="apa.html" title="Appendix&#160;A.&#160;Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">room</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apa.html">Prev</a>&#160;</td><th width="60%" align="center">Appendix&#160;A.&#160;Manual pages</th><td width="20%" align="right">&#160;</td></tr></table><hr></div><div class="refentry" title="room"><a name="room.1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>room &#8212; manage rooms</p></div><div class="refsect1" title="SYNOPSIS"><a name="idp63182288"></a><h2>SYNOPSIS</h2><p>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=US-ASCII"><title>room</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="apa.html" title="Appendix&#160;A.&#160;Manual pages"><link rel="prev" href="apa.html" title="Appendix&#160;A.&#160;Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">room</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apa.html">Prev</a>&#160;</td><th width="60%" align="center">Appendix&#160;A.&#160;Manual pages</th><td width="20%" align="right">&#160;</td></tr></table><hr></div><div class="refentry" title="room"><a name="room.1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>room &#8212; manage rooms</p></div><div class="refsect1" title="SYNOPSIS"><a name="idp63186384"></a><h2>SYNOPSIS</h2><p>
 </p><div class="literallayout"><p><br>
 <span class="bold"><strong>room&#160;list</strong></span><br>
 <span class="bold"><strong>room</strong></span>&#160;<em class="replaceable"><code>name</code></em>&#160;<span class="bold"><strong>configure</strong></span><br>
@@ -15,7 +15,7 @@
 <span class="bold"><strong>room</strong></span>&#160;<em class="replaceable"><code>name</code></em>&#160;<span class="bold"><strong>start</strong></span><br>
 <span class="bold"><strong>room</strong></span>&#160;<em class="replaceable"><code>name</code></em>&#160;<span class="bold"><strong>stop</strong></span><br>
 </p></div><p>
-</p></div><div class="refsect1" title="Description"><a name="idp63217616"></a><h2>Description</h2><p>
+</p></div><div class="refsect1" title="Description"><a name="idp63221712"></a><h2>Description</h2><p>
 The <span class="command"><strong>room</strong></span> command is the management utility
 for rooms. Rooms are a simplified form of containers that are
 built on top of ZFS and FreeBSD jails.
@@ -105,7 +105,7 @@ The following subcommands and options are available:
 		</span></dt><dd><p>
 	Terminate all processes inside the room called <em class="replaceable"><code>name</code></em>,
 	unmount all mounted filesystems in the room, and destroy the associated jail. 
-			</p></dd></dl></div></div><div class="refsect1" title="EXAMPLES"><a name="idp63254224"></a><h2>EXAMPLES</h2><p>
+			</p></dd></dl></div></div><div class="refsect1" title="EXAMPLES"><a name="idp63311568"></a><h2>EXAMPLES</h2><p>
 	The following example creates a base template using FreeBSD-10.3.
 	</p><pre class="programlisting">
 
@@ -124,13 +124,13 @@ $ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
 
 $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 
-	</pre></div><div class="refsect1" title="ENVIRONMENT"><a name="idp63256400"></a><h2>ENVIRONMENT</h2><p>
+	</pre></div><div class="refsect1" title="ENVIRONMENT"><a name="idp63313744"></a><h2>ENVIRONMENT</h2><p>
 	The <span class="command"><strong>room</strong></span> command does not rely on any environment variables.
-	</p></div><div class="refsect1" title="EXIT STATUS"><a name="idp63257424"></a><h2>EXIT STATUS</h2><p>
+	</p></div><div class="refsect1" title="EXIT STATUS"><a name="idp63314768"></a><h2>EXIT STATUS</h2><p>
 	The <span class="command"><strong>room</strong></span> command exits&#160;0 on success, and&#160;&gt;0 if an error occurs
-	</p></div><div class="refsect1" title="AUTHORS"><a name="idp63258576"></a><h2>AUTHORS</h2><p>
+	</p></div><div class="refsect1" title="AUTHORS"><a name="idp63315920"></a><h2>AUTHORS</h2><p>
 		Mark Heily &lt;mark@heily.com&gt;
-	</p></div><div class="refsect1" title="BUGS"><a name="idp63259216"></a><h2>BUGS</h2><p>
+	</p></div><div class="refsect1" title="BUGS"><a name="idp63316560"></a><h2>BUGS</h2><p>
 	Sending and receiving rooms will not work as expected if you are operating on
 	rooms which are cloned from the base template. For best results,	only send rooms that are created via "room create --uri=base.txz". 
 	</p><p>
