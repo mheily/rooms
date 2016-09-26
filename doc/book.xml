@@ -82,7 +82,10 @@ in more detail.
 
 <chapter>
 <title>Design</title>
+<!--
+Not finished:
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="comparison.xml" />
+-->
 </chapter>
 
 <chapter>
