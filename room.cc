@@ -751,7 +751,7 @@ void Room::pushResolvConf()
 // Generate a reasonably unique and meaningful ZFS snapshot name.
 string Room::generateSnapshotName()
 {
-	const char *format = "%Y-%m-%d.%H:%M:%S.UTC%z";
+	const char *format = "%Y-%m-%d.%H:%M:%S";
 	char buf[100];
 
 	std::time_t t = std::time(NULL);
