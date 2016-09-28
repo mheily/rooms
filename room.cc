@@ -718,8 +718,8 @@ void Room::install(const struct RoomInstallParams& rip)
 	Room room(rip.roomDir, rip.name);
 	room.roomOptions = rip.options;
 	room.createEmpty();
-	room.installFromArchive(rip.baseArchiveUri);
 	room.syncRoomOptions();
+	room.installFromArchive(rip.baseArchiveUri);
 }
 
 void Room::editConfiguration()
