@@ -116,6 +116,29 @@ void Room::enterJail(const string& runAsUser)
 	}
 }
 
+int Room::forkAndExec(std::vector<std::string> execVec, const string& runAsUser) {
+	pid_t pid = fork();
+	if (pid < 0) {
+		log_errno("fork(2)");
+		throw std::runtime_error("fork failed");
+	}
+	if (pid == 0) {
+		exec(execVec, runAsUser);
+		exit(1);
+	}
+
+	int status;
+	if (waitpid(pid, &status, 0) < 0) {
+		return -1;
+	}
+	if (!WIFEXITED(status)) {
+		return -1;
+	}
+	int exitStatus = WEXITSTATUS(status);
+
+	return exitStatus;
+}
+
 void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 {
 	PasswdEntry pwent(ownerUid);
@@ -289,36 +312,21 @@ void Room::createEmpty()
 // Run FreeBSD-specific postinstall actions
 void Room::postinstallFreeBSD()
 {
-	// KLUDGE: install pkg(8)
-	int rv;
-	Shell::execute("/usr/sbin/chroot", {
-			"-u", "root",
-			chrootDir,
-			"env", "ASSUME_ALWAYS_YES=YES", "pkg", "bootstrap"
-	}, rv);
-	if (rv != 0) {
+	if (forkAndExec({"/usr/bin/env", "ASSUME_ALWAYS_YES=YES", "/usr/sbin/pkg", "bootstrap"}, "root") != 0) {
 		throw std::runtime_error("failed to bootstrap pkg");
 	}
 
-	// Enable remote package installation
-	Shell::execute("/usr/sbin/chroot", {
-			"-u", "root",
-			chrootDir,
-			"sed", "-i", "-e", "s/enabled: no/enabled: yes/",
-			"/etc/pkg/FreeBSD.conf",
-	}, rv);
-	if (rv != 0) {
+	if (forkAndExec({
+		"/usr/bin/sed", "-i",
+		"-e", "s/enabled: no/enabled: yes/",
+		"/etc/pkg/FreeBSD.conf",
+	}, "root") != 0) {
 		throw std::runtime_error("failed to update pkg.conf");
 	}
 
 	// Download package catalog
-	Shell::execute("/usr/sbin/chroot", {
-			"-u", "root",
-			chrootDir,
-			"pkg", "update",
-	}, rv);
-	if (rv != 0) {
-		throw std::runtime_error("failed to run: pkg update");
+	if (forkAndExec({"/usr/sbin/pkg", "update"}, "root") != 0) {
+		throw std::runtime_error("failed to update package metadata");
 	}
 }
 
@@ -326,28 +334,16 @@ void Room::extractTarball(const string& baseTarball)
 {
 	string cmd;
 
-	SetuidHelper::raisePrivileges();
-
 	log_debug("creating room");
 
+	syncRoomOptions();
+
+	SetuidHelper::raisePrivileges();
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
-
-	Shell::execute("/sbin/mount", {
-			"-t", "devfs", "-o", "ruleset=4", "devfs", chrootDir + "/dev",
-	});
-
 	pushResolvConf();
-	try {
-		postinstallFreeBSD();
-	} catch (...) {
-		Shell::execute("/sbin/umount", { chrootDir + "/dev" });
-		throw std::runtime_error("postinstall script failed");
-	}
-	Shell::execute("/sbin/umount", { chrootDir + "/dev" });
-
 	SetuidHelper::lowerPrivileges();
 
-	syncRoomOptions();
+	postinstallFreeBSD();
 
 	snapshotCreate(generateSnapshotName());
 

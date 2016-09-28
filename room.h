@@ -63,6 +63,7 @@ public:
 	void installFromArchive(const string& uri);
 	void downloadTarball(const string& uri, const string& path);
 	void extractTarball(const string& baseTarball);
+	int forkAndExec(std::vector<std::string> execVec, const string& runAsUser);
 	void clone(const string& snapshot, const string& destRoom);
 	void killAllProcesses();
 	void snapshotCreate(const string& name);
