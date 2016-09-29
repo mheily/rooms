@@ -311,6 +311,15 @@ $ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
 	</programlisting>
 	
 	<para>
+	Clone the FreeBSD-10.3 room and call it "myroom".
+	</para>
+	<programlisting>
+<![CDATA[
+$ room myroom create --clone FreeBSD-10.3 
+]]>
+	</programlisting>
+
+	<para>
 	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
 	</para>
 	<programlisting>
