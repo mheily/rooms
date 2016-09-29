@@ -78,7 +78,7 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
 </literallayout>
 		</term>
 	
