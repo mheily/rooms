@@ -97,14 +97,10 @@ static void get_options(int argc, char *argv[])
 	po::options_description create_opts("Options when creating");
 	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
+	    ("clone", po::value<string>(&roomOpt.cloneUri), "the action to perform")
 	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
 		("share-home", po::bool_switch(&roomOpt.shareHomeDir), "mount the $HOME directory inside the room")
-	;
-
-	po::options_description clone_opts("Options when cloning");
-	clone_opts.add_options()
-	    ("source", po::value<string>(&action), "the action to perform")
 	;
 
 /*
@@ -115,7 +111,7 @@ static void get_options(int argc, char *argv[])
 */
 
 	po::options_description all("All options");
-	all.add(undocumented).add(clone_opts).add(create_opts).
+	all.add(undocumented).add(create_opts).
 			add(exec_opts).add(desc);
 
 	// Ignore all subsequent arguments after 'exec'
@@ -177,10 +173,12 @@ static void get_options(int argc, char *argv[])
 
 	if (popt0 == "list") {
 		mgr.listRooms();
-	} else if (popt1 == "clone") {
-		mgr.cloneRoom(popt2, popt0);
 	} else if (popt1 == "create") {
 		roomName = popt0;
+		if (roomOpt.cloneUri != "" && baseArchiveUri != "") {
+			cout << "Error: cannot clone and install from a tarball at the same time\n";
+			exit(1);
+		}
 		if (baseArchiveUri != "") {
 			mgr.installRoom(roomName, baseArchiveUri, roomOpt);
 		} else {
@@ -190,7 +188,7 @@ static void get_options(int argc, char *argv[])
 				exit(1);
 				//mgr.createBaseTemplate();
 			}
-			mgr.cloneRoom(roomName);
+			mgr.cloneRoom(roomName, roomOpt);
 		}
 		Room room = mgr.getRoomByName(roomName);
 	} else if (popt1 == "configure") {

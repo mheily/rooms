@@ -261,7 +261,7 @@ void Room::validateName(const string& name)
 	}
 }
 
-void Room::clone(const string& snapshot, const string& destRoom)
+void Room::clone(const string& snapshot, const string& destRoom, const RoomOptions& roomOpt)
 {
 	log_debug("cloning room");
 
@@ -279,6 +279,9 @@ void Room::clone(const string& snapshot, const string& destRoom)
 	// Copy the options.json file
 	Shell::execute("/bin/cp", { roomOptionsPath, cloneRoom.roomOptionsPath});
 	cloneRoom.loadRoomOptions();
+
+	// Merge options from the CLI
+	cloneRoom.roomOptions.merge(roomOpt);
 
 	// Assume that newly cloned rooms should not be hidden.
 	cloneRoom.getRoomOptions().isHidden = false;

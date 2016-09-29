@@ -37,6 +37,7 @@ void RoomOptions::load(const string &path)
 	shareHomeDir = tree.get("permissions.shareHomeDir", false);
 	useLinuxABI = tree.get("useLinuxABI", false);
 	isHidden = tree.get("isHidden", false);
+	cloneUri = tree.get("cloneUri", "");
 }
 
 
@@ -52,6 +53,9 @@ void RoomOptions::save(const string &path)
     tree.put("permissions.shareHomeDir", shareHomeDir);
     tree.put("useLinuxABI", useLinuxABI);
     tree.put("isHidden", isHidden);
+    if (cloneUri != "") {
+    	tree.put("cloneUri", cloneUri);
+    }
 
     pt::write_json(path, tree);
 }
@@ -60,4 +64,24 @@ void RoomOptions::dump()
 {
 	cout << "share_tmp=" << shareTempDir << endl;
 	cout << "useLinuxABI=" << useLinuxABI << endl;
+}
+
+/* If the <src> options are different from the default,
+ * merge them into the current object.
+ *
+ * FIXME: This does not account for removing permissions,
+ * and assumes that permissions are only ever added.
+ */
+void RoomOptions::merge(const struct RoomOptions& src)
+{
+	if (src.allowX11Clients) {
+		allowX11Clients = true;
+		shareTempDir = true; // WORKAROUND: should generate a new xauth key instead
+	}
+	if (src.shareTempDir) {
+		shareTempDir = true;
+	}
+	if (src.shareHomeDir) {
+		shareHomeDir = true;
+	}
 }

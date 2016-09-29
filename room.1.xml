@@ -17,8 +17,7 @@
 <literallayout>
 <emphasis role="bold">room list</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--uri <replaceable>URI</replaceable>]
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
@@ -76,38 +75,34 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>
 
-
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
 </literallayout>
 		</term>
 	
 		<listitem>
-			<para>
-	Clone an existing room named <replaceable>source</replaceable> to 
-	create a new room called <replaceable>name</replaceable>.
-			</para>
-		</listitem>
-	</varlistentry>
-
-	<varlistentry>
-		<term>
-<literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis>
-</literallayout>
-		</term>
-	
-		<listitem>
-			<para>
+	<para>
 	Create a new room called <replaceable>name</replaceable>.
+	</para>
+	
+	<para>
 	If the <replaceable>--uri</replaceable> option is provided, the URI will be
 	downloaded and extracted into the root filesystem of the room.
-	If no URI is provided, the default template will be used. 
-	If there is no default template, one will be created automatically 
-	using a minimal	installation of FreeBSD 10.3.
-			</para>
+	</para>
+
+	<para>
+	If the <replaceable>--clone</replaceable> option is provided, the 
+	room will be cloned from an existing room whose name matches
+	<replaceable>room-name</replaceable>. 
+	</para>
+	
+	<para>
+	Refer to the <emphasis role="bold">CONFIGURATION OPTIONS</emphasis> section
+	for a list of the options that can be set. 
+	</para>
+
 		</listitem>
 	</varlistentry>
 
@@ -226,6 +221,75 @@ The following subcommands and options are available:
 </refsect1>
 
 <refsect1>
+<title>CONFIGURATION OPTIONS</title>
+<para>
+When creating a new room, there are a number of configuration
+options that can be specified:
+</para>
+
+<variablelist>
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">--allow-x11</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Allows programs in the room to run graphical X11 clients.
+	This also grants access to the D-Bus user session. 
+			</para>
+			<para>
+			By default, rooms do not have access to run graphical programs
+			on the local host.
+			</para>
+		</listitem>
+	</varlistentry>
+	
+		<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">--share-tempdir</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Mounts the /tmp and /var/tmp directories from the main host
+	inside the room. This may be necessary for programs that use
+	files inside of /tmp for inter-process communication.
+			</para>
+			<para>
+			By default, each room has a private /tmp and /var/tmp.
+			</para>
+		</listitem>
+	</varlistentry>
+
+		<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">--share-home</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Mounts the user's home directory inside of the room.
+			</para>
+			<para>
+			By default, each room has a private home directory
+			that is not shared with the main system or any other room.
+			</para>
+		</listitem>
+	</varlistentry>
+	
+</variablelist>
+
+</refsect1>
+
+<refsect1>
 	<title>EXAMPLES</title>
 	<para>
 	The following example creates a base template using FreeBSD-10.3.
@@ -295,7 +359,7 @@ $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 	
 	<para>
 	Sending and receiving rooms will not work as expected if you are operating on
-	rooms which are cloned from the base template. For best results,	only send rooms that are created via "room create --uri=base.txz". 
+	rooms which are clones. For best results,	only send rooms that are created via "room create --uri=base.txz". 
 	</para>
 	
 	<para>

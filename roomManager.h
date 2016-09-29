@@ -49,8 +49,7 @@ public:
 	void installRoom(const string& name, const string& archive, const RoomOptions& options);
 	void importRoom(const string& name);
 	void createRoom(const string& name);
-	void cloneRoom(const string& src, const string& dest);
-	void cloneRoom(const string& dest);
+	void cloneRoom(const string& dest, const RoomOptions& roomOpt);
 	void receiveRoom(const string& name);
 	void destroyRoom(const string& name);
 	Room& getRoomByName(const string& name);

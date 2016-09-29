@@ -164,10 +164,11 @@ void RoomManager::createRoom(const string& name) {
 	room.extractTarball(baseTarball);
 }
 
-void RoomManager::cloneRoom(const string& src, const string& dest) {
-	Room* srcRoom = new Room(roomDir, src);
-	log_debug("cloning room: source=%s destination=%s", src.c_str(), dest.c_str());
-	srcRoom->clone(srcRoom->getLatestSnapshot(), dest);
+void RoomManager::cloneRoom(const string& dest, const RoomOptions& roomOpt)
+{
+	Room* srcRoom = new Room(roomDir, roomOpt.cloneUri);
+	log_debug("cloning `%s' from `%s'", dest.c_str(), roomOpt.cloneUri.c_str());
+	srcRoom->clone(srcRoom->getLatestSnapshot(), dest, roomOpt);
 	delete srcRoom;
 	enumerateRooms();
 }
@@ -201,11 +202,6 @@ void RoomManager::receiveRoom(const string& name)
 	SetuidHelper::raisePrivileges();
 	Subprocess proc;
 	proc.execve("/sbin/zfs", { "receive", getUserRoomDataset() + "/" + name });
-}
-
-void RoomManager::cloneRoom(const string& dest) {
-	log_debug("cloning `%s' from the default template", dest.c_str());
-	cloneRoom(getBaseTemplateName(), dest);
 }
 
 void RoomManager::destroyRoom(const string& name) {

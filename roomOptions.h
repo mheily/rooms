@@ -36,7 +36,11 @@ struct RoomOptions {
 	// use the Linux ABI
 	bool useLinuxABI = false;
 
+	// The URI of the room that this room was cloned from
+	string cloneUri;
+
 	void load(const string& path);
 	void save(const string& path);
 	void dump();
+	void merge(const struct RoomOptions& src);
 };
