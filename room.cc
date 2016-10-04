@@ -568,6 +568,14 @@ void Room::stop()
 		}
 	}
 
+	log_debug("unmounting /data");
+	if (unmount(string(chrootDir + "/data").c_str(), unmount_flags) < 0) {
+		if (errno != EINVAL) {
+			log_errno("unmount(2)");
+			throw std::system_error(errno, std::system_category());
+		}
+	}
+
 	if (jailExists()) {
 		log_debug("removing jail");
 		Shell::execute("/usr/sbin/jail", { "-r", jailName });
