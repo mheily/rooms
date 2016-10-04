@@ -41,6 +41,17 @@ built on top of ZFS and FreeBSD jails.
 </para>
 
 <para>
+Rooms are composed of two separate parts: shared and local.
+The shared part of the room is writable, but any changes will
+be lost when the room is upgraded to a newer version. The local
+part of the room is mounted at /data, and should be used to hold
+data that needs to persist after an upgrade. It is strongly encouraged
+that room developers use symbolic links to redirect important files
+and directories to /data; even better would be to build applications
+to store their variable data under /data rather than the traditional /var. 
+</para>
+
+<para>
 The following subcommands and options are available:
 </para>
 	
