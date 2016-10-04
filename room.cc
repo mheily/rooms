@@ -430,6 +430,15 @@ void Room::start() {
 		throw std::runtime_error("jail(1) failed");
 	}
 
+	// Mount the /local directory as /data within the jail
+	string data_dir = string(chrootDir + "/data");
+	unlink(data_dir.c_str());
+	mkdir(data_dir.c_str(), 0755);
+	Shell::execute("/sbin/mount", { "-t", "nullfs",
+			string(roomDataDir + "/local").c_str(),
+			data_dir.c_str()
+	});
+
 	if (roomOptions.shareTempDir) {
 		log_debug("using a shared /tmp");
 		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
