@@ -1,0 +1,85 @@
+What are rooms?
+
+	Rooms are a powerful and user-friendly way to 
+	run containers on FreeBSD using jails and ZFS.
+
+	Rooms allow you to take a base operating system image,
+	add your own software, customize the configuration, 
+	and distribute the resulting combination. This is the main reason why
+	Docker has become so popular, and Rooms are very similar
+	to Docker in this regard.
+
+	One reason for using containers is to avoid "dependency hell",
+	where multiple applications have conflicting requirements. 
+	This is ove earlier approaches,
+	 like Ubuntu Snappy Apps and PC-BSD PBIs.
+	These tools offered a way of distributing graphical applications
+	with all of their libraries bundled together so that multiple
+	applications could coexist with different library versions.
+
+What does the name mean?
+
+	Jails are nasty places that bad people go.
+	Rooms, on the other hand, are neutral containers; a room
+	could be a jail cell, a bedroom, a living room, or a
+	kitchen.
+
+	The name "room" reflects the fact that the containers
+	can be used to provide varying degrees of isolation
+	and security. If you want an ultra-secure jail that is
+	completely locked down, you can do that. If you want
+	a container that has a lot of access to the host
+	system, you can do that too.
+
+Why run containers on FreeBSD?
+
+	Why use FreeBSD to run containers, when most of the 
+	DevOps crowd is focused on Linux containers?  
+
+	The main reasons are:
+	- jobd v.s. systemd as a container manager
+	- ease of use of jail(2) v.s. cgroups
+	- security of jail(2) v.s. cgroups+apparmor/selinux
+	- features of ZFS v.s. Linux filesystems
+	- can run Linux containers using the Linuxulator
+	
+	Many Linux distributions have adopted systemd, which
+	is a controversial piece of bloatware that (IMHO)
+	has turned Linux a Frankenstein clone of both Windows and Unix.
+	On the other hand, FreeBSD has retained a classic 
+	Unix look-and-feel, and only needs a little help to 
+	improve the usability of containers.
+	
+Why use rooms instead of ezjail/iocage?
+
+	Rooms are based on jails, so it is fair to ask why the 
+	world needs another jail manager. We already have ezjail
+	and iocage, isn't that good enough?
+
+	The simple answer is that jails do not solve the same 
+	problems that rooms do. Existing jail managers do not:
+
+	* Allow normal user accounts to create jails and
+	  ZFS datasets.
+	* Offer clean separation between the jail OS and data,
+	  and an jail upgrade path that preserves the user's data
+	* Provide a mechanism to download pre-built jails
+	* Easily allow users to run graphical applications
+	  inside a jail.
+	* Integrate with jobd
+	
+Are rooms stable? When can I start using them?
+
+	At this point, Rooms should be considered beta quality 
+	software in most regards. There has not been an official
+	stable release. The internal structure of the rooms, and
+	the format of the configuration files, can all be changed
+	without warning, and may require expert-level knowledge
+	to upgrade between versions.
+
+	That being said, most of the core features of rooms are
+	complete and fairly stable. The only features that are
+	likely to see major changes are those related to publishing
+	and downloading rooms over the Internet. If you intend to
+	publish your own rooms, you should wait for this functionality
+	to mature.
