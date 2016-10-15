@@ -21,8 +21,8 @@
 bin_PROGRAMS=room
 
 room_CXXFLAGS="-std=c++11 -isystem /usr/local/include -Wall -Werror"
-room_LDFLAGS=""
-room_LDADD="/usr/local/lib/libboost_program_options.a"
+room_LDFLAGS="-L/usr/local/lib"
+room_LDADD="/usr/local/lib/libboost_program_options.a -lcurl -lssl"
 room_INSTALLFLAGS="-s -m 4755 -o 0 -g 0"
 room_SOURCES=`ls -1 *.cc | tr '\n' ' '`
 room_DEPENDS=""

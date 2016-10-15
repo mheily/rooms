@@ -1,8 +1,8 @@
 #include <assert.h>
 
-#include "json.hpp"
+#include "../../json.hpp"
 
-#include "repoParser.hpp"
+#include "../../repoParser.hpp"
 
 int main() {
 	RepoParser rp;

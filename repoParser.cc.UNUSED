@@ -44,6 +44,8 @@ void RepoParser::installRoom(const std::string& name)
 {
 	std::string uri = baseUri + "/" + name + "/full.txz";
 	std::cout << "downloading: " << uri << "\n";
+	string tarball = "/tmp/test-" + name + ".txz"; //XXX-FIXME insecure
+	Shell::execute("/usr/bin/fetch", { "-q", "-o", path, uri });
 }
 
 void RepoParser::printSearchResult(const std::string& pattern)
