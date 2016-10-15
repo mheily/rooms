@@ -15,9 +15,17 @@ struct MemoryStruct {
 class HttpBuffer {
 public:
 	HttpBuffer();
-	virtual ~HttpBuffer();
+	~HttpBuffer();
 
 	void get(const char *uri);
+
+	const char* getResponseBody() const {
+		return response.memory;
+	}
+
+	const size_t getResponseLength() const {
+		return response.size;
+	}
 
 private:
 	struct MemoryStruct response;
