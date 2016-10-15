@@ -1,0 +1,13 @@
+{
+	"api_version": 0,
+	"base_uri": "http://foo.example.com/rooms",
+	"rooms": {
+		"FreeBSD-10.3": {
+			"summary": "A base install of FreeBSD 10.3"
+		},
+		"Firefox": {
+			"summary": "The Mozilla Firefox web browser",
+			"parent": "FreeBSD-10.3"
+		}
+	}
+}

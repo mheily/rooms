@@ -1,0 +1,64 @@
+#include "repoParser.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <string.h>
+
+using json = nlohmann::json;
+
+RepoParser::RepoParser() {
+}
+
+void RepoParser::parse(const std::string& path)
+{
+	repoJsonPath = path;
+	json top;
+
+	parseJSON(top);
+	if (top["api_version"].get<unsigned int>() != 0) {
+		throw std::runtime_error("unsupported API version");
+	}
+	baseUri = top["base_uri"];
+	
+	json rooms_json = top["rooms"];
+        for (json::iterator it = rooms_json.begin(); it != rooms_json.end(); ++it) {
+		RepoRoom* rr = new RepoRoom(it.key(), it.value());
+		rooms[it.key()] = rr;
+        }
+}
+
+void RepoParser::parseJSON(json& result)
+  {
+          try {
+                  std::ifstream ifs(repoJsonPath, std::ifstream::in);
+                  ifs >> result;
+          } catch (std::exception& e) {
+                  //log_error("error parsing %s: %s", path.c_str(), e.what());
+                  throw;
+          } catch (...) {
+                  throw;
+          }
+  }
+
+void RepoParser::installRoom(const std::string& name)
+{
+	std::string uri = baseUri + "/" + name + "/full.txz";
+	std::cout << "downloading: " << uri << "\n";
+}
+
+void RepoParser::printSearchResult(const std::string& pattern)
+{
+	for (auto& it : rooms) {
+		auto rr = it.second;
+		if (pattern != "") {
+			auto name = rr->getName();
+			auto summary = rr->getSummary();
+		  	if (strcasestr(name.c_str(), pattern.c_str()) == NULL &&
+		  	     strcasestr(summary.c_str(), pattern.c_str()) == NULL) {
+		
+				continue;
+			}
+		}
+		printf("%-20s %s\n", rr->getName().c_str(), rr->getSummary().c_str());
+	}
+}
