@@ -303,12 +303,13 @@ options that can be specified:
 <refsect1>
 	<title>EXAMPLES</title>
 	<para>
-	The following example creates a base template using FreeBSD-10.3.
+	The following example creates a room containing the base install
+	of FreeBSD 11.0.
 	</para>
 	<programlisting>
 <![CDATA[
-$ room FreeBSD-10.3 create \
-    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room FreeBSD-11.0-RELEASE create \
+    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/amd64/11.0-RELEASE/base.txz
 ]]>
 	</programlisting>
 
