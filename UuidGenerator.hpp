@@ -20,6 +20,7 @@
 #include <boost/uuid/uuid_io.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <iostream>
+#include <sstream>
 
 class UuidGenerator {
 public:
@@ -30,14 +31,21 @@ public:
 
 	void generate() {
 		boost::uuids::random_generator gen;
-		boost::uuids::uuid u = gen();
-		this->value = to_string(u);
+		this->uuid = gen();
 	}
 
 	std::string getValue() const {
-		return value;
+		return to_string(uuid);
+	}
+
+	void setValue(std::string value) {
+	    std::istringstream iss(value);
+	    iss >> uuid;
+	    if (!iss.good()) {
+	    	throw std::runtime_error("invalid UUID");
+	    }
 	}
 
 private:
-	std::string value;
+	boost::uuids::uuid uuid;
 };
