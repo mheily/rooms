@@ -58,6 +58,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 	ownerLogin = pwent.getLogin();
 
 	validateName(name);
+	roomName = name;
 	getJailName();
 
 	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
@@ -237,8 +238,6 @@ void Room::validateName(const string& name)
 {
 	string buf = name;
 	std::locale loc("C");
-
-	roomName = name;
 
 	if (name.length() == 0) {
 		throw std::runtime_error("name cannot be empty");

@@ -34,6 +34,9 @@ struct RoomManagerUserOptions {
 
 	// ---- END: Default security options when creating a room -----
 
+	// The name of the default room used when creating new rooms
+	std::string defaultRoom;
+
 	void load(const string& path);
 	void save(const string& path);
 	void dump();

@@ -22,9 +22,11 @@
 
 #include "roomManagerUserOptions.h"
 #include "logger.h"
+#include "room.h"
 
 namespace pt = boost::property_tree;
 
+// TODO: Allow setting these options via the CLI
 void RoomManagerUserOptions::load(const string &path) {
 	pt::ptree tree;
 
@@ -34,6 +36,10 @@ void RoomManagerUserOptions::load(const string &path) {
 	allowX11Clients = tree.get("permissions.default.allow_x11", false);
 	shareTempDir = tree.get("permissions.default.share_tempdir", false);
 	shareHomeDir = tree.get("permissions.default.share_home", false);
+	defaultRoom = tree.get("defaultRoom", "");
+	if (defaultRoom != "" && !Room::isValidName(defaultRoom)) {
+		throw std::runtime_error("invalid defaultRoom");
+	}
 }
 
 void RoomManagerUserOptions::save(const string &path) {

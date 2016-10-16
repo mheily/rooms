@@ -77,6 +77,16 @@ public:
 	void exportArchive();
 	void printSnapshotList();
 
+	static bool isValidName(const string& name)
+	{
+		try {
+			Room::validateName(name);
+		} catch (...) {
+			return false;
+		}
+		return true;
+	}
+
 	// The following methods can be used after create() but before install()
 	void setOsType(const string& osType);
 
@@ -120,7 +130,7 @@ private:
 	void enterJail(const string& runAsUser);
 	bool jailExists();
 	void customizeWithoutRoot();
-	void validateName(const string& name);
+	static void validateName(const string& name);
 	void pushResolvConf();
 	void getJailName();
 	void postinstallFreeBSD();

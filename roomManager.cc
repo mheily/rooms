@@ -166,8 +166,21 @@ void RoomManager::createRoom(const string& name) {
 
 void RoomManager::cloneRoom(const string& dest, const RoomOptions& roomOpt)
 {
-	Room* srcRoom = new Room(roomDir, roomOpt.cloneUri);
-	log_debug("cloning `%s' from `%s'", dest.c_str(), roomOpt.cloneUri.c_str());
+	Room* srcRoom;
+	string uri;
+
+	if (roomOpt.cloneUri == "" && userOptions.defaultRoom == "") {
+		throw std::runtime_error("cloneUri and defaultRoom not set");
+	}
+
+	if (roomOpt.cloneUri == "") {
+		uri = userOptions.defaultRoom;
+	} else {
+		uri = roomOpt.cloneUri;
+	}
+
+	log_debug("cloning `%s' from `%s'", dest.c_str(), uri.c_str());
+	srcRoom = new Room(roomDir, uri);
 	srcRoom->clone(srcRoom->getLatestSnapshot(), dest, roomOpt);
 	delete srcRoom;
 	enumerateRooms();
