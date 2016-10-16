@@ -38,6 +38,7 @@ void RoomOptions::load(const string &path)
 	useLinuxABI = tree.get("useLinuxABI", false);
 	isHidden = tree.get("isHidden", false);
 	cloneUri = tree.get("cloneUri", "");
+	uuid = tree.get("uuid", "");
 }
 
 
@@ -53,6 +54,7 @@ void RoomOptions::save(const string &path)
     tree.put("permissions.shareHomeDir", shareHomeDir);
     tree.put("useLinuxABI", useLinuxABI);
     tree.put("isHidden", isHidden);
+    tree.put("uuid", uuid);
     if (cloneUri != "") {
     	tree.put("cloneUri", cloneUri);
     }

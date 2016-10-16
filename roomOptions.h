@@ -39,6 +39,9 @@ struct RoomOptions {
 	// The URI of the room that this room was cloned from
 	string cloneUri;
 
+	// The UUID of the room
+	string uuid;
+
 	void load(const string& path);
 	void save(const string& path);
 	void dump();

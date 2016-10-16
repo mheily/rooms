@@ -44,6 +44,7 @@ extern "C" {
 #include "room.h"
 #include "setuidHelper.h"
 #include "zfsPool.h"
+#include "UuidGenerator.hpp"
 
 extern char **environ;
 
@@ -285,8 +286,13 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 
 	// Assume that newly cloned rooms should not be hidden.
 	cloneRoom.getRoomOptions().isHidden = false;
-	cloneRoom.syncRoomOptions();
 
+	// Generate a new UUID
+    UuidGenerator ug;
+    ug.generate();
+    cloneRoom.getRoomOptions().uuid = ug.getValue();
+
+	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);
 
 	log_debug("clone complete");
@@ -296,6 +302,12 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 void Room::createEmpty()
 {
 	log_debug("creating an empty room");
+
+	// Generate a UUID
+    UuidGenerator ug;
+    ug.generate();
+    roomOptions.uuid = ug.getValue();
+
 	SetuidHelper::raisePrivileges();
 
 	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
