@@ -102,7 +102,7 @@ string Shell::readline(int pd) {
 
 void Subprocess::execute(const char *path, const std::vector<std::string>& args)
 {
-	char* const envp[] = {
+	char* sanitized_envp[] = {
 			(char*)"HOME=/",
 			(char*)"PATH=/sbin:/usr/sbin:/bin:/usr/bin",
 			(char*)"LANG=C",
@@ -113,6 +113,14 @@ void Subprocess::execute(const char *path, const std::vector<std::string>& args)
 			(char*)"SHELL=/bin/sh",
 			NULL
 	};
+
+	extern char **environ;
+	char** envp;
+	if (preserveEnvironment) {
+		envp = environ;
+	} else {
+		envp = (char **)sanitized_envp;
+	}
 
 	string argv_s = path;
 	std::vector<char*> argv;
@@ -145,6 +153,17 @@ void Subprocess::execute(const char *path, const std::vector<std::string>& args)
 			}
 			close(pd[1]);
 			close(pd[0]);
+		}
+		if (dropPrivileges) {
+			gid_t egid = getegid();
+	        if (setresgid(egid, egid, egid) < 0) {
+	                throw std::system_error(errno, std::system_category());
+	        }
+
+	        uid_t euid = geteuid();
+	        if (setresuid(euid, euid, euid) < 0) {
+	                throw std::system_error(errno, std::system_category());
+	        }
 		}
 		if (::execve(path, argv.data(), envp) < 0) {
 			log_errno("execve(2)");

@@ -44,7 +44,25 @@ public:
 		return savedErrnoMessage;
 	}
 
+	bool isPreserveEnvironment() const {
+		return preserveEnvironment;
+	}
+
+	void setPreserveEnvironment(bool preserveEnvironment = false) {
+		this->preserveEnvironment = preserveEnvironment;
+	}
+
+	bool isDropPrivileges() const {
+		return dropPrivileges;
+	}
+
+	void setDropPrivileges(bool dropPrivileges = false) {
+		this->dropPrivileges = dropPrivileges;
+	}
+
 private:
+	bool dropPrivileges = false;
+	bool preserveEnvironment = false;
 	bool captureStdio = false;
 	int savedErrno = 0;
 	string savedErrnoMessage = "No error";
