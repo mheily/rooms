@@ -21,6 +21,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 #include "roomOptions.h"
+#include "UuidGenerator.hpp"
 #include "logger.h"
 
 namespace pt = boost::property_tree;
@@ -38,7 +39,10 @@ void RoomOptions::load(const string &path)
 	useLinuxABI = tree.get("useLinuxABI", false);
 	isHidden = tree.get("isHidden", false);
 	cloneUri = tree.get("cloneUri", "");
-	uuid = tree.get("uuid", "");
+
+	UuidGenerator ug;
+	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
+	uuid = ug.getValue();
 }
 
 
