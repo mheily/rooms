@@ -804,18 +804,9 @@ string Room::getLatestSnapshot()
 
 void Room::pushToOrigin()
 {
-	string buf = roomOptions.originUri;
-	//cout << roomOptions.originUri << "\n";
-	if (buf.compare(0, 6, "ssh://") != 0) {
-		throw std::runtime_error("invalid URI");
-	}
-	buf = buf.substr(6, string::npos);
-	string host = buf.substr(0, buf.find('/', 6));
-	//cout << "host: " + host + "\n";
-	string path = buf.substr(host.length(), string::npos);
-	//	cout << "path: " + path + "\n";
+	string scheme, host, path;
 
-	//cout << roomOptionsPath;
+	Room::parseRemoteUri(roomOptions.originUri, scheme, host, path);
 
 	log_debug("creating room directory on origin server");
     Subprocess p;
@@ -852,4 +843,20 @@ void Room::pushToOrigin()
 			throw std::runtime_error("scp failed");
 		}
 	}
+}
+
+void Room::parseRemoteUri(const string& uri, string& scheme, string& host, string& path)
+{
+	string buf = uri;
+
+	if (buf.compare(0, 6, "ssh://") != 0) {
+		throw std::runtime_error("invalid URI");
+	}
+	scheme = "ssh";
+
+	buf = buf.substr(6, string::npos);
+	host = buf.substr(0, buf.find('/', 6));
+	//cout << "host: " + host + "\n";
+	path = buf.substr(host.length(), string::npos);
+	//	cout << "path: " + path + "\n";
 }

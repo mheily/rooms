@@ -135,5 +135,6 @@ private:
 	void pushResolvConf();
 	void getJailName();
 	void postinstallFreeBSD();
+	static void parseRemoteUri(const string& uri, string& scheme, string& host, string& path);
 	string generateSnapshotName();
 };
