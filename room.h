@@ -76,7 +76,11 @@ public:
 	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
 	void printSnapshotList();
+
+	// Remote push/pull functions
+	void cloneFromOrigin(const string& uri);
 	void pushToOrigin();
+
 
 	static bool isValidName(const string& name)
 	{

@@ -261,6 +261,7 @@ void Room::validateName(const string& name)
 	}
 }
 
+// SEE ALSO: cloneFromOrigin()
 void Room::clone(const string& snapshot, const string& destRoom, const RoomOptions& roomOpt)
 {
 	log_debug("cloning room");
@@ -294,6 +295,30 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 
 	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);
+
+	log_debug("clone complete");
+}
+
+void Room::cloneFromOrigin(const string& uri)
+{
+	string scheme, host, path;
+
+	Room::parseRemoteUri(uri, scheme, host, path);
+
+	createEmpty();
+
+	string tmpdir = roomDataDir + "/local/tmp";
+	Shell::execute("/usr/bin/fetch", { "-q", "-o", roomOptionsPath, uri+"/options.json" });
+	Shell::execute("/usr/bin/fetch", { "-q", "-o", tmpdir, uri+"/share.zfs.xz" });
+	Shell::execute("/usr/bin/unxz", { tmpdir + "/share.zfs.xz" });
+
+	// Replace the empty "share" dataset with a clone of the original
+	string dataset = roomDataset + "/" + roomName + "/share";
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", { "destroy", dataset });
+	Shell::execute("/bin/sh", { "-c", "/sbin/zfs recv -F " + dataset + " < " + tmpdir + "/share.zfs" });
+	Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", zpoolName + "/room/" + ownerLogin + "/" + roomName });
+	SetuidHelper::lowerPrivileges();
 
 	log_debug("clone complete");
 }
@@ -848,14 +873,20 @@ void Room::pushToOrigin()
 void Room::parseRemoteUri(const string& uri, string& scheme, string& host, string& path)
 {
 	string buf = uri;
+	size_t schemelen;
 
-	if (buf.compare(0, 6, "ssh://") != 0) {
+	if (buf.find("ssh://") == 0) {
+		schemelen = 6;
+		scheme = "ssh";
+	} else if (buf.find("http://") == 0) {
+		schemelen = 7;
+		scheme = "http";
+	} else {
 		throw std::runtime_error("invalid URI");
 	}
-	scheme = "ssh";
 
-	buf = buf.substr(6, string::npos);
-	host = buf.substr(0, buf.find('/', 6));
+	buf = buf.substr(schemelen, string::npos);
+	host = buf.substr(0, buf.find('/', schemelen));
 	//cout << "host: " + host + "\n";
 	path = buf.substr(host.length(), string::npos);
 	//	cout << "path: " + path + "\n";
