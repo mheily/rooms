@@ -16,6 +16,7 @@
 <para>
 <literallayout>
 <emphasis role="bold">room list</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
@@ -23,9 +24,11 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> create
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot</emphasis> <replaceable>snapshot-name</replaceable> destroy
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot list</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">snapshot list</emphasis><!--
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">receive</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">send</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">send</emphasis>-->
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">pull</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 </literallayout>
@@ -82,6 +85,22 @@ The following subcommands and options are available:
 			<para>
 	Edit the configuration settings for a room named <replaceable>source</replaceable>.
 	FIXME: each setting should be documented here.
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Clone a room from a remote <replaceable>URI</replaceable>. If a new version
+	of the remote room is published, you can run the "room pull" command to
+	download the latest version.
 			</para>
 		</listitem>
 	</varlistentry>
@@ -166,6 +185,61 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">pull</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+			Downloads new versions of the room from the remote repository,
+			and fast-forwards the room to the latest version.
+			</para>
+			
+			<para>
+			This is a potentially dangerous operation. Any programs
+			running in the room will be forefully terminated. Changes
+			to files outside of the /home and /data directories within
+			the room will be lost. Rooms are designed to store data
+			in a persistent location, but there is a chance that users
+			may have accidentally stored files outside of the designated
+			safe areas. In the future, this subcommand will run a "zfs diff"
+			and alert the user if files would be deleted as a result of
+			the pull opreration.
+			</para>
+					
+			<para>
+			This command only works on rooms that were cloned from
+			a remote repository via the "room clone" command. If
+			the room was created locally via the "room create" command,
+			there is no remote repository to pull from.
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+			Pushes the latest versions of the room to the remote repository.
+			New versions may be created using the "room snapshot" command.
+			</para>
+
+			<para>
+			This command only works on rooms that have an "origin" URI defined
+			in their configuration file. The only supported transport mechanism
+			at this time is SSH.
+			</para>
+		</listitem>
+	</varlistentry>	
+
+	<varlistentry>
+		<term>
+<literallayout>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 </literallayout>
 		</term>
@@ -179,6 +253,7 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>	
 
+<!--
 	<varlistentry>
 		<term>
 <literallayout>
@@ -211,6 +286,7 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>	
 
+-->
 	
 		<varlistentry>
 		<term>
@@ -304,7 +380,9 @@ options that can be specified:
 	<title>EXAMPLES</title>
 	<para>
 	The following example creates a room containing the base install
-	of FreeBSD 11.0.
+	of FreeBSD 11.0. An empty room is created, the base tarball is downloaded
+	from the FTP mirror site, and the tarball is extracted to create a
+	fresh install.
 	</para>
 	<programlisting>
 <![CDATA[
@@ -314,11 +392,12 @@ $ room FreeBSD-11.0-RELEASE create \
 	</programlisting>
 
 	<para>
-	The following example creates a TrueOS room named 'TrueOS'.
+	The following example clones a room named "FreeBSD-11.0-RELEASE" from
+	a remote repository. 
 	</para>
 	<programlisting>
 	<![CDATA[
-$ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
+$ room FreeBSD-11.0-RELEASE clone http://arise.daemonspawn.org/rooms/FreeBSD-11.0-RELEASE
 ]]>
 	</programlisting>
 	
@@ -331,6 +410,7 @@ $ room myroom create --clone FreeBSD-10.3
 ]]>
 	</programlisting>
 
+<!--
 	<para>
 	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
 	</para>
@@ -339,7 +419,8 @@ $ room myroom create --clone FreeBSD-10.3
 $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 ]]>
 	</programlisting>
-	
+ -->
+ 
 </refsect1>
 
 <refsect1>
@@ -378,11 +459,17 @@ $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 <refsect1>
 	<title>BUGS</title>
 	
+	<!-- 
 	<para>
 	Sending and receiving rooms will not work as expected if you are operating on
-	rooms which are clones. For best results,	only send rooms that are created via "room create --uri=base.txz". 
+	rooms which are clones.  
 	</para>
-	
+	 -->
+
+	<para>
+	The "pull" command is not yet implemented.
+	</para>
+		
 	<para>
 	The snapshot subcommands are not documented in this manual page.
 	</para>
