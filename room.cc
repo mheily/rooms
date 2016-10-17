@@ -821,7 +821,7 @@ void Room::pushToOrigin()
     Subprocess p;
     p.setPreserveEnvironment(true);
     p.setDropPrivileges(true);
-    p.execute("/usr/bin/ssh", { host, "mkdir", "-p", path + "/" + roomOptions.uuid });
+    p.execute("/usr/bin/ssh", { host, "mkdir", "-p", path + "/" + roomName });
 	int result = p.waitForExit();
 	if (result != 0) {
 		throw std::runtime_error("mkdir failed");
@@ -834,7 +834,7 @@ void Room::pushToOrigin()
 	    p.setPreserveEnvironment(true);
 	    p.setDropPrivileges(true);
 		p.execute("/bin/sh", { "-c", "/sbin/zfs send -R " + snapPath + " | xz | " +
-			"ssh " + host + " 'cat > " + path + "/" + roomOptions.uuid + "/share.zfs.xz'" });
+			"ssh " + host + " 'cat > " + path + "/" + roomName + "/share.zfs.xz'" });
 		int result = p.waitForExit();
 		if (result != 0) {
 			throw std::runtime_error("zfs send failed");
@@ -846,7 +846,7 @@ void Room::pushToOrigin()
 		Subprocess p;
 	    p.setPreserveEnvironment(true);
 	    p.setDropPrivileges(true);
-		p.execute("/usr/bin/scp", { "-q", roomOptionsPath, host + ":" + path + "/" + roomOptions.uuid });
+		p.execute("/usr/bin/scp", { "-q", roomOptionsPath, host + ":" + path + "/" + roomName });
 		int result = p.waitForExit();
 		if (result != 0) {
 			throw std::runtime_error("scp failed");
