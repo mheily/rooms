@@ -469,6 +469,10 @@ $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 	<para>
 	The "pull" command is not yet implemented.
 	</para>
+
+	<para>
+	The /data directory is not actually mounted inside the room.
+	</para>
 		
 	<para>
 	The snapshot subcommands are not documented in this manual page.
