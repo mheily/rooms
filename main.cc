@@ -175,7 +175,6 @@ static void get_options(int argc, char *argv[])
 		mgr.listRooms();
 	} else if (popt1 == "clone") {
 		roomName = popt0;
-		cout << roomName;
 		mgr.cloneRoomFromRemote(roomName, popt2);
 	} else if (popt1 == "create") {
 		roomName = popt0;
