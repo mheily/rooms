@@ -274,6 +274,7 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	SetuidHelper::raisePrivileges();
 	Shell::execute("/sbin/zfs", { "destroy", dest });
 	Shell::execute("/sbin/zfs", { "clone", src, dest });
+	Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", zpoolName + "/room/" + ownerLogin + "/" + destRoom });
 	SetuidHelper::lowerPrivileges();
 
 	// Copy the options.json file
@@ -312,6 +313,10 @@ void Room::createEmpty()
 	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
 
 	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName + "/share"});
+
+	// Allow the owner to use 'zfs send'
+	Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", roomDataset + "/" + roomName });
+
 	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, ownerGid);
 
 	FileUtil::mkdir_idempotent(roomDataDir + "/etc", 0700, ownerUid, ownerGid);
@@ -795,4 +800,56 @@ string Room::getLatestSnapshot()
 			roomDataset + "/" + roomName + " | tail -1 | sed 's/.*@//'";
 
 	return Shell::popen_readline(cmd);
+}
+
+void Room::pushToOrigin()
+{
+	string buf = roomOptions.originUri;
+	//cout << roomOptions.originUri << "\n";
+	if (buf.compare(0, 6, "ssh://") != 0) {
+		throw std::runtime_error("invalid URI");
+	}
+	buf = buf.substr(6, string::npos);
+	string host = buf.substr(0, buf.find('/', 6));
+	//cout << "host: " + host + "\n";
+	string path = buf.substr(host.length(), string::npos);
+	//	cout << "path: " + path + "\n";
+
+	//cout << roomOptionsPath;
+
+	log_debug("creating room directory on origin server");
+    Subprocess p;
+    p.setPreserveEnvironment(true);
+    p.setDropPrivileges(true);
+    p.execute("/usr/bin/ssh", { host, "mkdir", "-p", path + "/" + roomOptions.uuid });
+	int result = p.waitForExit();
+	if (result != 0) {
+		throw std::runtime_error("mkdir failed");
+	}
+
+	log_debug("sending a replication stream package");
+	{
+		string snapPath = roomDataset + "/" + roomName + "/share@" + getLatestSnapshot();
+		Subprocess p;
+	    p.setPreserveEnvironment(true);
+	    p.setDropPrivileges(true);
+		p.execute("/bin/sh", { "-c", "/sbin/zfs send -R " + snapPath + " | xz | " +
+			"ssh " + host + " 'cat > " + path + "/" + roomOptions.uuid + "/share.zfs.xz'" });
+		int result = p.waitForExit();
+		if (result != 0) {
+			throw std::runtime_error("zfs send failed");
+		}
+	}
+
+	log_debug("sending the room configuration file");
+	{
+		Subprocess p;
+	    p.setPreserveEnvironment(true);
+	    p.setDropPrivileges(true);
+		p.execute("/usr/bin/scp", { "-q", roomOptionsPath, host + ":" + path + "/" + roomOptions.uuid });
+		int result = p.waitForExit();
+		if (result != 0) {
+			throw std::runtime_error("scp failed");
+		}
+	}
 }

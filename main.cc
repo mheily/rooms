@@ -218,6 +218,8 @@ static void get_options(int argc, char *argv[])
 			exit(1);
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
+	} else if (popt1 == "push") {
+		mgr.getRoomByName(popt0).pushToOrigin();
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
 	} else if (popt1 == "snapshot") {

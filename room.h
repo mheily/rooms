@@ -76,6 +76,7 @@ public:
 	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
 	void printSnapshotList();
+	void pushToOrigin();
 
 	static bool isValidName(const string& name)
 	{

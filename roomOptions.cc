@@ -39,6 +39,7 @@ void RoomOptions::load(const string &path)
 	useLinuxABI = tree.get("useLinuxABI", false);
 	isHidden = tree.get("isHidden", false);
 	cloneUri = tree.get("cloneUri", "");
+	originUri = tree.get("originUri", "");
 
 	UuidGenerator ug;
 	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
@@ -61,6 +62,9 @@ void RoomOptions::save(const string &path)
     tree.put("uuid", uuid);
     if (cloneUri != "") {
     	tree.put("cloneUri", cloneUri);
+    }
+    if (originUri != "") {
+    	tree.put("originUri", originUri);
     }
 
     pt::write_json(path, tree);

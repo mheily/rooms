@@ -42,6 +42,10 @@ struct RoomOptions {
 	// The UUID of the room
 	string uuid;
 
+	// The remote "origin" of the room; similar to Git, this allows
+	// you to push/pull changes to/from a remote server
+	string originUri;
+
 	void load(const string& path);
 	void save(const string& path);
 	void dump();
