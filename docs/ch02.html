@@ -1,4 +1,151 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 2. Design</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch01.html" title="Chapter 1. Overview"><link rel="next" href="ch03.html" title="Chapter 3. Installation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Design</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 2. Design"><div class="titlepage"><div><div><h2 class="title"><a name="idp61240952"></a>Chapter 2. Design</h2></div></div></div>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 2. Frequently Anticipated Questions</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch01.html" title="Chapter 1. Overview"><link rel="next" href="ch03.html" title="Chapter 3. Installation"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 2. Frequently Anticipated Questions</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="idm159724082912"></a>Chapter 2. Frequently Anticipated Questions</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="ch02.html#idm159724082656">Frequently Anticipated Questions</a></span></dt></dl></div>
 
+<div lang="en" class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idm159724082656"></a>Frequently Anticipated Questions</h2></div></div></div>
+
+
+<p>
+This chapter is a rough collection of questions and answers about Rooms.
+</p>
+
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159724081056"></a>What are rooms?</h3></div></div></div>
+
+<p>
+	Rooms are a powerful and user-friendly way to 
+	run containers on FreeBSD using jails and ZFS.
+</p>
+
+<p>
+	Rooms allow you to take a base operating system image,
+	add your own software, customize the configuration, 
+	and distribute the resulting combination. This is the main reason why
+	Docker has become so popular, and Rooms are very similar
+	to Docker in this regard.
+</p>
+
+<p>
+	One reason for using containers is to avoid "dependency hell",
+	where multiple applications have conflicting requirements. 
+	This is a big motivation for similar tools, like Ubuntu Snappy Apps and PC-BSD PBIs.
+	These tools offered a way of distributing graphical applications
+	with all of their libraries bundled together so that multiple
+	applications could coexist with different library versions.
+</p>
+
+</div>
+
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159724078304"></a>
+What does the name mean?
+</h3></div></div></div>
+
+<p>
+	Jails are nasty places that bad people go.
+	Rooms, on the other hand, are neutral containers; a room
+	could be a jail cell, a bedroom, a living room, or a
+	kitchen.
+</p>
+
+<p>
+	The name "room" reflects the fact that the containers
+	can be used to provide varying degrees of isolation
+	and security. If you want an ultra-secure jail that is
+	completely locked down, you can do that. If you want
+	a container that has a lot of access to the host
+	system, you can do that too.
+</p>
+
+</div>
+
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159724076288"></a>
+Why run containers on FreeBSD?
+</h3></div></div></div>
+
+<p>
+	Why use FreeBSD to run containers, when most of the 
+	DevOps crowd is focused on Linux containers? The main reasons are:
+</p>
+
+<p>
+</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	jobd v.s. systemd as a container manager
+</p></li><li class="listitem"><p>
+	ease of use of jail(2) v.s. cgroups
+</p></li><li class="listitem"><p>
+	security of jail(2) v.s. cgroups+apparmor/selinux
+</p></li><li class="listitem"><p>
+	features of ZFS v.s. Linux filesystems
+</p></li><li class="listitem"><p>
+	if you still need to run some Linux-only things, you can
+	run Linux containers on a FreeBSD host using the Linuxulator
+</p></li></ul></div><p>
+</p>
+	
+<p>
+	Many Linux distributions have adopted systemd, which
+	is a controversial piece of bloatware that (IMHO)
+	has turned Linux a Frankenstein clone of both Windows and Unix.
+	On the other hand, FreeBSD has retained a classic 
+	Unix look-and-feel, and only needs a little help to 
+	improve the usability of containers.
+</p>
+</div>
+	
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159724070384"></a>
+Why use rooms instead of ezjail/iocage?
+</h3></div></div></div>
+
+<p>
+	Rooms are based on jails, so it is fair to ask why the 
+	world needs another jail manager. We already have ezjail
+	and iocage, isn't that good enough?
+</p>
+
+<p>
+	The simple answer is that jails do not solve the same 
+	problems that rooms do. Existing jail managers do not:
+</p>
+
+<p>
+</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+	Allow normal user accounts to create jails and
+	  ZFS datasets.
+</p></li><li class="listitem"><p>
+	Offer clean separation between the jail OS and data,
+	  and an jail upgrade path that preserves the user's data
+</p></li><li class="listitem"><p>
+	Provide a mechanism to download pre-built jails
+</p></li><li class="listitem"><p>
+	Easily allow users to run graphical applications
+	  inside a jail.
+</p></li><li class="listitem"><p>
+	Integrate with jobd
+</p></li></ul></div><p>
+</p>
+	
+</div>
+
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159724064704"></a>
+Are rooms stable? When can I start using them?
+</h3></div></div></div>
+
+<p>
+	At this point, Rooms should be considered beta quality 
+	software in most regards. There has not been an official
+	stable release. The internal structure of the rooms, and
+	the format of the configuration files, can all be changed
+	without warning, and may require expert-level knowledge
+	to upgrade between versions.
+</p>
+
+<p>
+	That being said, most of the core features of rooms are
+	complete and fairly stable. The only features that are
+	likely to see major changes are those related to publishing
+	and downloading rooms over the Internet. If you intend to
+	publish your own rooms, you should wait for this functionality
+	to mature.
+</p>
+</div>
+
+</div>
 
 </div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch01.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch03.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 1. Overview </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 3. Installation</td></tr></table></div></body></html>

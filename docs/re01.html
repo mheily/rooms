@@ -1,6 +1,7 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>room</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="apa.html" title="Appendix A. Manual pages"><link rel="prev" href="apa.html" title="Appendix A. Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">room</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apa.html">Prev</a> </td><th width="60%" align="center">Appendix A. Manual pages</th><td width="20%" align="right"> </td></tr></table><hr></div><div class="refentry" title="room"><a name="room.1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>room — manage rooms</p></div><div class="refsect1" title="SYNOPSIS"><a name="idp61114104"></a><h2>SYNOPSIS</h2><p>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>room</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="apa.html" title="Appendix A. Manual pages"><link rel="prev" href="apa.html" title="Appendix A. Manual pages"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">room</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="apa.html">Prev</a> </td><th width="60%" align="center">Appendix A. Manual pages</th><td width="20%" align="right"> </td></tr></table><hr></div><div class="refentry"><a name="room.1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>room — manage rooms</p></div><div class="refsect1"><a name="idm159722895488"></a><h2>SYNOPSIS</h2><p>
 </p><div class="literallayout"><p><br>
 <span class="bold"><strong>room list</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>clone</strong></span> <em class="replaceable"><code>URI</code></em><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>configure</strong></span><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>create</strong></span> [options] [--clone <em class="replaceable"><code>room-name</code></em>] [--uri <em class="replaceable"><code>URI</code></em>]<br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>destroy</strong></span><br>
@@ -9,18 +10,27 @@
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot</strong></span> <em class="replaceable"><code>snapshot-name</code></em> create<br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot</strong></span> <em class="replaceable"><code>snapshot-name</code></em> destroy<br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>snapshot list</strong></span><br>
-<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>receive</strong></span><br>
-<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>send</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>pull</strong></span><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>push</strong></span><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>start</strong></span><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>stop</strong></span><br>
 </p></div><p>
-</p></div><div class="refsect1" title="Description"><a name="idp60533240"></a><h2>Description</h2><p>
+</p></div><div class="refsect1"><a name="idm159722867168"></a><h2>Description</h2><p>
 The <span class="command"><strong>room</strong></span> command is the management utility
 for rooms. Rooms are a simplified form of containers that are
 built on top of ZFS and FreeBSD jails.
 </p><p>
+Rooms are composed of two separate parts: shared and local.
+The shared part of the room is writable, but any changes will
+be lost when the room is upgraded to a newer version. The local
+part of the room is mounted at /data, and should be used to hold
+data that needs to persist after an upgrade. It is strongly encouraged
+that room developers use symbolic links to redirect important files
+and directories to /data; even better would be to build applications
+to store their variable data under /data rather than the traditional /var. 
+</p><p>
 The following subcommands and options are available:
-</p><div class="variablelist"><dl><dt><span class="term">
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <div class="literallayout"><p><br>
 <span class="bold"><strong>room list</strong></span><br>
 </p></div>
@@ -33,6 +43,14 @@ The following subcommands and options are available:
 		</span></dt><dd><p>
 	Edit the configuration settings for a room named <em class="replaceable"><code>source</code></em>.
 	FIXME: each setting should be documented here.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>clone</strong></span> <em class="replaceable"><code>URI</code></em><br>
+</p></div>
+		</span></dt><dd><p>
+	Clone a room from a remote <em class="replaceable"><code>URI</code></em>. If a new version
+	of the remote room is published, you can run the "room pull" command to
+	download the latest version.
 			</p></dd><dt><span class="term">
 <div class="literallayout"><p><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>create</strong></span> [options] [--clone <em class="replaceable"><code>room-name</code></em>] [--uri <em class="replaceable"><code>URI</code></em>]<br>
@@ -73,6 +91,39 @@ The following subcommands and options are available:
 	To avoid confusion, it is recommended to use -- to signify the start of the command(s) to be executed.
 			</p></dd><dt><span class="term">
 <div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>pull</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+			Downloads new versions of the room from the remote repository,
+			and fast-forwards the room to the latest version.
+			</p><p>
+			This is a potentially dangerous operation. Any programs
+			running in the room will be forefully terminated. Changes
+			to files outside of the /home and /data directories within
+			the room will be lost. Rooms are designed to store data
+			in a persistent location, but there is a chance that users
+			may have accidentally stored files outside of the designated
+			safe areas. In the future, this subcommand will run a "zfs diff"
+			and alert the user if files would be deleted as a result of
+			the pull opreration.
+			</p><p>
+			This command only works on rooms that were cloned from
+			a remote repository via the "room clone" command. If
+			the room was created locally via the "room create" command,
+			there is no remote repository to pull from.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
+<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>push</strong></span><br>
+</p></div>
+		</span></dt><dd><p>
+			Pushes the latest versions of the room to the remote repository.
+			New versions may be created using the "room snapshot" command.
+			</p><p>
+			This command only works on rooms that have an "origin" URI defined
+			in their configuration file. The only supported transport mechanism
+			at this time is SSH.
+			</p></dd><dt><span class="term">
+<div class="literallayout"><p><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>start</strong></span><br>
 </p></div>
 		</span></dt><dd><p>
@@ -81,31 +132,15 @@ The following subcommands and options are available:
 	support will be added for starting programs automatically within the room. 
 			</p></dd><dt><span class="term">
 <div class="literallayout"><p><br>
-<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>receive</strong></span><br>
-</p></div>
-		</span></dt><dd><p>
-	Create a room with the given <em class="replaceable"><code>name</code></em> from
-	a streaming archive provided over standard input. The archive must
-	be created by running the "room send" command. 
-	This behaves similar to the "zfs receive" command. 
-			</p></dd><dt><span class="term">
-<div class="literallayout"><p><br>
-<span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>send</strong></span><br>
-</p></div>
-		</span></dt><dd><p>
-	Create a streaming archive of a room with the given <em class="replaceable"><code>name</code></em> and 
-	send it to standard output. This behaves similar to the "zfs send" command. 
-			</p></dd><dt><span class="term">
-<div class="literallayout"><p><br>
 <span class="bold"><strong>room</strong></span> <em class="replaceable"><code>name</code></em> <span class="bold"><strong>stop</strong></span><br>
 </p></div>
 		</span></dt><dd><p>
 	Terminate all processes inside the room called <em class="replaceable"><code>name</code></em>,
 	unmount all mounted filesystems in the room, and destroy the associated jail. 
-			</p></dd></dl></div></div><div class="refsect1" title="CONFIGURATION OPTIONS"><a name="idp61289336"></a><h2>CONFIGURATION OPTIONS</h2><p>
+			</p></dd></dl></div></div><div class="refsect1"><a name="idm159722802560"></a><h2>CONFIGURATION OPTIONS</h2><p>
 When creating a new room, there are a number of configuration
 options that can be specified:
-</p><div class="variablelist"><dl><dt><span class="term">
+</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
 <div class="literallayout"><p><br>
 <span class="bold"><strong>--allow-x11</strong></span><br>
 </p></div>
@@ -134,18 +169,22 @@ options that can be specified:
 			</p><p>
 			By default, each room has a private home directory
 			that is not shared with the main system or any other room.
-			</p></dd></dl></div></div><div class="refsect1" title="EXAMPLES"><a name="idp61296120"></a><h2>EXAMPLES</h2><p>
-	The following example creates a base template using FreeBSD-10.3.
+			</p></dd></dl></div></div><div class="refsect1"><a name="idm159722794656"></a><h2>EXAMPLES</h2><p>
+	The following example creates a room containing the base install
+	of FreeBSD 11.0. An empty room is created, the base tarball is downloaded
+	from the FTP mirror site, and the tarball is extracted to create a
+	fresh install.
 	</p><pre class="programlisting">
 
-$ room FreeBSD-10.3 create \
-    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/10.3-RELEASE/base.txz
+$ room FreeBSD-11.0-RELEASE create \
+    --uri=ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/amd64/11.0-RELEASE/base.txz
 
 	</pre><p>
-	The following example creates a TrueOS room named 'TrueOS'.
+	The following example clones a room named "FreeBSD-11.0-RELEASE" from
+	a remote repository. 
 	</p><pre class="programlisting">
 	
-$ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
+$ room FreeBSD-11.0-RELEASE clone http://arise.daemonspawn.org/rooms/FreeBSD-11.0-RELEASE
 
 	</pre><p>
 	Clone the FreeBSD-10.3 room and call it "myroom".
@@ -153,21 +192,16 @@ $ room TrueOS create --uri=http://download.trueos.org/master/amd64/dist/base.txz
 
 $ room myroom create --clone FreeBSD-10.3 
 
-	</pre><p>
-	To copy a room called "FreeBSD-10.3" to a remote server named "myhost".
-	</p><pre class="programlisting">
-
-$ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
-
-	</pre></div><div class="refsect1" title="ENVIRONMENT"><a name="idp61298680"></a><h2>ENVIRONMENT</h2><p>
+	</pre></div><div class="refsect1"><a name="idm159722791808"></a><h2>ENVIRONMENT</h2><p>
 	The <span class="command"><strong>room</strong></span> command does not rely on any environment variables.
-	</p></div><div class="refsect1" title="EXIT STATUS"><a name="idp61299704"></a><h2>EXIT STATUS</h2><p>
+	</p></div><div class="refsect1"><a name="idm159722790784"></a><h2>EXIT STATUS</h2><p>
 	The <span class="command"><strong>room</strong></span> command exits 0 on success, and &gt;0 if an error occurs
-	</p></div><div class="refsect1" title="AUTHORS"><a name="idp61300856"></a><h2>AUTHORS</h2><p>
+	</p></div><div class="refsect1"><a name="idm159722789184"></a><h2>AUTHORS</h2><p>
 		Mark Heily &lt;mark@heily.com&gt;
-	</p></div><div class="refsect1" title="BUGS"><a name="idp61301496"></a><h2>BUGS</h2><p>
-	Sending and receiving rooms will not work as expected if you are operating on
-	rooms which are clones. For best results,	only send rooms that are created via "room create --uri=base.txz". 
+	</p></div><div class="refsect1"><a name="idm159722788496"></a><h2>BUGS</h2><p>
+	The "pull" command is not yet implemented.
+	</p><p>
+	The /data directory is not actually mounted inside the room.
 	</p><p>
 	The snapshot subcommands are not documented in this manual page.
 	</p></div></div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="apa.html">Prev</a> </td><td width="20%" align="center"><a accesskey="u" href="apa.html">Up</a></td><td width="40%" align="right"> </td></tr><tr><td width="40%" align="left" valign="top">Appendix A. Manual pages </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> </td></tr></table></div></body></html>

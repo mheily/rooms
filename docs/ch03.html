@@ -1,6 +1,6 @@
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 3. Installation</title><meta name="generator" content="DocBook XSL Stylesheets V1.76.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch02.html" title="Chapter 2. Design"><link rel="next" href="ch04.html" title="Chapter 4. Usage"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 3. Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr></table><hr></div><div class="chapter" title="Chapter 3. Installation"><div class="titlepage"><div><div><h2 class="title"><a name="idp61241976"></a>Chapter 3. Installation</h2></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt><span class="section"><a href="ch03.html#idp61242232">Building from source</a></span></dt></dl></div>
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>Chapter 3. Installation</title><meta name="generator" content="DocBook XSL Stylesheets V1.79.1"><link rel="home" href="index.html" title="Rooms"><link rel="up" href="index.html" title="Rooms"><link rel="prev" href="ch02.html" title="Chapter 2. Frequently Anticipated Questions"><link rel="next" href="ch04.html" title="Chapter 4. Usage"></head><body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF"><div class="navheader"><table width="100%" summary="Navigation header"><tr><th colspan="3" align="center">Chapter 3. Installation</th></tr><tr><td width="20%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><th width="60%" align="center"> </th><td width="20%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr></table><hr></div><div class="chapter"><div class="titlepage"><div><div><h1 class="title"><a name="idm159722924016"></a>Chapter 3. Installation</h1></div></div></div><div class="toc"><p><b>Table of Contents</b></p><dl class="toc"><dt><span class="section"><a href="ch03.html#idm159722923408">Building from source</a></span></dt></dl></div>
 
-<div lang="en" class="section" title="Building from source"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idp61242232"></a>Building from source</h2></div></div></div>
+<div lang="en" class="section"><div class="titlepage"><div><div><h2 class="title" style="clear: both"><a name="idm159722923408"></a>Building from source</h2></div></div></div>
 
 
 <p>
@@ -8,32 +8,36 @@ This section describes how to build the Rooms project from source.
 </p>
 
 To build the software, you will need, at a minimum:
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
 FreeBSD 10.3 or newer
 </p></li><li class="listitem"><p>
-the boost-libs package
+the Boost C++ libraries
 </p></li><li class="listitem"><p>
 a Git client
 </p></li></ul></div>
 
 In order to build the manual pages, you will also need, at a minimum:
-<div class="itemizedlist"><ul class="itemizedlist" type="disc"><li class="listitem"><p>
-groff, docbook2X
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem"><p>
+groff
 </p></li><li class="listitem"><p>
-The following packages are needed to build the DocBook-based website:
- jing, xmlto
+docbook2X
 </p></li></ul></div>
 
-<div class="sect2" title="Installation procedures"><div class="titlepage"><div><div><h3 class="title"><a name="idp61246712"></a>Installation procedures</h3></div></div></div>
+<p>
+To build the Rooms website, you will need the 'xmlto' package.
+</p>
+
+<div class="sect2"><div class="titlepage"><div><div><h3 class="title"><a name="idm159722917856"></a>Installation procedures</h3></div></div></div>
 <div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
 <p>Install the required packages.</p>
 <pre class="programlisting">
-$ sudo pkg install -y git groff docbook2X jing xmlto
+$ su -
+# pkg install -y git groff docbook2X xmlto boost-all
 </pre>
 </li><li class="listitem">
 <p>Download the source code.</p>
 <pre class="programlisting">
-$ git https://github.com/mheily/rooms.git
+$ git clone https://github.com/mheily/rooms.git
 </pre>
 </li><li class="listitem">
 <p>Change into the directory with the source code.</p>
@@ -59,9 +63,10 @@ $ make
 Install the software.
 </p>
 <pre class="programlisting">
-$ sudo make install
+$ su -
+# make install
 </pre>
 </li></ol></div>
 </div>
 </div>
-</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Design </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 4. Usage</td></tr></table></div></body></html>
+</div><div class="navfooter"><hr><table width="100%" summary="Navigation footer"><tr><td width="40%" align="left"><a accesskey="p" href="ch02.html">Prev</a> </td><td width="20%" align="center"> </td><td width="40%" align="right"> <a accesskey="n" href="ch04.html">Next</a></td></tr><tr><td width="40%" align="left" valign="top">Chapter 2. Frequently Anticipated Questions </td><td width="20%" align="center"><a accesskey="h" href="index.html">Home</a></td><td width="40%" align="right" valign="top"> Chapter 4. Usage</td></tr></table></div></body></html>
