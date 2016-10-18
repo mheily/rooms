@@ -26,7 +26,7 @@ groff, docbook2X
 </para></listitem>
 <listitem><para>
 The following packages are needed to build the DocBook-based website:
- jing, xmlto
+ xmlto
 </para></listitem>
 </itemizedlist>
 
@@ -35,14 +35,15 @@ The following packages are needed to build the DocBook-based website:
 <listitem>
 <para>Install the required packages.</para>
 <programlisting>
-$ sudo pkg install -y git groff docbook2X jing xmlto
+$ su -
+# pkg install -y git groff docbook2X xmlto boost-all
 </programlisting>
 </listitem>
 
 <listitem>
 <para>Download the source code.</para>
 <programlisting>
-$ git https://github.com/mheily/rooms.git
+$ git clone https://github.com/mheily/rooms.git
 </programlisting>
 </listitem>
 
@@ -52,7 +53,6 @@ $ git https://github.com/mheily/rooms.git
 $ cd rooms
 </programlisting>
 </listitem>
-
 
 <listitem>
 <para>
@@ -77,7 +77,8 @@ $ make
 Install the software.
 </para>
 <programlisting>
-$ sudo make install
+$ su -
+# make install
 </programlisting>
 </listitem>
 </orderedlist>
