@@ -432,7 +432,7 @@ void Room::printSnapshotList()
 {
 	// FIXME: would like to avoid this popen, for better security
 	string cmd = "zfs list -H -r -d 1 -t snapshot -o name -s creation " +
-			roomDataset + "/" + roomName + " | sed 's/.*@//'";
+			roomDataset + "/" + roomName + "/share | sed 's/.*@//'";
 
 	Subprocess proc;
 	proc.execve("/bin/sh", { "-c", cmd });
@@ -822,7 +822,7 @@ string Room::getLatestSnapshot()
 {
 	// FIXME: would like to avoid this popen, for better security
 	string cmd = "zfs list -H -r -d 1 -t snapshot -o name -s creation " +
-			roomDataset + "/" + roomName + " | tail -1 | sed 's/.*@//'";
+			roomDataset + "/" + roomName + "/share | tail -1 | sed 's/.*@//'";
 
 	return Shell::popen_readline(cmd);
 }
