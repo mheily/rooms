@@ -185,12 +185,15 @@ static void get_options(int argc, char *argv[])
 		if (baseArchiveUri != "") {
 			mgr.installRoom(roomName, baseArchiveUri, roomOpt);
 		} else {
+// DEADWOOD: need to redo the whole basetemplate mechanism
+#if 0
 			if (! mgr.doesBaseTemplateExist()) {
 				cout << "ERROR: The FreeBSD-10.3 base template does not exist.\n";
 				cout << "       See the room(1) manual page for an example of creating the base template.\n";
 				exit(1);
 				//mgr.createBaseTemplate();
 			}
+#endif
 			mgr.cloneRoom(roomName, roomOpt);
 		}
 		Room room = mgr.getRoomByName(roomName);
