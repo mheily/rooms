@@ -1,38 +1,64 @@
-What are rooms?
+<?xml version="1.0" encoding="UTF-8"?>
+<section xml:lang="en" xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">
 
+<title>Frequently Asked Questions</title>
+<para>
+This chapter is a rough collection of questions and answers about Rooms.
+</para>
+
+<sect2><title>What are rooms?</title>
+
+<para>
 	Rooms are a powerful and user-friendly way to 
 	run containers on FreeBSD using jails and ZFS.
+</para>
 
+<para>
 	Rooms allow you to take a base operating system image,
 	add your own software, customize the configuration, 
 	and distribute the resulting combination. This is the main reason why
 	Docker has become so popular, and Rooms are very similar
 	to Docker in this regard.
+</para>
 
+<para>
 	One reason for using containers is to avoid "dependency hell",
 	where multiple applications have conflicting requirements. 
-	This is ove earlier approaches,
-	 like Ubuntu Snappy Apps and PC-BSD PBIs.
+	This is a big motivation for similar tools, like Ubuntu Snappy Apps and PC-BSD PBIs.
 	These tools offered a way of distributing graphical applications
 	with all of their libraries bundled together so that multiple
 	applications could coexist with different library versions.
+</para>
 
+</sect2>
+
+<sect2><title>
 What does the name mean?
+</title>
 
+<para>
 	Jails are nasty places that bad people go.
 	Rooms, on the other hand, are neutral containers; a room
 	could be a jail cell, a bedroom, a living room, or a
 	kitchen.
+</para>
 
+<para>
 	The name "room" reflects the fact that the containers
 	can be used to provide varying degrees of isolation
 	and security. If you want an ultra-secure jail that is
 	completely locked down, you can do that. If you want
 	a container that has a lot of access to the host
 	system, you can do that too.
+</para>
 
+</sect2>
+
+<sect2><title>
 Why run containers on FreeBSD?
+</title>
 
+<para>
 	Why use FreeBSD to run containers, when most of the 
 	DevOps crowd is focused on Linux containers?  
 
@@ -42,23 +68,34 @@ Why run containers on FreeBSD?
 	- security of jail(2) v.s. cgroups+apparmor/selinux
 	- features of ZFS v.s. Linux filesystems
 	- can run Linux containers using the Linuxulator
+</para>
 	
+<para>
 	Many Linux distributions have adopted systemd, which
 	is a controversial piece of bloatware that (IMHO)
 	has turned Linux a Frankenstein clone of both Windows and Unix.
 	On the other hand, FreeBSD has retained a classic 
 	Unix look-and-feel, and only needs a little help to 
 	improve the usability of containers.
+</para>
+</sect2>
 	
+<sect2><title>
 Why use rooms instead of ezjail/iocage?
+</title>
 
+<para>
 	Rooms are based on jails, so it is fair to ask why the 
 	world needs another jail manager. We already have ezjail
 	and iocage, isn't that good enough?
+</para>
 
+<para>
 	The simple answer is that jails do not solve the same 
 	problems that rooms do. Existing jail managers do not:
 
+</para>
+<para>
 	* Allow normal user accounts to create jails and
 	  ZFS datasets.
 	* Offer clean separation between the jail OS and data,
@@ -67,19 +104,31 @@ Why use rooms instead of ezjail/iocage?
 	* Easily allow users to run graphical applications
 	  inside a jail.
 	* Integrate with jobd
+</para>
 	
-Are rooms stable? When can I start using them?
+</sect2>
 
+<sect2><title>
+Are rooms stable? When can I start using them?
+</title>
+
+<para>
 	At this point, Rooms should be considered beta quality 
 	software in most regards. There has not been an official
 	stable release. The internal structure of the rooms, and
 	the format of the configuration files, can all be changed
 	without warning, and may require expert-level knowledge
 	to upgrade between versions.
+</para>
 
+<para>
 	That being said, most of the core features of rooms are
 	complete and fairly stable. The only features that are
 	likely to see major changes are those related to publishing
 	and downloading rooms over the Internet. If you intend to
 	publish your own rooms, you should wait for this functionality
 	to mature.
+</para>
+</sect2>
+
+</section>

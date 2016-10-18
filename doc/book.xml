@@ -62,11 +62,21 @@ Features:
 	</para>
 </listitem>
 
-<listitem>
-<para>
+<listitem><para>
 Allow users to run X11 applications in jails
-</para>
-</listitem>
+</para></listitem>
+
+<listitem><para>
+Keep data and code separate, so that applications can be updated
+without losing data.
+</para></listitem>
+
+<listitem><para>
+Treat applications like Git repositories; cloning from a remote
+URI, pulling new revisions and merging them with local changes,
+and pushing your changes to a remote repository.
+</para></listitem>
+
 </itemizedlist>
 </section>
 
@@ -81,7 +91,8 @@ in more detail.
 </chapter>
 
 <chapter>
-<title>Design</title>
+<title>Frequently Anticipated Questions</title>
+<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="faq.xml" />
 <!--
 Not finished:
 <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="comparison.xml" />

@@ -12,7 +12,7 @@ To build the software, you will need, at a minimum:
 FreeBSD 10.3 or newer
 </para></listitem>
 <listitem><para>
-the boost-libs package
+the Boost C++ libraries
 </para></listitem>
 <listitem><para>
 a Git client
@@ -22,13 +22,16 @@ a Git client
 In order to build the manual pages, you will also need, at a minimum:
 <itemizedlist>
 <listitem><para>
-groff, docbook2X
+groff
 </para></listitem>
 <listitem><para>
-The following packages are needed to build the DocBook-based website:
- xmlto
+docbook2X
 </para></listitem>
 </itemizedlist>
+
+<para>
+To build the Rooms website, you will need the 'xmlto' package.
+</para>
 
 <sect2><title>Installation procedures</title>
 <orderedlist>
