@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section xml:lang="en" xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xi="http://www.w3.org/2001/XInclude" xmlns:xl="http://www.w3.org/1999/xlink">
 
-<title>Frequently Asked Questions</title>
+<title>Frequently Anticipated Questions</title>
 <para>
 This chapter is a rough collection of questions and answers about Rooms.
 </para>
@@ -60,14 +60,34 @@ Why run containers on FreeBSD?
 
 <para>
 	Why use FreeBSD to run containers, when most of the 
-	DevOps crowd is focused on Linux containers?  
+	DevOps crowd is focused on Linux containers? The main reasons are:
+</para>
 
-	The main reasons are:
-	- jobd v.s. systemd as a container manager
-	- ease of use of jail(2) v.s. cgroups
-	- security of jail(2) v.s. cgroups+apparmor/selinux
-	- features of ZFS v.s. Linux filesystems
-	- can run Linux containers using the Linuxulator
+<para>
+<itemizedlist>
+
+<listitem><para>
+	jobd v.s. systemd as a container manager
+</para></listitem>
+
+<listitem><para>
+	ease of use of jail(2) v.s. cgroups
+</para></listitem>
+
+<listitem><para>
+	security of jail(2) v.s. cgroups+apparmor/selinux
+</para></listitem>
+
+<listitem><para>
+	features of ZFS v.s. Linux filesystems
+</para></listitem>
+
+<listitem><para>
+	if you still need to run some Linux-only things, you can
+	run Linux containers on a FreeBSD host using the Linuxulator
+</para></listitem>
+
+</itemizedlist>
 </para>
 	
 <para>
@@ -93,17 +113,33 @@ Why use rooms instead of ezjail/iocage?
 <para>
 	The simple answer is that jails do not solve the same 
 	problems that rooms do. Existing jail managers do not:
-
 </para>
+
 <para>
-	* Allow normal user accounts to create jails and
+<itemizedlist>
+<listitem><para>
+	Allow normal user accounts to create jails and
 	  ZFS datasets.
-	* Offer clean separation between the jail OS and data,
+</para></listitem>
+
+<listitem><para>
+	Offer clean separation between the jail OS and data,
 	  and an jail upgrade path that preserves the user's data
-	* Provide a mechanism to download pre-built jails
-	* Easily allow users to run graphical applications
+</para></listitem>
+
+<listitem><para>
+	Provide a mechanism to download pre-built jails
+</para></listitem>
+
+<listitem><para>
+	Easily allow users to run graphical applications
 	  inside a jail.
-	* Integrate with jobd
+</para></listitem>
+
+<listitem><para>
+	Integrate with jobd
+</para></listitem>
+</itemizedlist>
 </para>
 	
 </sect2>
