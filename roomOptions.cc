@@ -36,13 +36,13 @@ void RoomOptions::load(const string &path)
 	allowX11Clients = tree.get("permissions.allowX11Clients", false);
 	shareTempDir = tree.get("permissions.shareTempDir", false);
 	shareHomeDir = tree.get("permissions.shareHomeDir", false);
-	useLinuxABI = tree.get("useLinuxABI", false);
-	isHidden = tree.get("isHidden", false);
-	cloneUri = tree.get("cloneUri", "");
-	originUri = tree.get("originUri", "");
+	useLinuxABI = tree.get("instance.useLinuxABI", false);
+	isHidden = tree.get("instance.isHidden", false);
+	cloneUri = tree.get("instance.cloneUri", "");
+	originUri = tree.get("instance.originUri", "");
 
 	UuidGenerator ug;
-	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
+	ug.setValue(tree.get("instance.uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
 	uuid = ug.getValue();
 }
 
@@ -53,19 +53,15 @@ void RoomOptions::save(const string &path)
 
     log_debug("writing options to %s", path.c_str());
 
-    tree.put("rooms.api_version", "0");
+    tree.put("api.version", "0");
     tree.put("permissions.allowX11Clients", allowX11Clients);
     tree.put("permissions.shareTempDir", shareTempDir);
     tree.put("permissions.shareHomeDir", shareHomeDir);
-    tree.put("useLinuxABI", useLinuxABI);
-    tree.put("isHidden", isHidden);
-    tree.put("uuid", uuid);
-    if (cloneUri != "") {
-    	tree.put("cloneUri", cloneUri);
-    }
-    if (originUri != "") {
-    	tree.put("originUri", originUri);
-    }
+    tree.put("instance.useLinuxABI", useLinuxABI);
+    tree.put("instance.uuid", uuid);
+    tree.put("instance.isHidden", isHidden);
+   	tree.put("instance.cloneUri", cloneUri);
+   	tree.put("instance.originUri", originUri);
 
     pt::write_json(path, tree);
 }
