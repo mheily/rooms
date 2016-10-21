@@ -353,27 +353,6 @@ void Room::createEmpty()
 	SetuidHelper::lowerPrivileges();
 }
 
-// Run FreeBSD-specific postinstall actions
-void Room::postinstallFreeBSD()
-{
-	if (forkAndExec({"/usr/bin/env", "ASSUME_ALWAYS_YES=YES", "/usr/sbin/pkg", "bootstrap"}, "root") != 0) {
-		throw std::runtime_error("failed to bootstrap pkg");
-	}
-
-	if (forkAndExec({
-		"/usr/bin/sed", "-i",
-		"-e", "s/enabled: no/enabled: yes/",
-		"/etc/pkg/FreeBSD.conf",
-	}, "root") != 0) {
-		throw std::runtime_error("failed to update pkg.conf");
-	}
-
-	// Download package catalog
-	if (forkAndExec({"/usr/sbin/pkg", "update"}, "root") != 0) {
-		throw std::runtime_error("failed to update package metadata");
-	}
-}
-
 void Room::extractTarball(const string& baseTarball)
 {
 	string cmd;
@@ -386,10 +365,6 @@ void Room::extractTarball(const string& baseTarball)
 	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
 	pushResolvConf();
 	SetuidHelper::lowerPrivileges();
-
-	postinstallFreeBSD();
-
-	snapshotCreate(generateSnapshotName());
 
 	log_debug("room %s created", roomName.c_str());
 }
