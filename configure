@@ -19,6 +19,7 @@
 . ./vars.sh
 
 bin_PROGRAMS=room
+bin_SCRIPTS=room-build
 
 room_CXXFLAGS="-std=c++11 -isystem /usr/local/include -Wall -Werror"
 room_LDFLAGS="-L/usr/local/lib"
