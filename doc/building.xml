@@ -19,7 +19,14 @@ a Git client
 </para></listitem>
 </itemizedlist>
 
+<para>
+In order to use the room-build(1) tool, you will also need Ruby and the uclcmd package.
+</para>
+
+<para>
 In order to build the manual pages, you will also need, at a minimum:
+</para>
+
 <itemizedlist>
 <listitem><para>
 groff

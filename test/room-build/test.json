@@ -1,0 +1,38 @@
+{
+  "api": {
+    "version": 0
+  },
+  "label": "com.heily.FreeBSD-11.0",
+  "name": "FreeBSD-11.0",
+  "base": {
+    "uri": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/amd64/11.0-RELEASE/base.txz",
+    "sha512": "137e84cc8774729bb55349e43de5df55bf8b50dc37eb4fb6b4f4f2b9f94daf11dd2841db2d6b8be0d081766d665068f97f47bdae73f23809588ae75a2d43a476",
+    "type": "archive",
+    "tag": "base",
+    "script": [
+      "env ASSUME_ALWAYS_YES=YES pkg bootstrap",
+      "sed -i -e 's/enabled: no/enabled: yes/' /etc/pkg/FreeBSD.conf",
+      "pkg update"
+    ]
+  },
+  "tags": [
+    {
+      "name": "v0.1",
+      "script": [
+        "cd /tmp2",
+        "git fetch",
+        "git checkout tags/:v0.1",
+        "make all install"
+      ]
+    },
+    {
+      "name": "v0.2",  
+      "script": [
+        "cd /tmp3",
+        "git fetch",
+        "git checkout tags/:v0.1",
+        "make all install"
+      ]
+    }
+  ]
+}
