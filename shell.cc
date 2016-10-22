@@ -155,15 +155,7 @@ void Subprocess::execute(const char *path, const std::vector<std::string>& args)
 			close(pd[0]);
 		}
 		if (dropPrivileges) {
-			gid_t egid = getegid();
-	        if (setresgid(egid, egid, egid) < 0) {
-	                throw std::system_error(errno, std::system_category());
-	        }
-
-	        uid_t euid = geteuid();
-	        if (setresuid(euid, euid, euid) < 0) {
-	                throw std::system_error(errno, std::system_category());
-	        }
+			SetuidHelper::dropPrivileges();
 		}
 		if (::execve(path, argv.data(), envp) < 0) {
 			log_errno("execve(2)");

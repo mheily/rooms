@@ -127,17 +127,24 @@ void SetuidHelper::dropPrivileges() {
 		throw std::logic_error("privileges are already dropped");
 	}
 
+	if (isLoweredPrivs) {
+		raisePrivileges();
+	}
+
 	log_debug("dropping privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
 
 	if (setgroups(0, NULL) < 0) {
+		log_errno("setgroups(2)");
 		throw std::system_error(errno, std::system_category());
 	}
 
 	if (setresgid(egid, egid, egid) < 0) {
+		log_errno("setresgid(2)");
 		throw std::system_error(errno, std::system_category());
 	}
 
 	if (setresuid(euid, euid, euid) < 0) {
+		log_errno("setresuid(2)");
 		throw std::system_error(errno, std::system_category());
 	}
 
