@@ -45,6 +45,7 @@ using std::cin;
 using std::endl;
 using std::string;
 
+#include "setuidHelper.h"
 #include "shell.h"
 
 // Run a command that is expected to return a single line of output

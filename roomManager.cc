@@ -16,6 +16,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <locale>
@@ -188,7 +189,19 @@ void RoomManager::cloneRoom(const string& dest, const RoomOptions& roomOpt)
 
 void RoomManager::cloneRoomFromRemote(const string& name, const string& uri)
 {
-	Room room(roomDir, name);
+	string roomName;
+
+	if (name == "") {
+		char *pos = std::strrchr(uri.c_str(), '/');
+		if (pos == NULL) {
+			throw std::runtime_error("invalid URI");
+		}
+		roomName = string(pos + 1);
+	} else {
+		roomName = name;
+	}
+
+	Room room(roomDir, roomName);
 	room.cloneFromOrigin(uri);
 }
 
