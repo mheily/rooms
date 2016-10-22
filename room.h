@@ -80,6 +80,7 @@ public:
 	// Remote push/pull functions
 	void cloneFromOrigin(const string& uri);
 	void pushToOrigin();
+	void setOriginUri(const string& uri);
 
 
 	static bool isValidName(const string& name)

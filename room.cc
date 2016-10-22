@@ -730,6 +730,16 @@ void Room::setOsType(const string& osType)
 }
 */
 
+void Room::setOriginUri(const string& uri)
+{
+	// Validate syntax
+	string scheme, host, path;
+	Room::parseRemoteUri(uri, scheme, host, path);
+
+	roomOptions.originUri = uri;
+	syncRoomOptions();
+}
+
 void Room::downloadTarball(const string& uri, const string& path)
 {
 	string tarball = roomDataDir + "/base.txz";
@@ -804,8 +814,13 @@ string Room::getLatestSnapshot()
 
 void Room::pushToOrigin()
 {
-	string scheme, host, path;
+	if (roomOptions.originUri == "") {
+		throw std::runtime_error("origin URI cannot be empty");
+	}
 
+	log_debug("pushing room to origin %s", roomOptions.originUri.c_str());
+
+	string scheme, host, path;
 	Room::parseRemoteUri(roomOptions.originUri, scheme, host, path);
 
 	log_debug("creating room directory on origin server");

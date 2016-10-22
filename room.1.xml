@@ -28,7 +28,7 @@
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">receive</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">send</emphasis>-->
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">pull</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis> [-u|--set-upstream <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">start</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">stop</emphasis>
 </literallayout>
@@ -219,7 +219,7 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis>
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">push</emphasis> [-u|--set-upstream <replaceable>URI</replaceable>]
 </literallayout>
 		</term>
 	
@@ -230,9 +230,9 @@ The following subcommands and options are available:
 			</para>
 
 			<para>
-			This command only works on rooms that have an "origin" URI defined
-			in their configuration file. The only supported transport mechanism
-			at this time is SSH.
+			This command only works on rooms that have an "origin" URI defined. 
+			To set the origin URI, use the --set-upstream <replaceable>URI</replaceable> option. 
+			The only support transport at this time is SSH, so URIs must be in the format <replaceable>ssh://$FQDN/$PATH</replaceable>.
 			</para>
 		</listitem>
 	</varlistentry>	

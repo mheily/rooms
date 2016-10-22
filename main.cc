@@ -71,7 +71,7 @@ static void get_options(int argc, char *argv[])
 	bool isVerbose;
 
 	string popt0, popt1, popt2, popt3;
-	string runAsUser;
+	string runAsUser, upstreamUri;
 
 	po::options_description desc("Miscellaneous options");
 	desc.add_options()
@@ -94,6 +94,11 @@ static void get_options(int argc, char *argv[])
 	    ("user,u", po::value<string>(&runAsUser), "the user to run the command as")
 	;
 
+	po::options_description push_opts("Options when using push");
+	push_opts.add_options()
+	    ("set-upstream,u", po::value<string>(&upstreamUri), "the remote URI to push to ")
+	;
+
 	po::options_description create_opts("Options when creating");
 	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
@@ -111,8 +116,7 @@ static void get_options(int argc, char *argv[])
 */
 
 	po::options_description all("All options");
-	all.add(undocumented).add(create_opts).
-			add(exec_opts).add(desc);
+	all.add(undocumented).add(create_opts).add(push_opts).add(desc);
 
 	// Ignore all subsequent arguments after 'exec'
 	int argc_before_exec = argc;
@@ -124,8 +128,10 @@ static void get_options(int argc, char *argv[])
 			break;
 		}
 	}
-	// If there is 'exec' and '--', use the '--' as a delimiter
 	if (found) {
+		all.add(exec_opts);
+
+		// If there is 'exec' and '--', use the '--' as a delimiter
 		for (int i = 0; i < argc; i++) {
 			if (!strcmp(argv[i], "--")) {
 				argc_before_exec = i + 1;
@@ -148,10 +154,12 @@ static void get_options(int argc, char *argv[])
 
 	if (vm.count("help")) {
 		po::options_description helpinfo;
-		if (popt0 == "create") {
+		if (popt1 == "create") {
 			helpinfo.add(create_opts);
-		} else if (popt0 == "exec") {
+		} else if (popt1 == "exec") {
 			helpinfo.add(exec_opts);
+		} else if (popt1 == "push") {
+			helpinfo.add(push_opts);
 		}
 		helpinfo.add(desc);
 		printUsage(helpinfo);
@@ -225,7 +233,11 @@ static void get_options(int argc, char *argv[])
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
 	} else if (popt1 == "push") {
-		mgr.getRoomByName(popt0).pushToOrigin();
+		auto room = mgr.getRoomByName(popt0);
+		if (upstreamUri != "") {
+			room.setOriginUri(upstreamUri);
+		}
+		room.pushToOrigin();
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
 	} else if (popt1 == "snapshot") {

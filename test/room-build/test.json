@@ -6,9 +6,9 @@
   "name": "FreeBSD-11.0",
   "description": "FreeBSD 11.0",
   "permissions": {
- 	"allowX11Clients": true,
-    "shareTempDir": true,
-    "shareHomeDir": true,
+ 	"allowX11Clients": false,
+    "shareTempDir": false,
+    "shareHomeDir": false,
   },
   "base": {
     "uri": "ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/amd64/11.0-RELEASE/base.txz",
