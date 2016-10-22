@@ -321,6 +321,11 @@ emit_scripts() {
 	\$(INSTALL) -m 755 $_prog \$\$DESTDIR\$(SBINDIR)"
 	done
 
+	if [ -n "$pkglibexec_SCRIPTS" ] ; then install_DIRS="$install_DIRS ${libexecdir}/${PACKAGE_NAME}" ; fi
+	for _prog in $pkglibexec_SCRIPTS ; do
+		DISTFILES="$DISTFILES $_prog"
+		_mf_install_rules="$_mf_install_rules${lftab}\$(INSTALL) -m 755 $_prog \$\$DESTDIR\$(LIBEXECDIR)/\$(PACKAGE_NAME)"
+	done
 }
 
 # Write rules for creating directories during 'make install'
