@@ -15,6 +15,7 @@
 
 <para>
 <literallayout>
+<emphasis role="bold">room</emphasis> <emphasis role="bold">build</emphasis> <replaceable>path</replaceable>
 <emphasis role="bold">room list</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
@@ -63,6 +64,23 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
+<emphasis role="bold">room</emphasis> <emphasis role="bold">build</emphasis> <replaceable>path</replaceable>
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Build a room from source code using a configuration file at a given <replaceable>path</replaceable>.
+	The format of the configuration file is described in
+	<citerefentry><refentrytitle>Roomfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>. 
+			</para>
+		</listitem>
+	</varlistentry>
+
+
+	<varlistentry>
+		<term>
+<literallayout>
 <emphasis role="bold">room list</emphasis>
 </literallayout>
 		</term>
@@ -88,6 +106,8 @@ The following subcommands and options are available:
 			</para>
 		</listitem>
 	</varlistentry>
+
+
 
 	<varlistentry>
 		<term>
@@ -437,17 +457,12 @@ $ room FreeBSD-10.3 send | ssh myhost room receive FreeBSD-10.3
 	</para>
 </refsect1>
 
-<!--
 <refsect1>
 	<title>SEE ALSO</title>
 	<para>
-	<citerefentry><refentrytitle>jobadm</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	<citerefentry><refentrytitle>jobcfg</refentrytitle><manvolnum>1</manvolnum></citerefentry>
-	<citerefentry><refentrytitle>jobd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
-	<citerefentry><refentrytitle>job</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	<citerefentry><refentrytitle>Roomfile</refentrytitle><manvolnum>5</manvolnum></citerefentry> 
 	</para>
 </refsect1>
--->
 
 <refsect1>
 	<title>AUTHORS</title>

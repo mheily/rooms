@@ -205,6 +205,9 @@ static void get_options(int argc, char *argv[])
 			mgr.cloneRoom(roomName, roomOpt);
 		}
 		Room room = mgr.getRoomByName(roomName);
+	} else if (popt0 == "build") {
+		SetuidHelper::dropPrivileges();
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-build", popt1.c_str(), NULL);
 	} else if (popt1 == "configure") {
 		Room room = mgr.getRoomByName(popt0);
 		room.editConfiguration();
