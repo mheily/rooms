@@ -19,6 +19,9 @@ require "json"
 require "pp"
 require 'logger'
 require 'tempfile'
+require_relative 'room'
+
+include RoomUtility
 
 def run_script(buf)
   raise ArgumentError unless buf.kind_of? String
@@ -50,7 +53,7 @@ def permissions(json)
 end
 
 def create_base(json)
-  archive = @cachedir + '/' + json['label'] + '-base.txz'
+  archive = @tmpdir + '/' + json['label'] + '-base.txz'
   unless File.exist?(archive)
     system("fetch -o #{archive} #{json['base']['uri']}") or raise 'fetch failed'    
   end
@@ -67,9 +70,8 @@ def main
   raise 'usage: room-build <configuration file>' unless path
   raise Errno::ENOENT unless File.exist?(path)
   
-  @logger = Logger.new(STDOUT)
-  @logger.level = Logger::DEBUG
-  @cachedir = '/tmp' # XXX-FIXME SECURITY
+  setup_logger
+  setup_tmpdir
   
   data = `uclcmd get --file #{path} -c ''`
   json = JSON.parse data
@@ -96,15 +98,6 @@ def main
   end
   
   logger.debug 'done'
-end
-    
-def logger
-  @logger
-end
-
-def system(command)
-  logger.debug 'running: ' + command
-  Kernel.system(command)
 end
 
 main

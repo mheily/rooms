@@ -116,7 +116,26 @@ static void get_options(int argc, char *argv[])
 */
 
 	po::options_description all("All options");
-	all.add(undocumented).add(create_opts).add(push_opts).add(desc);
+	all.add(desc).add(undocumented);
+
+	// Add context-sensitive options
+	bool found_create = false;
+	bool found_push = false;
+	for (int i = 0; i < argc; i++) {
+		if (!strcmp(argv[i], "create")) {
+			if (!found_create) {
+				all.add(create_opts);
+				found_create = true;
+			}
+		} else if (!strcmp(argv[i], "push")) {
+			if (!found_push) {
+				all.add(push_opts);
+				found_push = true;
+			}
+		} else if (!strcmp(argv[i], "--")) {
+			break;
+		}
+	}
 
 	// Ignore all subsequent arguments after 'exec'
 	int argc_before_exec = argc;
