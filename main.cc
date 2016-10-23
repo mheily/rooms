@@ -184,7 +184,9 @@ static void get_options(int argc, char *argv[])
 	} else if (popt0 == "clone") {
 		string uri = popt1;
 		roomName = popt2;
-		mgr.cloneRoomFromRemote(roomName, uri);
+		SetuidHelper::dropPrivileges();
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-clone.rb", roomName.c_str(), uri.c_str(), NULL);
+		//mgr.cloneRoomFromRemote(roomName, uri);
 	} else if (popt1 == "create") {
 		roomName = popt0;
 		if (roomOpt.cloneUri != "" && baseArchiveUri != "") {
@@ -208,7 +210,7 @@ static void get_options(int argc, char *argv[])
 		Room room = mgr.getRoomByName(roomName);
 	} else if (popt0 == "build") {
 		SetuidHelper::dropPrivileges();
-		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-build", popt1.c_str(), NULL);
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-build.rb", popt1.c_str(), NULL);
 	} else if (popt1 == "configure") {
 		Room room = mgr.getRoomByName(popt0);
 		room.editConfiguration();
@@ -237,11 +239,15 @@ static void get_options(int argc, char *argv[])
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
 	} else if (popt1 == "push") {
+		SetuidHelper::dropPrivileges();
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-push.rb", popt0.c_str(), upstreamUri.c_str(), NULL);
+#if 0
 		auto room = mgr.getRoomByName(popt0);
 		if (upstreamUri != "") {
 			room.setOriginUri(upstreamUri);
 		}
 		room.pushToOrigin();
+#endif
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
 	} else if (popt1 == "snapshot") {

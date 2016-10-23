@@ -50,7 +50,7 @@ public:
 	void importRoom(const string& name);
 	void createRoom(const string& name);
 	void cloneRoom(const string& dest, const RoomOptions& roomOpt);
-	void cloneRoomFromRemote(const string& name, const string& uri);
+	//void cloneRoomFromRemote(const string& name, const string& uri);
 	void receiveRoom(const string& name);
 	void destroyRoom(const string& name);
 	Room& getRoomByName(const string& name);

@@ -299,6 +299,7 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	log_debug("clone complete");
 }
 
+#if 0
 void Room::cloneFromOrigin(const string& uri)
 {
 	string scheme, host, path;
@@ -308,8 +309,15 @@ void Room::cloneFromOrigin(const string& uri)
 	createEmpty();
 
 	string tmpdir = roomDataDir + "/local/tmp";
-	Shell::execute("/usr/bin/fetch", { "-q", "-o", roomOptionsPath, uri+"/options.json" });
-	Shell::execute("/usr/bin/fetch", { "-q", "-o", tmpdir, uri+"/share.zfs.xz" });
+	if (scheme == "http" || scheme == "https") {
+		Shell::execute("/usr/bin/fetch", { "-o", roomOptionsPath, uri+"/options.json" });
+		Shell::execute("/usr/bin/fetch", { "-o", tmpdir, uri+"/share.zfs.xz" });
+	} else if (scheme == "ssh") {
+		Shell::execute("/usr/bin/scp", { host + ":" + path + "/options.json", roomOptionsPath });
+		Shell::execute("/usr/bin/scp", { host + ":" + path + "/share.zfs.xz", tmpdir });
+	} else {
+		throw std::runtime_error("unsupported URI scheme");
+	}
 	Shell::execute("/usr/bin/unxz", { tmpdir + "/share.zfs.xz" });
 
 	// Replace the empty "share" dataset with a clone of the original
@@ -322,6 +330,7 @@ void Room::cloneFromOrigin(const string& uri)
 
 	log_debug("clone complete");
 }
+#endif
 
 // Create an empty room, ready for share/ to be populated
 void Room::createEmpty()
@@ -730,6 +739,7 @@ void Room::setOsType(const string& osType)
 }
 */
 
+#if 0
 void Room::setOriginUri(const string& uri)
 {
 	// Validate syntax
@@ -739,6 +749,7 @@ void Room::setOriginUri(const string& uri)
 	roomOptions.originUri = uri;
 	syncRoomOptions();
 }
+#endif
 
 void Room::downloadTarball(const string& uri, const string& path)
 {
@@ -812,6 +823,7 @@ string Room::getLatestSnapshot()
 	return Shell::popen_readline(cmd);
 }
 
+#if 0
 void Room::pushToOrigin()
 {
 	if (roomOptions.originUri == "") {
@@ -859,7 +871,9 @@ void Room::pushToOrigin()
 		}
 	}
 }
+#endif
 
+#if 0
 void Room::parseRemoteUri(const string& uri, string& scheme, string& host, string& path)
 {
 	string buf = uri;
@@ -881,3 +895,4 @@ void Room::parseRemoteUri(const string& uri, string& scheme, string& host, strin
 	path = buf.substr(host.length(), string::npos);
 	//	cout << "path: " + path + "\n";
 }
+#endif

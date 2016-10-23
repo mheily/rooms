@@ -20,14 +20,17 @@ require "pp"
 require 'logger'
 require 'tempfile'
 
-class Room
+#
+# Utility functions for working with rooms
+#
+module Room
   def setup_logger
     @logger = Logger.new(STDOUT)
     @logger.level = Logger::DEBUG
   end
   
   def setup_tmpdir
-    @tmpdir = Dir.mktmpdir($PROGRAM_NAME)
+    @tmpdir = Dir.mktmpdir($PROGRAM_NAME.sub(/.*\//, ''))
     at_exit { system "rm -rf #{@tmpdir}" if File.exist?(@tmpdir) }
   end
     

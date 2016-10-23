@@ -187,6 +187,7 @@ void RoomManager::cloneRoom(const string& dest, const RoomOptions& roomOpt)
 	enumerateRooms();
 }
 
+#if 0
 void RoomManager::cloneRoomFromRemote(const string& name, const string& uri)
 {
 	string roomName;
@@ -204,6 +205,7 @@ void RoomManager::cloneRoomFromRemote(const string& name, const string& uri)
 	Room room(roomDir, roomName);
 	room.cloneFromOrigin(uri);
 }
+#endif
 
 void RoomManager::importRoom(const string& roomName) {
 	const string snapName = "tmp_export";

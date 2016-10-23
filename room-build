@@ -69,7 +69,7 @@ def main
   
   @logger = Logger.new(STDOUT)
   @logger.level = Logger::DEBUG
-  @cachedir = '/tmp'
+  @cachedir = '/tmp' # XXX-FIXME SECURITY
   
   data = `uclcmd get --file #{path} -c ''`
   json = JSON.parse data

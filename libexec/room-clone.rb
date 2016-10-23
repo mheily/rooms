@@ -18,19 +18,38 @@
 require "json"
 require "pp"
 require 'logger'
+require 'net/http'
 require 'tempfile'
 require 'uri'
-require 'room'
+require_relative 'room'
+
+include Room
 
 def main
   user = `whoami`.chomp
-  name = ARGV[0]
-  raise 'usage: room-pull <name>' unless name
+  base_uri = ARGV[0]
+  name = ARGV[1] || base_uri.gsub(/.*\//, '')
+  raise "usage: #{$PROGRAM_NAME} <uri> [name]" unless base_uri
   
   setup_logger
   setup_tmpdir
-  json = parse_options_json("/room/#{user}/#{name}/etc/options.json")
 
+  logger.debug "cloning: base_uri=#{base_uri} name=#{name}"
+
+  base_uri = URI(base_uri)
+  Net::HTTP.start(base_uri.host, base_uri.port) do |http|
+    uri = base_uri.to_s + '/options.json'
+    logger.debug "getting #{uri}"
+    request = Net::HTTP::Get.new uri
+  
+    response = http.request request # Net::HTTPResponse object
+    raise 'bad response' unless response.body
+    json = JSON.parse(response.body)
+    logger.debug "json=#{json.pretty_inspect}"
+  end
+ 
+  raise 'fixme'
+  
   uri = URI(json['instance']['originuri'] + '/options.json')
   uuid = json['instance']['uuid']
   logger.debug "fetching #{uri}"
