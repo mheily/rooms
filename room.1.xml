@@ -16,8 +16,8 @@
 <para>
 <literallayout>
 <emphasis role="bold">room</emphasis> <emphasis role="bold">build</emphasis> <replaceable>path</replaceable>
+<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable> [<replaceable>name</replaceable>]
 <emphasis role="bold">room list</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
@@ -77,6 +77,22 @@ The following subcommands and options are available:
 		</listitem>
 	</varlistentry>
 
+	<varlistentry>
+		<term>
+<literallayout>
+<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable> [<replaceable>name</replaceable>]
+</literallayout>
+		</term>
+	
+		<listitem>
+			<para>
+	Clone a room from a remote <replaceable>URI</replaceable>.
+	You can optionally provide a different [<replaceable>name</replaceable>] for
+	the room; if none is provided, the name will be derived from the last component of the URI. 
+			</para>
+		</listitem>
+	</varlistentry>
+
 
 	<varlistentry>
 		<term>
@@ -103,24 +119,6 @@ The following subcommands and options are available:
 			<para>
 	Edit the configuration settings for a room named <replaceable>source</replaceable>.
 	FIXME: each setting should be documented here.
-			</para>
-		</listitem>
-	</varlistentry>
-
-
-
-	<varlistentry>
-		<term>
-<literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable>
-</literallayout>
-		</term>
-	
-		<listitem>
-			<para>
-	Clone a room from a remote <replaceable>URI</replaceable>. If a new version
-	of the remote room is published, you can run the "room pull" command to
-	download the latest version.
 			</para>
 		</listitem>
 	</varlistentry>

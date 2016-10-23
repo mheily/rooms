@@ -185,10 +185,6 @@ static void get_options(int argc, char *argv[])
 		string uri = popt1;
 		roomName = popt2;
 		mgr.cloneRoomFromRemote(roomName, uri);
-	} else if (popt1 == "clone") {
-		//LEGACY
-		roomName = popt0;
-		mgr.cloneRoomFromRemote(roomName, popt2);
 	} else if (popt1 == "create") {
 		roomName = popt0;
 		if (roomOpt.cloneUri != "" && baseArchiveUri != "") {
