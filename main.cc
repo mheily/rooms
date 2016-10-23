@@ -167,6 +167,9 @@ static void get_options(int argc, char *argv[])
 	}
 
 	mgr.setVerbose(isVerbose);
+	if (isVerbose) {
+		setenv("ROOM_DEBUG", "YES", 1);
+	}
 
 	SetuidHelper::lowerPrivileges();
 
@@ -239,15 +242,13 @@ static void get_options(int argc, char *argv[])
 		}
 		mgr.getRoomByName(popt0).exec(execVec, runAsUser);
 	} else if (popt1 == "push") {
-		SetuidHelper::dropPrivileges();
-		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-push.rb", popt0.c_str(), upstreamUri.c_str(), NULL);
-#if 0
 		auto room = mgr.getRoomByName(popt0);
 		if (upstreamUri != "") {
 			room.setOriginUri(upstreamUri);
 		}
-		room.pushToOrigin();
-#endif
+		//room.pushToOrigin();
+		SetuidHelper::dropPrivileges();
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-push.rb", popt0.c_str(), upstreamUri.c_str(), NULL);
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
 	} else if (popt1 == "snapshot") {

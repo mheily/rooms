@@ -80,7 +80,7 @@ public:
 	// Remote push/pull functions
 	//void cloneFromOrigin(const string& uri);
 	//void pushToOrigin();
-	//void setOriginUri(const string& uri);
+	void setOriginUri(const string& uri);
 
 
 	static bool isValidName(const string& name)
@@ -139,6 +139,6 @@ private:
 	static void validateName(const string& name);
 	void pushResolvConf();
 	void getJailName();
-	//static void parseRemoteUri(const string& uri, string& scheme, string& host, string& path);
+	static void parseRemoteUri(const string& uri, string& scheme, string& host, string& path);
 	string generateSnapshotName();
 };

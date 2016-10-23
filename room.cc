@@ -739,7 +739,6 @@ void Room::setOsType(const string& osType)
 }
 */
 
-#if 0
 void Room::setOriginUri(const string& uri)
 {
 	// Validate syntax
@@ -749,7 +748,6 @@ void Room::setOriginUri(const string& uri)
 	roomOptions.originUri = uri;
 	syncRoomOptions();
 }
-#endif
 
 void Room::downloadTarball(const string& uri, const string& path)
 {
@@ -873,7 +871,6 @@ void Room::pushToOrigin()
 }
 #endif
 
-#if 0
 void Room::parseRemoteUri(const string& uri, string& scheme, string& host, string& path)
 {
 	string buf = uri;
@@ -895,4 +892,3 @@ void Room::parseRemoteUri(const string& uri, string& scheme, string& host, strin
 	path = buf.substr(host.length(), string::npos);
 	//	cout << "path: " + path + "\n";
 }
-#endif

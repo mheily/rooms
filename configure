@@ -21,7 +21,7 @@
 package 'rooms' '0.1'
 
 bin_PROGRAMS=room
-pkglibexec_SCRIPTS=room-build
+pkglibexec_SCRIPTS="$(ls libexec/*.rb)"
 
 room_CXXFLAGS="-std=c++11 -isystem /usr/local/include -Wall -Werror"
 room_LDFLAGS="-L/usr/local/lib"

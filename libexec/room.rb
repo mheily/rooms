@@ -20,13 +20,41 @@ require "pp"
 require 'logger'
 require 'tempfile'
 
+class Room
+  attr_reader :name, :mountpoint, :dataset, :tags
+  
+  def initialize(name)
+    @name = name
+    user = `whoami`.chomp
+    @mountpoint = "/room/#{user}/#{name}"
+    @dataset = `df -h /room/mark/FreeBSD-11.0-RELEASE/ | tail -1 | awk '{ print \$1 }'`.chomp
+    @json = JSON.parse options_json
+  end
+  
+  def tags
+    `zfs list -H -r -t snapshot -o name #{@dataset}/share`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
+  end
+  
+  def options_json
+    `cat #{mountpoint}/etc/options.json`.chomp
+  end
+  
+  def origin
+    @json['instance']['originUri']
+  end
+end
+
 #
 # Utility functions for working with rooms
 #
-module Room
+module RoomUtility
   def setup_logger
     @logger = Logger.new(STDOUT)
-    @logger.level = Logger::DEBUG
+    if ENV['ROOM_DEBUG']
+      @logger.level = Logger::DEBUG
+    else
+      @logger.level = Logger::INFO
+    end
   end
   
   def setup_tmpdir
@@ -49,4 +77,5 @@ module Room
     logger.debug 'running: ' + command
     Kernel.system(command)
   end
+  
 end
