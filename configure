@@ -58,4 +58,10 @@ fi
 #TODO: add a valgrinding option:
 #make clean ; make all CFLAGS="-g -O0" && valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=20 --track-fds=yes ./launchd -fv 2>&1|less
 
+for script in room-clone room-pull
+do
+	custom_target $script "libexec/$script.rb lib/ruby/room.rb" \
+  		"cat lib/ruby/room.rb libexec/$script.rb > $script"
+done
+	        
 write_makefile
