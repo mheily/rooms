@@ -23,7 +23,7 @@ require 'tempfile'
 require 'uri'
 require_relative 'room'
 
-include Room
+include RoomUtility
 
 def main
   user = `whoami`.chomp
@@ -32,53 +32,16 @@ def main
   raise "usage: #{$PROGRAM_NAME} <uri> [name]" unless base_uri
   
   setup_logger
-  setup_tmpdir
+  #setup_tmpdir
 
   logger.debug "cloning: base_uri=#{base_uri} name=#{name}"
 
   base_uri = URI(base_uri)
-  Net::HTTP.start(base_uri.host, base_uri.port) do |http|
-    uri = base_uri.to_s + '/options.json'
-    logger.debug "getting #{uri}"
-    request = Net::HTTP::Get.new uri
+  room = RemoteRoom.new(base_uri, logger)
+  room.connect
+  puts room.tags
   
-    response = http.request request # Net::HTTPResponse object
-    raise 'bad response' unless response.body
-    json = JSON.parse(response.body)
-    logger.debug "json=#{json.pretty_inspect}"
-  end
- 
-  raise 'fixme'
-  
-  uri = URI(json['instance']['originuri'] + '/options.json')
-  uuid = json['instance']['uuid']
-  logger.debug "fetching #{uri}"
-  case uri.scheme
-  when 'ssh'
-    options = JSON.parse(`ssh #{uri.host} cat #{uri.path}`)
-    if options['instance']['uuid'] != uuid
-      raise 'TODO -- support replacing the entire room'
-    end
-    pp options
-    
-  when 'http', 'https'
-    raise 'todo'; #data = `fetch -o - #{uri}`
-  else
-    raise 'unsupported scheme: ' + uri.scheme
-  end
-  
-  current_tags = `room #{name} snapshot list`.split(/\n/)
-  logger.debug "room #{name} current_tags=#{current_tags.inspect}" 
-  json['tags'] ||= []
-  json['tags'].each do |tag|
-  	if current_tags.include?(tag['name'])
-  	  logger.debug "tag #{tag['name']} already exists"
-  	else
-  	  logger.debug "creating tag: #{tag['name']}"
-  	  run_script tag['script'] if tag.has_key? 'script'
-  	  system "room #{@label} snapshot #{tag['name']} create"
-  	end
-  end
+  raise 'TODO -- download JSONs, make room, download the tags'
   
   logger.debug 'done'
 end

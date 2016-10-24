@@ -19,7 +19,39 @@ require "json"
 require "pp"
 require 'logger'
 require 'tempfile'
+require 'net/ssh'
+require 'shellwords'
 
+# A room on a remote server
+class RemoteRoom
+  attr_reader :uri, :name, :path, :tags
+  
+  def initialize(uri, logger)
+    @uri = URI(uri)
+    @name = uri.path.sub(/.*\//, '')
+    @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
+    @logger = logger
+  end
+
+  def connect
+    @ssh = Net::SSH.start(uri.host)
+    fetch
+  end
+  
+  # Get information about the remote room
+  def fetch
+    @options_json = JSON.parse @ssh.exec!("cat #{Shellwords.escape(@path)}/options.json")
+
+    logger.debug "downloading tags.json"
+    @tags = JSON.parse(@ssh.exec!("cat #{Shellwords.escape(@path)}/tags.json"))
+  end
+  
+  def logger
+    @logger
+  end
+end
+
+# A room on localhost
 class Room
   attr_reader :name, :mountpoint, :dataset, :tags
   
