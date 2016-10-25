@@ -43,7 +43,11 @@ class RemoteRoom
     @options_json = JSON.parse @ssh.exec!("cat #{Shellwords.escape(@path)}/options.json")
 
     logger.debug "downloading tags.json"
-    @tags = JSON.parse(@ssh.exec!("cat #{Shellwords.escape(@path)}/tags.json"))
+    @tags_json = JSON.parse(@ssh.exec!("cat #{Shellwords.escape(@path)}/tags.json"))
+  end
+  
+  def tags
+    @tags_json['tags'].map { |ent| ent['name'] }
   end
   
   def logger

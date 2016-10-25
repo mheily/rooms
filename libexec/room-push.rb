@@ -99,9 +99,10 @@ def push_via_ssh(room_name, uri)
     remote_tags = ssh.exec!("ls #{Shellwords.escape(basedir)}/tags").split(/\r?\n/)
     logger.debug "remote_tags=#{remote_tags.inspect}"
     
+    remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
     i = 0
     room.tags.each do |tag|
-      unless remote_tags.include? tag
+      unless remote_tag_names.include? tag
         tagfile = basedir + '/tags/' + tag
         upload_tag(ssh, room, i, tagfile)
       end
