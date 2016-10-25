@@ -67,6 +67,18 @@ class Room
     `zfs list -H -r -t snapshot -o name #{@dataset}/share`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
   end
   
+  def tags_json
+    names = tags
+    nameset = tags.map do |name|
+      { 'name' => name, 'compression' => 'xz', 'format' => 'zfs' }
+    end
+    
+    JSON.pretty_generate({
+      'api' => { 'version' => 0 },
+      'tags' => nameset
+    })
+  end
+  
   def options_json
     `cat #{mountpoint}/etc/options.json`.chomp
   end

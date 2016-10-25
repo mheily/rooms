@@ -69,7 +69,7 @@ def push_via_ssh(room_name, uri)
   
   room = Room.new(room_name)
   
-  if uri.empty?
+  if uri.nil? or uri.empty?
     uri = room.origin 
     if uri.nil?
       logger.error "No origin URI has been defined for this room"
@@ -93,7 +93,7 @@ def push_via_ssh(room_name, uri)
     ssh.exec!("echo #{Shellwords.escape room.options_json} > #{Shellwords.escape(basedir)}/options.json")
 
     logger.debug "uploading tags.json"
-    ssh.exec!("echo #{Shellwords.escape room.tags.to_json} > #{Shellwords.escape(basedir)}/tags.json")
+    ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
     
     logger.debug "getting tags on remote server"
     remote_tags = ssh.exec!("ls #{Shellwords.escape(basedir)}/tags").split(/\r?\n/)
