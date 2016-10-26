@@ -28,9 +28,10 @@ class RemoteRoom
   
   def initialize(uri, logger)
     @uri = URI(uri)
-    @name = uri.path.sub(/.*\//, '')
+    @name = @uri.path.sub(/.*\//, '')
     @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
     @logger = logger
+    logger.debug "initialized; name=#{@name} uri=#{@uri} path=#{@path}"
   end
 
   def connect
@@ -40,10 +41,13 @@ class RemoteRoom
   
   # Get information about the remote room
   def fetch
-    @options_json = JSON.parse @ssh.exec!("cat #{Shellwords.escape(@path)}/options.json")
+    prefix = Shellwords.escape(@path)
+    
+    logger.debug "downloading options.json" 
+    @options_json = JSON.parse @ssh.exec!("cat #{prefix}/options.json")
 
     logger.debug "downloading tags.json"
-    @tags_json = JSON.parse(@ssh.exec!("cat #{Shellwords.escape(@path)}/tags.json"))
+    @tags_json = JSON.parse(@ssh.exec!("cat #{prefix}/tags.json"))
   end
   
   def tags
@@ -69,6 +73,13 @@ class Room
   
   def tags
     `zfs list -H -r -t snapshot -o name #{@dataset}/share`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
+  end
+  
+  def has_tag?(name)
+    tags.each do |tag|
+      return true if tag == name
+    end
+    return false
   end
   
   def tags_json

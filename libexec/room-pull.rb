@@ -20,60 +20,34 @@ require "pp"
 require 'logger'
 require 'tempfile'
 require 'uri'
+require_relative 'room'
+
+include RoomUtility
 
 def main
   user = `whoami`.chomp
   name = ARGV[0]
   raise 'usage: room-pull <name>' unless name
-  
-  @logger = Logger.new(STDOUT)
-  @logger.level = Logger::DEBUG
-  @cachedir = '/tmp' # XXX-FIXME SECURITY
-  
-  data = `uclcmd get --file /room/#{user}/#{name}/etc/options.json -c ''`
-  json = JSON.parse data
-  logger.debug "json=#{json.pretty_inspect}"
 
-  uri = URI(json['instance']['originuri'] + '/options.json')
-  uuid = json['instance']['uuid']
-  logger.debug "fetching #{uri}"
-  case uri.scheme
-  when 'ssh'
-    options = JSON.parse(`ssh #{uri.host} cat #{uri.path}`)
-    if options['instance']['uuid'] != uuid
-      raise 'TODO -- support replacing the entire room'
-    end
-    pp options
-    
-  when 'http', 'https'
-    raise 'todo'; #data = `fetch -o - #{uri}`
-  else
-    raise 'unsupported scheme: ' + uri.scheme
-  end
+  setup_logger
+  #setup_tmpdir  
   
-  current_tags = `room #{name} snapshot list`.split(/\n/)
-  logger.debug "room #{name} current_tags=#{current_tags.inspect}" 
-  json['tags'] ||= []
-  json['tags'].each do |tag|
-  	if current_tags.include?(tag['name'])
-  	  logger.debug "tag #{tag['name']} already exists"
+  room = Room.new(name)
+  remote = RemoteRoom.new(room.origin, logger)
+  remote.connect
+  
+  current_tags = room.tags_json
+  logger.debug "room #{name} current_tags=#{room.tags.inspect}" 
+  remote.tags.each do |tag|
+  	if room.has_tag?(tag)
+  	  logger.debug "tag #{tag} already exists"
   	else
-  	  logger.debug "creating tag: #{tag['name']}"
-  	  run_script tag['script'] if tag.has_key? 'script'
-  	  system "room #{@label} snapshot #{tag['name']} create"
+  	  logger.debug "downloading tag: #{tag}"
+  	  raise 'TODO'
   	end
   end
   
   logger.debug 'done'
-end
-    
-def logger
-  @logger
-end
-
-def system(command)
-  logger.debug 'running: ' + command
-  Kernel.system(command)
 end
 
 main
