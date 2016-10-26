@@ -60,7 +60,7 @@ def upload_tag(ssh, room, index, tagfile)
   end
 
   ssh.loop
-  ssh.exec!("mv #{tagfile}.tmp#{$$} #{tagfile}")
+  ssh.exec!("mv #{tagfile}.tmp#{$$} #{tagfile}.zfs.xz")
   logger.debug 'tag uploaded successfully'
 end
 
@@ -92,22 +92,29 @@ def push_via_ssh(room_name, uri)
     logger.debug "uploading options.json"
     ssh.exec!("echo #{Shellwords.escape room.options_json} > #{Shellwords.escape(basedir)}/options.json")
 
-    logger.debug "uploading tags.json"
-    ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
-    
-    logger.debug "getting tags on remote server"
-    remote_tags = ssh.exec!("ls #{Shellwords.escape(basedir)}/tags").split(/\r?\n/)
+    logger.debug "getting tags from remote server"
+    remote_tags = JSON.parse(ssh.exec!("cat #{Shellwords.escape(basedir)}/tags.json"))
     logger.debug "remote_tags=#{remote_tags.inspect}"
-    
+     
     remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
     i = 0
+    refresh = false
     room.tags.each do |tag|
-      unless remote_tag_names.include? tag
+      if remote_tag_names.include? tag
+        logger.debug "tag #{tag} already exists; skipping"
+      else
         tagfile = basedir + '/tags/' + tag
         upload_tag(ssh, room, i, tagfile)
+        refresh = true
       end
       i += 1
     end
+    
+    if refresh
+      logger.debug "uploading tags.json: #{room.tags_json}"
+      ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
+    end
+
   end
 end
 
