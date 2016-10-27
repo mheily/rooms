@@ -70,10 +70,15 @@ class RemoteRoom
         channel.on_data do |ch, data|
           zfs.write(data)
         end
+        
+        channel.on_close do |ch, data|
+          zfs.close
+        end
       end
     end
   
     @ssh.loop
+
     logger.debug 'tag downloaded successfully'
   end
   
