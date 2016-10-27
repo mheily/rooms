@@ -412,6 +412,15 @@ void Room::snapshotDestroy(const string& name)
 	SetuidHelper::lowerPrivileges();
 }
 
+void Room::snapshotReceive(const string& name)
+{
+	SetuidHelper::raisePrivileges();
+	Subprocess proc;
+	proc.execve("/sbin/zfs", { "receive", "-F",
+			roomDataset + "/" + roomName + "/share@" + name,
+	});
+}
+
 void Room::printSnapshotList()
 {
 	// FIXME: would like to avoid this popen, for better security

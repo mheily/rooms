@@ -207,7 +207,7 @@ static void get_options(int argc, char *argv[])
 		string uri = popt1;
 		roomName = popt2;
 		SetuidHelper::dropPrivileges();
-		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-clone.rb", roomName.c_str(), uri.c_str(), NULL);
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-clone.rb", uri.c_str(), roomName.c_str(), NULL);
 		//mgr.cloneRoomFromRemote(roomName, uri);
 	} else if (popt1 == "create") {
 		roomName = popt0;
@@ -270,7 +270,7 @@ static void get_options(int argc, char *argv[])
 		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-push.rb", popt0.c_str(), upstreamUri.c_str(), NULL);
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
-	} else if (popt1 == "snapshot") {
+	} else if ((popt1 == "snapshot") or (popt1 == "tag")) { //TODO: rename everything to use 'tag'
 		if (popt2 == "list") {
 			mgr.getRoomByName(popt0).printSnapshotList();
 		} else {
@@ -282,6 +282,8 @@ static void get_options(int argc, char *argv[])
 				room.snapshotCreate(snapName);
 			} else if (action == "destroy") {
 				room.snapshotDestroy(snapName);
+			} else if (action == "receive") {
+				room.snapshotReceive(snapName);
 			} else {
 				cout << "ERROR: invalid syntax\n";
 				exit(1);

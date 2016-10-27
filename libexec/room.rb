@@ -35,19 +35,17 @@ class RemoteRoom
   end
 
   def connect
-    @ssh = Net::SSH.start(uri.host)
+    host = uri.host
+    raise 'host missing' unless host
+    logger.debug "connecting to #{host}"
+    @ssh = Net::SSH.start(host)
     fetch
   end
   
   # Get information about the remote room
   def fetch
-    prefix = Shellwords.escape(@path)
-    
-    logger.debug "downloading options.json" 
-    @options_json = JSON.parse @ssh.exec!("cat #{prefix}/options.json")
-
-    logger.debug "downloading tags.json"
-    @tags_json = JSON.parse(@ssh.exec!("cat #{prefix}/tags.json"))
+    @options_json = download_json "#{@path}/options.json"
+    @tags_json = download_json "#{@path}/tags.json"
   end
   
   def tags
@@ -77,6 +75,15 @@ class RemoteRoom
   
     @ssh.loop
     logger.debug 'tag downloaded successfully'
+  end
+  
+  private
+  
+  def download_json(path)
+    logger.debug "downloading #{path}"
+    json = @ssh.exec!("cat #{Shellwords.escape(path)}") # XXX-error checking
+    logger.debug "got: #{json}"
+    return JSON.parse(json)
   end
 end
 

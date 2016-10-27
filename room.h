@@ -68,6 +68,7 @@ public:
 	void killAllProcesses();
 	void snapshotCreate(const string& name);
 	void snapshotDestroy(const string& name);
+	void snapshotReceive(const string& name);
 	void start();
 	void stop();
 	void destroy();
