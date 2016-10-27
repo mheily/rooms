@@ -68,7 +68,7 @@ static void get_options(int argc, char *argv[])
 	string action;
 	string roomName = "";
 	string baseArchiveUri;
-	bool isVerbose;
+	bool isVerbose, isEmpty;
 
 	string popt0, popt1, popt2, popt3;
 	string runAsUser, upstreamUri;
@@ -103,6 +103,7 @@ static void get_options(int argc, char *argv[])
 	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
 	    ("clone", po::value<string>(&roomOpt.cloneUri), "the action to perform")
+	    ("empty", po::bool_switch(&isEmpty)->default_value(false), "create an empty room")
 	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
 		("share-home", po::bool_switch(&roomOpt.shareHomeDir), "mount the $HOME directory inside the room")
@@ -215,7 +216,10 @@ static void get_options(int argc, char *argv[])
 			cout << "Error: cannot clone and install from a tarball at the same time\n";
 			exit(1);
 		}
-		if (baseArchiveUri != "") {
+
+		if (isEmpty) {
+			mgr.installRoom(roomName, "", roomOpt);
+		} else if (baseArchiveUri != "") {
 			mgr.installRoom(roomName, baseArchiveUri, roomOpt);
 		} else {
 // DEADWOOD: need to redo the whole basetemplate mechanism

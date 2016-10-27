@@ -779,7 +779,11 @@ void Room::install(const struct RoomInstallParams& rip)
 	room.roomOptions = rip.options;
 	room.createEmpty();
 	room.syncRoomOptions();
-	room.installFromArchive(rip.baseArchiveUri);
+	if (rip.baseArchiveUri != "") {
+		room.installFromArchive(rip.baseArchiveUri);
+	} else {
+		log_debug("created an empty room");
+	}
 }
 
 void Room::editConfiguration()
