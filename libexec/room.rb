@@ -57,6 +57,27 @@ class RemoteRoom
   def logger
     @logger
   end
+
+  def download_tag(name, local_room_name)   
+    logger.debug "downloading tag '#{name}'"  
+    @ssh.open_channel do |channel|
+      channel.exec("cat #{@path}/tags/#{name}.zfs.xz") do |ch, success|
+        raise 'command failed' unless success
+        
+        command = "xz -d | room #{local_room_name} snapshot #{name} receive"
+        
+        logger.debug("popen command: #{command}")
+        zfs = IO.popen(command, "w")
+        
+        channel.on_data do |ch, data|
+          zfs.write(data)
+        end
+      end
+    end
+  
+    @ssh.loop
+    logger.debug 'tag downloaded successfully'
+  end
 end
 
 # A room on localhost

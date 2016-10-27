@@ -42,8 +42,7 @@ def main
   	if room.has_tag?(tag)
   	  logger.debug "tag #{tag} already exists"
   	else
-  	  logger.debug "downloading tag: #{tag}"
-  	  raise 'TODO'
+  	  remote.download_tag(tag, name)
   	end
   end
   
