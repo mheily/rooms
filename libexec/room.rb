@@ -56,7 +56,7 @@ class RemoteRoom
     @logger
   end
 
-  def download_tag(name, local_room_name)   
+  def download_tag(name, local_room_name)
     logger.debug "downloading tag '#{name}'"  
     @ssh.open_channel do |channel|
       channel.exec("cat #{@path}/tags/#{name}.zfs.xz") do |ch, success|
@@ -160,9 +160,9 @@ module RoomUtility
     json
   end
   
-  def system(command)
-    logger.debug 'running: ' + command
-    Kernel.system(command)
+  def system(*args)
+    logger.debug 'running: ' + args.join(' ')
+    Kernel.system(*args)
   end
   
 end

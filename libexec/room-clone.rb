@@ -39,10 +39,13 @@ def main
   base_uri = URI(base_uri)
   room = RemoteRoom.new(base_uri, logger)
   room.connect
-  puts room.tags
   
+  system('room', name, 'create', '--empty') or raise "unable to create room"
+  room.tags.each do |tag|
+    room.download_tag(tag, name)
+  end
+
   raise 'TODO -- download JSONs, make room, download the tags'
-  
   logger.debug 'done'
 end
     
