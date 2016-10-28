@@ -83,7 +83,7 @@ class RemoteRoom
     tags.each do |tag|
       download_tag(tag, name)
     end
-    room = Room.new(@name)
+    room = Room.new(@name, logger)
     room.origin = @uri.to_s
   end
   

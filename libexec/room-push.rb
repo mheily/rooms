@@ -67,7 +67,7 @@ end
 def push_via_ssh(room_name, uri)
   user = `whoami`.chomp
   
-  room = Room.new(room_name)
+  room = Room.new(room_name, logger)
   
   if uri.nil? or uri.empty?
     uri = room.origin 
@@ -85,7 +85,7 @@ def push_via_ssh(room_name, uri)
   puts "pushing room #{room.name} to #{uri.to_s}"
   
   Net::SSH.start(uri.host) do |ssh|
-    basedir = path + '/' + room_name
+    basedir = path
     logger.debug "creating #{basedir} directory tree"
     ssh.exec!("install -d -m 755 #{Shellwords.escape(basedir)} #{Shellwords.escape(basedir + '/tags')}")
     
