@@ -39,46 +39,9 @@ def main
   base_uri = URI(base_uri)
   room = RemoteRoom.new(base_uri, logger)
   room.connect
-  
-  system('room', name, 'create', '--empty') or raise "unable to create room"
-  room.tags.each do |tag|
-    room.download_tag(tag, name)
-  end
-
-  raise 'TODO -- download JSONs, make room, download the tags'
+  room.clone
+    
   logger.debug 'done'
 end
-    
 
 main
-__END__
-void Room::cloneFromOrigin(const string& uri)
-{
-  string scheme, host, path;
-
-  Room::parseRemoteUri(uri, scheme, host, path);
-
-  createEmpty();
-
-  string tmpdir = roomDataDir + "/local/tmp";
-  if (scheme == "http" || scheme == "https") {
-    Shell::execute("/usr/bin/fetch", { "-o", roomOptionsPath, uri+"/options.json" });
-    Shell::execute("/usr/bin/fetch", { "-o", tmpdir, uri+"/share.zfs.xz" });
-  } else if (scheme == "ssh") {
-    Shell::execute("/usr/bin/scp", { host + ":" + path + "/options.json", roomOptionsPath });
-    Shell::execute("/usr/bin/scp", { host + ":" + path + "/share.zfs.xz", tmpdir });
-  } else {
-    throw std::runtime_error("unsupported URI scheme");
-  }
-  Shell::execute("/usr/bin/unxz", { tmpdir + "/share.zfs.xz" });
-
-  // Replace the empty "share" dataset with a clone of the original
-  string dataset = roomDataset + "/" + roomName + "/share";
-  SetuidHelper::raisePrivileges();
-  Shell::execute("/sbin/zfs", { "destroy", dataset });
-  Shell::execute("/bin/sh", { "-c", "/sbin/zfs recv -F " + dataset + " < " + tmpdir + "/share.zfs" });
-  Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", zpoolName + "/room/" + ownerLogin + "/" + roomName });
-  SetuidHelper::lowerPrivileges();
-
-  log_debug("clone complete");
-}

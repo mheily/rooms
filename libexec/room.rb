@@ -42,6 +42,15 @@ class RemoteRoom
     fetch
   end
   
+  def clone
+    system('room', name, 'create', '--empty') or raise "unable to create room"
+    tags.each do |tag|
+      download_tag(tag, name)
+    end
+    room = Room.new(@name)
+    room.origin = @uri.to_s
+  end
+  
   # Get information about the remote room
   def fetch
     @options_json = download_json "#{@path}/options.json"
@@ -92,6 +101,17 @@ class RemoteRoom
   end
 end
 
+# TODO: write this class
+## The options.json for a room
+#class RoomOptions
+#  def initialize(path)
+#    @path = path
+#    @json = JSON.parse(File.read(path))
+#    pp json
+#    raise 'hi'
+#  end
+#end
+
 # A room on localhost
 class Room
   attr_reader :name, :mountpoint, :dataset, :tags
@@ -134,6 +154,14 @@ class Room
   def origin
     @json['instance']['originUri']
   end
+  
+  def origin=(uri)
+    @json['instance']['originUri'] = uri
+    File.open("#{mountpoint}/etc/options.json", "w") do |f|
+      f.puts JSON.pretty_generate(@json)
+    end
+  end
+  
 end
 
 #
