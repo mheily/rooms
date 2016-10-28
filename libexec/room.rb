@@ -22,6 +22,42 @@ require 'tempfile'
 require 'net/ssh'
 require 'shellwords'
 
+#
+# Utility functions for working with rooms
+#
+module RoomUtility
+  def setup_logger
+    @logger = Logger.new(STDOUT)
+    if ENV['ROOM_DEBUG']
+      @logger.level = Logger::DEBUG
+    else
+      @logger.level = Logger::INFO
+    end
+  end
+  
+  def setup_tmpdir
+    @tmpdir = Dir.mktmpdir($PROGRAM_NAME.sub(/.*\//, ''))
+    at_exit { system "rm -rf #{@tmpdir}" if File.exist?(@tmpdir) }
+  end
+    
+  def logger
+    @logger
+  end
+  
+  def parse_options_json(path)
+    data = `uclcmd get --file #{path} -c ''`
+    json = JSON.parse data
+    logger.debug "json=#{json.pretty_inspect}"
+    json
+  end
+  
+  def system(*args)
+    logger.debug 'running: ' + args.join(' ')
+    Kernel.system(*args)
+  end
+  
+end
+
 # A room on a remote server
 class RemoteRoom
   attr_reader :uri, :name, :path, :tags
@@ -116,16 +152,23 @@ end
 class Room
   attr_reader :name, :mountpoint, :dataset, :tags
   
-  def initialize(name)
+  include RoomUtility
+  
+  def initialize(name, logger)
     @name = name
     user = `whoami`.chomp
     @mountpoint = "/room/#{user}/#{name}"
     @dataset = `df -h /room/mark/FreeBSD-11.0-RELEASE/ | tail -1 | awk '{ print \$1 }'`.chomp
     @json = JSON.parse options_json
+    @logger = logger
   end
   
   def tags
-    `zfs list -H -r -t snapshot -o name #{@dataset}/share`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
+    # Strangely, this only lists the first snapshot. If you remove '-o name', it lists them all
+    #command = "zfs list -H -r -t snapshot -o name #{@dataset}/share"
+    command = "ls -1 #{@mountpoint}/share/.zfs/snapshot"
+    logger.debug "running: #{command}"
+    `#{command}`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
   end
   
   def has_tag?(name)
@@ -164,38 +207,3 @@ class Room
   
 end
 
-#
-# Utility functions for working with rooms
-#
-module RoomUtility
-  def setup_logger
-    @logger = Logger.new(STDOUT)
-    if ENV['ROOM_DEBUG']
-      @logger.level = Logger::DEBUG
-    else
-      @logger.level = Logger::INFO
-    end
-  end
-  
-  def setup_tmpdir
-    @tmpdir = Dir.mktmpdir($PROGRAM_NAME.sub(/.*\//, ''))
-    at_exit { system "rm -rf #{@tmpdir}" if File.exist?(@tmpdir) }
-  end
-    
-  def logger
-    @logger
-  end
-  
-  def parse_options_json(path)
-    data = `uclcmd get --file #{path} -c ''`
-    json = JSON.parse data
-    logger.debug "json=#{json.pretty_inspect}"
-    json
-  end
-  
-  def system(*args)
-    logger.debug 'running: ' + args.join(' ')
-    Kernel.system(*args)
-  end
-  
-end

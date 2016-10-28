@@ -32,12 +32,11 @@ def main
   setup_logger
   #setup_tmpdir  
   
-  room = Room.new(name)
+  room = Room.new(name, logger)
   remote = RemoteRoom.new(room.origin, logger)
   remote.connect
   
-  current_tags = room.tags_json
-  logger.debug "room #{name} current_tags=#{room.tags.inspect}" 
+  logger.debug "local room #{name} current_tags=#{room.tags.inspect}" 
   remote.tags.each do |tag|
   	if room.has_tag?(tag)
   	  logger.debug "tag #{tag} already exists"

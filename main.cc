@@ -272,6 +272,10 @@ static void get_options(int argc, char *argv[])
 		//room.pushToOrigin();
 		SetuidHelper::dropPrivileges();
 		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-push.rb", popt0.c_str(), upstreamUri.c_str(), NULL);
+	} else if (popt1 == "pull") {
+		auto room = mgr.getRoomByName(popt0);
+		SetuidHelper::dropPrivileges();
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-pull.rb", popt0.c_str(), NULL);
 	} else if (popt1 == "receive" || popt1 == "recv") {
 		mgr.receiveRoom(popt0);
 	} else if ((popt1 == "snapshot") or (popt1 == "tag")) { //TODO: rename everything to use 'tag'
