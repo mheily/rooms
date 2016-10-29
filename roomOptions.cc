@@ -36,7 +36,7 @@ void RoomOptions::load(const string &path)
 	allowX11Clients = tree.get("permissions.allowX11Clients", false);
 	shareTempDir = tree.get("permissions.shareTempDir", false);
 	shareHomeDir = tree.get("permissions.shareHomeDir", false);
-	useLinuxABI = tree.get("instance.useLinuxABI", false);
+	kernelABI = tree.get("abi.kernel", "FreeBSD");
 	isHidden = tree.get("instance.isHidden", false);
 	cloneUri = tree.get("instance.cloneUri", "");
 	originUri = tree.get("instance.originUri", "");
@@ -54,10 +54,10 @@ void RoomOptions::save(const string &path)
     log_debug("writing options to %s", path.c_str());
 
     tree.put("api.version", "0");
+    tree.put("abi.kernel", "FreeBSD");
     tree.put("permissions.allowX11Clients", allowX11Clients);
     tree.put("permissions.shareTempDir", shareTempDir);
     tree.put("permissions.shareHomeDir", shareHomeDir);
-    tree.put("instance.useLinuxABI", useLinuxABI);
     tree.put("instance.uuid", uuid);
     tree.put("instance.isHidden", isHidden);
    	tree.put("instance.cloneUri", cloneUri);
@@ -69,7 +69,6 @@ void RoomOptions::save(const string &path)
 void RoomOptions::dump()
 {
 	cout << "share_tmp=" << shareTempDir << endl;
-	cout << "useLinuxABI=" << useLinuxABI << endl;
 }
 
 /* If the <src> options are different from the default,

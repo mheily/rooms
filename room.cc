@@ -513,7 +513,7 @@ void Room::start() {
 				chrootDir + pwent.getHome() });
 	}
 
-	if (roomOptions.useLinuxABI) {
+	if (roomOptions.kernelABI == "Linux") {
 		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
 		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
 		Shell::execute("/sbin/mount", { "-t", "linprocfs", "linprocfs", chrootDir + "/proc" });
@@ -596,7 +596,7 @@ void Room::stop()
 		}
 	}
 
-	if (roomOptions.useLinuxABI) {
+	if (roomOptions.kernelABI == "Linux") {
 		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
 		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
 	}

@@ -33,8 +33,13 @@ struct RoomOptions {
 	// share $HOME with the main system
 	bool shareHomeDir = false;
 
-	// use the Linux ABI
-	bool useLinuxABI = false;
+	// what Kernel ABI the room uses (e.g. Linux, FreeBSD)
+	string kernelABI;
+
+	// Specify the minimum kernel version that the host must have
+	// based on the ABI of the programs inside the room.
+	// e.g. "Linux 2.6.32" or "FreeBSD 11.0-RELEASE-p1"
+	// TODO: string kernelVersion;
 
 	// The URI of the room that this room was cloned from
 	string cloneUri;
