@@ -29,7 +29,8 @@ def main
   user = `whoami`.chomp
   base_uri = RoomURI.new(ARGV[0])
   name = ARGV[1] || base_uri.gsub(/.*\//, '')
-  raise "usage: #{$PROGRAM_NAME} <uri or name> [name]" unless base_uri
+  template_tag = ARGV[2]
+  raise "usage: #{$PROGRAM_NAME} <uri or name> [name] [tag]" unless base_uri
   
   setup_logger
   #setup_tmpdir
@@ -38,7 +39,6 @@ def main
   
   if %w(http https ssh).include? uri.scheme
     logger.debug "cloning: uri=#{uri} name=#{name}"
-
     room = RemoteRoom.new(uri, logger)
     room.connect
     room.clone(name)
@@ -46,7 +46,12 @@ def main
     src_room = Room.new(uri.path, logger)
     src_name = uri.path.sub(/^\//, '')
     logger.debug "cloning #{src_name}"
-    system('room', name, 'create', '--clone', src_name) or raise 'failed to create room'
+    args = ['room', name, 'create', '--clone', src_name]
+    if template_tag
+      args << '--tag'
+      args << template_tag
+    end
+    system(args) or raise 'failed to create room'
     dst_room = Room.new(name, logger)
     dst_room.uuid = `uuid -v4`.chomp
     dst_room.template_uri = src_room.origin

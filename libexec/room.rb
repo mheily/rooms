@@ -102,10 +102,23 @@ class RemoteRoom
   
   def clone(local_name)
     local_name = @name if local_name.empty?
-    system('room', local_name, 'create', '--empty') or raise "unable to create room"
-    tags.each do |tag|
+    
+    tags_copy = tags.dup
+    
+    if is_clone?
+      download_template
+      args = ['room', local_name, 'create', '--clone', template_name, '--tag', template_tag]
+      args << '-v' if ENV['ROOM_DEBUG']
+      system(*args) or raise "unable to create room"
+      tags_copy.shift # The first tag comes from the template, not the remote room.
+    else
+      system('room', local_name, 'create', '--empty') or raise "unable to create room"
+    end
+    
+    tags_copy.each do |tag|
       download_tag(tag, local_name)
     end
+    
     room = Room.new(local_name, logger)
     room.origin = @uri.to_s
   end
@@ -158,6 +171,33 @@ class RemoteRoom
     logger.debug "got: #{json}"
     return JSON.parse(json)
   end
+  
+  def is_clone?
+    @options_json['template']['uri'] != ''
+  end
+  
+  # The name of the template
+  # KLUDGE: this forces the local room name to match the remote
+  def template_name
+    @options_json['template']['uri'].sub(/.*\//, '')
+  end
+
+  def template_tag
+    @options_json['template']['snapshot']
+  end
+    
+  # Download the base template, if it does not already exist
+  def download_template
+    uri = @options_json['template']['uri']
+  
+    if Room.exist? template_name
+      logger.debug "template #{template_name} already exists"
+    else
+      logger.debug "downloading base template #{template_name} from #{uri}"
+      raise 'no'
+      system('room', 'clone', uri) or raise "failed to clone template"
+    end
+  end
 end
 
 ## The options.json for a room
@@ -178,11 +218,15 @@ class Room
   
   def initialize(name, logger)
     @name = name
-    user = `whoami`.chomp
-    @mountpoint = "/room/#{user}/#{name}"
-    @dataset = `df -h /room/#{user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
+    @user = `whoami`.chomp
+    @mountpoint = "/room/#{@user}/#{name}"
+    @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
     @json = JSON.parse options_json
     @logger = logger
+  end
+  
+  def Room.exist?(name)
+    File.exist? "/room/#{`whoami`.chomp}/#{name}"
   end
   
   def tags

@@ -103,6 +103,7 @@ static void get_options(int argc, char *argv[])
 	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
 	    ("clone", po::value<string>(&roomOpt.templateUri), "the action to perform")
+		("tag", po::value<string>(&roomOpt.templateSnapshot), "the tag to clone from")
 	    ("empty", po::bool_switch(&isEmpty)->default_value(false), "create an empty room")
 	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
@@ -208,7 +209,8 @@ static void get_options(int argc, char *argv[])
 		string uri = popt1;
 		roomName = popt2;
 		SetuidHelper::dropPrivileges();
-		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-clone.rb", uri.c_str(), roomName.c_str(), NULL);
+		execl("/usr/local/bin/ruby", "/usr/local/bin/ruby", "/usr/local/libexec/rooms/room-clone.rb",
+				uri.c_str(), roomName.c_str(), roomOpt.templateSnapshot.c_str(), NULL);
 		//mgr.cloneRoomFromRemote(roomName, uri);
 	} else if (popt1 == "create") {
 		roomName = popt0;
