@@ -89,6 +89,10 @@ def push_via_ssh(room_name, uri)
   raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
   puts "pushing room #{room.name} to #{uri.to_s}"
   
+  if room.tags.empty?
+    raise "Room has no tags. You must create at least one tag before pushing."
+  end
+
   Net::SSH.start(uri.host) do |ssh|
     basedir = path
     logger.debug "creating #{basedir} directory tree"
@@ -98,7 +102,13 @@ def push_via_ssh(room_name, uri)
     ssh.exec!("echo #{Shellwords.escape room.options_json} > #{Shellwords.escape(basedir)}/options.json")
 
     logger.debug "getting tags from remote server"
-    remote_tags = JSON.parse(ssh.exec!("cat #{Shellwords.escape(basedir)}/tags.json"))
+    remote_tags_path = Shellwords.escape(basedir) + "/tags.json"
+    buf = ssh.exec!("test -e #{remote_tags_path} && cat #{remote_tags_path}")
+    if buf.empty?
+      remote_tags = {'tags'=> []}
+    else
+      remote_tags = JSON.parse(buf)
+    end
     logger.debug "remote_tags=#{remote_tags.inspect}"
      
     remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
