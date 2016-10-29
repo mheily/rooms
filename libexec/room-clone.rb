@@ -27,22 +27,33 @@ include RoomUtility
 
 def main
   user = `whoami`.chomp
-  base_uri = ARGV[0]
+  base_uri = RoomURI.new(ARGV[0])
   name = ARGV[1] || base_uri.gsub(/.*\//, '')
   raise "usage: #{$PROGRAM_NAME} <uri or name> [name]" unless base_uri
   
   setup_logger
   #setup_tmpdir
 
-  if base_uri =~ /^http|ssh/
-    logger.debug "cloning: base_uri=#{base_uri} name=#{name}"
+  uri = base_uri.uri
+  
+  if %w(http https ssh).include? uri.scheme
+    logger.debug "cloning: uri=#{uri} name=#{name}"
 
-    base_uri = URI(base_uri)
-    room = RemoteRoom.new(base_uri, logger)
+    room = RemoteRoom.new(uri, logger)
     room.connect
     room.clone(name)
+  elsif uri.scheme == 'room' and uri.host == 'localhost'
+    src_room = Room.new(uri.path, logger)
+    src_name = uri.path.sub(/^\//, '')
+    logger.debug "cloning #{src_name}"
+    system('room', name, 'create', '--clone', src_name) or raise 'failed to create room'
+    dst_room = Room.new(name, logger)
+    dst_room.uuid = `uuid -v4`.chomp
+    dst_room.template_uri = src_room.origin
+    dst_room.template_snapshot = src_room.tags.dup.pop
+    dst_room.origin = ""
   else
-    system('room', name, 'create', '--clone', base_uri) or raise 'failed to create room'
+    raise 'Invalid URI: ' + uri
   end
     
   logger.debug 'done'

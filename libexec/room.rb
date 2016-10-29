@@ -58,6 +58,28 @@ module RoomUtility
   
 end
 
+# An URI of a Room
+class RoomURI
+  
+  attr_reader :uri
+  
+  def initialize(uri)
+    @original = uri
+    @canonical = canonicalize(uri)
+    @uri = URI(@canonical)
+  end
+  
+  private
+  
+  def canonicalize(s)
+    if s =~ /:\/\//
+      s
+    else
+      'room://localhost/' + s 
+    end
+  end
+end
+
 # A room on a remote server
 class RemoteRoom
   attr_reader :uri, :name, :path, :tags
@@ -138,7 +160,6 @@ class RemoteRoom
   end
 end
 
-# TODO: write this class
 ## The options.json for a room
 #class RoomOptions
 #  def initialize(path)
@@ -202,6 +223,21 @@ class Room
   def origin=(uri)
     @json['remotes']['origin'] = uri
     save_options
+  end
+  
+  def template_uri=(s)
+    @json['template']['uri'] = s
+    save_options  
+  end
+  
+  def template_snapshot=(s)
+    @json['template']['snapshot'] = s
+    save_options  
+  end
+  
+  def uuid=(s)
+    @json['uuid'] = s
+    save_options  
   end
   
   private

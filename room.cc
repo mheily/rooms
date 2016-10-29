@@ -290,6 +290,9 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	// Assume that newly cloned rooms should not be hidden.
 	new_options.isHidden = false;
 
+#if 0
+    //DEADWOOD -- handled in Ruby now
+
 	// Generate a new UUID
     UuidGenerator ug;
     ug.generate();
@@ -299,6 +302,7 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	new_options.templateUri = roomOptions.originUri;
 	new_options.originUri = "";
 	new_options.templateSnapshot = snapshot;
+#endif
 
 	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);
