@@ -196,11 +196,17 @@ class Room
   end
   
   def origin
-    @json['instance']['originUri']
+    @json['remotes']['origin']
   end
   
   def origin=(uri)
-    @json['instance']['originUri'] = uri
+    @json['remotes']['origin'] = uri
+    save_options
+  end
+  
+  private
+  
+  def save_options
     File.open("#{mountpoint}/etc/options.json", "w") do |f|
       f.puts JSON.pretty_generate(@json)
     end

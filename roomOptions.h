@@ -56,6 +56,10 @@ struct RoomOptions {
 
 	void load(const string& path);
 	void save(const string& path);
+	void save();
+	//TODO:void set(const string& key, const string& value);
 	void dump();
 	void merge(const struct RoomOptions& src);
+
+	string optionsPath; // set whenever load() is called, and used by save()
 };

@@ -30,6 +30,7 @@ void RoomOptions::load(const string &path)
 {
 	pt::ptree tree;
 
+	optionsPath = path;
     log_debug("reading options from %s", path.c_str());
     pt::read_json(path, tree);
 
@@ -46,7 +47,6 @@ void RoomOptions::load(const string &path)
 	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
 	uuid = ug.getValue();
 }
-
 
 void RoomOptions::save(const string &path)
 {
@@ -66,6 +66,11 @@ void RoomOptions::save(const string &path)
    	tree.put("remotes.origin", originUri);
 
     pt::write_json(path, tree);
+}
+
+void RoomOptions::save()
+{
+    save(optionsPath);
 }
 
 void RoomOptions::dump()

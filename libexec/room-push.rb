@@ -69,6 +69,7 @@ def upload_tag(ssh, room, index, tagfile)
   logger.debug 'tag uploaded successfully'
 end
 
+# FIXME: uri is modified by this function, would be better to have a #canonicalize_uri method do this 
 def push_via_ssh(room_name, uri)
   user = `whoami`.chomp
   
@@ -81,19 +82,27 @@ def push_via_ssh(room_name, uri)
       exit 1
     end
   end
-  
-  uri = URI(uri)
-  path = uri.path
-  path.sub!(/^\/~\//, './')  # support ssh://$host/~/foo notation
-
-  raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
-  puts "pushing room #{room.name} to #{uri.to_s}"
-  
+   
   if room.tags.empty?
     raise "Room has no tags. You must create at least one tag before pushing."
   end
 
-  Net::SSH.start(uri.host) do |ssh|
+  Net::SSH.start(URI(uri).host) do |ssh|
+    
+    if uri =~ /\/~\//
+      logger.debug "converting ~ into a real path; uri=#{uri}"
+      remote_home = ssh.exec!('echo $HOME').chomp
+      uri.sub!(/\/~\//, remote_home + '/')
+      logger.debug "remote home is #{remote_home}, new URI is #{uri}"
+    end
+  
+    room.origin = uri
+    uri = URI(uri)
+    path = uri.path
+  
+    raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
+    puts "pushing room #{room.name} to #{uri.to_s}"
+      
     basedir = path
     logger.debug "creating #{basedir} directory tree"
     ssh.exec!("install -d -m 755 #{Shellwords.escape(basedir)} #{Shellwords.escape(basedir + '/tags')}")
@@ -135,7 +144,7 @@ end
 
 def main
   user = `whoami`.chomp
-  room, origin = ARGV
+  room, origin = ARGV[0], ARGV[1].dup
   raise "usage: #{$PROGRAM_NAME} <room> [origin]" unless room
   
   setup_logger
