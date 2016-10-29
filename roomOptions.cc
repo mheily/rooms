@@ -37,7 +37,7 @@ void RoomOptions::load(const string &path)
 	shareTempDir = tree.get("permissions.shareTempDir", false);
 	shareHomeDir = tree.get("permissions.shareHomeDir", false);
 	kernelABI = tree.get("abi.kernel", "FreeBSD");
-	isHidden = tree.get("instance.isHidden", false);
+	isHidden = tree.get("display.isHidden", false);
 	cloneUri = tree.get("instance.cloneUri", "");
 	originUri = tree.get("instance.originUri", "");
 
@@ -59,7 +59,7 @@ void RoomOptions::save(const string &path)
     tree.put("permissions.shareTempDir", shareTempDir);
     tree.put("permissions.shareHomeDir", shareHomeDir);
     tree.put("instance.uuid", uuid);
-    tree.put("instance.isHidden", isHidden);
+    tree.put("display.isHidden", isHidden);
    	tree.put("instance.cloneUri", cloneUri);
    	tree.put("instance.originUri", originUri);
 

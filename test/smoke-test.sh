@@ -3,7 +3,7 @@
 rebuild() {
 	cd ..
 	make clean
-	make all CFLAGS="-g -O0 -static"
+	make all -j4 CFLAGS="-g -O0 -static"
 	sudo make install
 	cd test
 }
