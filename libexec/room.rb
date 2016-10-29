@@ -79,6 +79,7 @@ class RemoteRoom
   end
   
   def clone(local_name)
+    local_name = @name if local_name.empty?
     system('room', local_name, 'create', '--empty') or raise "unable to create room"
     tags.each do |tag|
       download_tag(tag, local_name)
@@ -94,17 +95,7 @@ class RemoteRoom
   end
   
   def tags
-    data = @ssh.exec!('ls -l #{@path}/tags').split(/\n/)
-    metadata = @tags_json['tags'].map { |ent| ent['name'] }
-    result = []
-    metadata.each do |ent|
-      if data.include? ent['name'] + '.zfs.xz'
-        result << ent['name']
-      else
-        logger.error "metadata is not correct; remote tag #{ent['name']} does not exist"
-      end
-    end
-    result
+    @tags_json['tags'].map { |ent| ent['name'] }
   end
   
   def logger
