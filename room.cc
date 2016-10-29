@@ -296,8 +296,9 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
     new_options.uuid = ug.getValue();
 
     // Update the origin/clone URIs
-	new_options.cloneUri = roomOptions.originUri;
+	new_options.templateUri = roomOptions.originUri;
 	new_options.originUri = "";
+	new_options.templateSnapshot = snapshot;
 
 	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);

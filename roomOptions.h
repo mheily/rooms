@@ -42,7 +42,10 @@ struct RoomOptions {
 	// TODO: string kernelVersion;
 
 	// The URI of the room that this room was cloned from
-	string cloneUri;
+	string templateUri;
+
+	// The name of the snapshot within the template that this room was cloned from
+	string templateSnapshot;
 
 	// The UUID of the room
 	string uuid;

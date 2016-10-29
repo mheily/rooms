@@ -102,7 +102,7 @@ static void get_options(int argc, char *argv[])
 	po::options_description create_opts("Options when creating");
 	create_opts.add_options()
 	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
-	    ("clone", po::value<string>(&roomOpt.cloneUri), "the action to perform")
+	    ("clone", po::value<string>(&roomOpt.templateUri), "the action to perform")
 	    ("empty", po::bool_switch(&isEmpty)->default_value(false), "create an empty room")
 	    ("allow-x11", po::bool_switch(&roomOpt.allowX11Clients), "allow running X11 clients")
 	    ("share-tempdir", po::bool_switch(&roomOpt.shareTempDir), "mount the global /tmp and /var/tmp inside the room")
@@ -212,7 +212,7 @@ static void get_options(int argc, char *argv[])
 		//mgr.cloneRoomFromRemote(roomName, uri);
 	} else if (popt1 == "create") {
 		roomName = popt0;
-		if (roomOpt.cloneUri != "" && baseArchiveUri != "") {
+		if (roomOpt.templateUri != "" && baseArchiveUri != "") {
 			cout << "Error: cannot clone and install from a tarball at the same time\n";
 			exit(1);
 		}

@@ -38,8 +38,9 @@ void RoomOptions::load(const string &path)
 	shareHomeDir = tree.get("permissions.shareHomeDir", false);
 	kernelABI = tree.get("abi.kernel", "FreeBSD");
 	isHidden = tree.get("display.isHidden", false);
-	cloneUri = tree.get("instance.cloneUri", "");
-	originUri = tree.get("instance.originUri", "");
+	templateUri = tree.get("template.uri", "");
+	templateSnapshot = tree.get("template.snapshot", "");
+	originUri = tree.get("remotes.origin", "");
 
 	UuidGenerator ug;
 	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
@@ -60,8 +61,9 @@ void RoomOptions::save(const string &path)
     tree.put("permissions.shareHomeDir", shareHomeDir);
     tree.put("uuid", uuid);
     tree.put("display.isHidden", isHidden);
-   	tree.put("instance.cloneUri", cloneUri);
-   	tree.put("instance.originUri", originUri);
+   	tree.put("template.uri", templateUri);
+   	tree.put("template.snapshot", templateSnapshot);
+   	tree.put("remotes.origin", originUri);
 
     pt::write_json(path, tree);
 }

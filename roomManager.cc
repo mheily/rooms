@@ -170,14 +170,14 @@ void RoomManager::cloneRoom(const string& dest, const RoomOptions& roomOpt)
 	Room* srcRoom;
 	string uri;
 
-	if (roomOpt.cloneUri == "" && userOptions.defaultRoom == "") {
+	if (roomOpt.templateUri == "" && userOptions.defaultRoom == "") {
 		throw std::runtime_error("cloneUri and defaultRoom not set");
 	}
 
-	if (roomOpt.cloneUri == "") {
+	if (roomOpt.templateUri == "") {
 		uri = userOptions.defaultRoom;
 	} else {
-		uri = roomOpt.cloneUri;
+		uri = roomOpt.templateUri;
 	}
 
 	log_debug("cloning `%s' from `%s'", dest.c_str(), uri.c_str());
