@@ -285,13 +285,19 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	// Merge options from the CLI
 	cloneRoom.roomOptions.merge(roomOpt);
 
+	auto new_options = cloneRoom.getRoomOptions();
+
 	// Assume that newly cloned rooms should not be hidden.
-	cloneRoom.getRoomOptions().isHidden = false;
+	new_options.isHidden = false;
 
 	// Generate a new UUID
     UuidGenerator ug;
     ug.generate();
-    cloneRoom.getRoomOptions().uuid = ug.getValue();
+    new_options.uuid = ug.getValue();
+
+    // Update the origin/clone URIs
+	new_options.cloneUri = roomOptions.originUri;
+	new_options.originUri = "";
 
 	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);
