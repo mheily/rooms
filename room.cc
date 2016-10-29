@@ -306,39 +306,6 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 	log_debug("clone complete");
 }
 
-#if 0
-void Room::cloneFromOrigin(const string& uri)
-{
-	string scheme, host, path;
-
-	Room::parseRemoteUri(uri, scheme, host, path);
-
-	createEmpty();
-
-	string tmpdir = roomDataDir + "/local/tmp";
-	if (scheme == "http" || scheme == "https") {
-		Shell::execute("/usr/bin/fetch", { "-o", roomOptionsPath, uri+"/options.json" });
-		Shell::execute("/usr/bin/fetch", { "-o", tmpdir, uri+"/share.zfs.xz" });
-	} else if (scheme == "ssh") {
-		Shell::execute("/usr/bin/scp", { host + ":" + path + "/options.json", roomOptionsPath });
-		Shell::execute("/usr/bin/scp", { host + ":" + path + "/share.zfs.xz", tmpdir });
-	} else {
-		throw std::runtime_error("unsupported URI scheme");
-	}
-	Shell::execute("/usr/bin/unxz", { tmpdir + "/share.zfs.xz" });
-
-	// Replace the empty "share" dataset with a clone of the original
-	string dataset = roomDataset + "/" + roomName + "/share";
-	SetuidHelper::raisePrivileges();
-	Shell::execute("/sbin/zfs", { "destroy", dataset });
-	Shell::execute("/bin/sh", { "-c", "/sbin/zfs recv -F " + dataset + " < " + tmpdir + "/share.zfs" });
-	Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", zpoolName + "/room/" + ownerLogin + "/" + roomName });
-	SetuidHelper::lowerPrivileges();
-
-	log_debug("clone complete");
-}
-#endif
-
 // Create an empty room, ready for share/ to be populated
 void Room::createEmpty()
 {
@@ -840,56 +807,6 @@ string Room::getLatestSnapshot()
 
 	return Shell::popen_readline(cmd);
 }
-
-#if 0
-void Room::pushToOrigin()
-{
-	if (roomOptions.originUri == "") {
-		throw std::runtime_error("origin URI cannot be empty");
-	}
-
-	log_debug("pushing room to origin %s", roomOptions.originUri.c_str());
-
-	string scheme, host, path;
-	Room::parseRemoteUri(roomOptions.originUri, scheme, host, path);
-
-	log_debug("creating room directory on origin server");
-    Subprocess p;
-    p.setPreserveEnvironment(true);
-    p.setDropPrivileges(true);
-    p.execute("/usr/bin/ssh", { host, "mkdir", "-p", path + "/" + roomName });
-	int result = p.waitForExit();
-	if (result != 0) {
-		throw std::runtime_error("mkdir failed");
-	}
-
-	log_debug("sending a replication stream package");
-	{
-		string snapPath = roomDataset + "/" + roomName + "/share@" + getLatestSnapshot();
-		Subprocess p;
-	    p.setPreserveEnvironment(true);
-	    p.setDropPrivileges(true);
-		p.execute("/bin/sh", { "-c", "/sbin/zfs send -R " + snapPath + " | xz | " +
-			"ssh " + host + " 'cat > " + path + "/" + roomName + "/share.zfs.xz'" });
-		int result = p.waitForExit();
-		if (result != 0) {
-			throw std::runtime_error("zfs send failed");
-		}
-	}
-
-	log_debug("sending the room configuration file");
-	{
-		Subprocess p;
-	    p.setPreserveEnvironment(true);
-	    p.setDropPrivileges(true);
-		p.execute("/usr/bin/scp", { "-q", roomOptionsPath, host + ":" + path + "/" + roomName });
-		int result = p.waitForExit();
-		if (result != 0) {
-			throw std::runtime_error("scp failed");
-		}
-	}
-}
-#endif
 
 void Room::parseRemoteUri(const string& uri, string& scheme, string& host, string& path)
 {
