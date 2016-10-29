@@ -42,7 +42,7 @@ void RoomOptions::load(const string &path)
 	originUri = tree.get("instance.originUri", "");
 
 	UuidGenerator ug;
-	ug.setValue(tree.get("instance.uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
+	ug.setValue(tree.get("uuid", "4328e12e-ab2a-4a28-8585-d33b42a77b83"));
 	uuid = ug.getValue();
 }
 
@@ -58,7 +58,7 @@ void RoomOptions::save(const string &path)
     tree.put("permissions.allowX11Clients", allowX11Clients);
     tree.put("permissions.shareTempDir", shareTempDir);
     tree.put("permissions.shareHomeDir", shareHomeDir);
-    tree.put("instance.uuid", uuid);
+    tree.put("uuid", uuid);
     tree.put("display.isHidden", isHidden);
    	tree.put("instance.cloneUri", cloneUri);
    	tree.put("instance.originUri", originUri);
