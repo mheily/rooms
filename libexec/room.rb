@@ -94,7 +94,17 @@ class RemoteRoom
   end
   
   def tags
-    @tags_json['tags'].map { |ent| ent['name'] }
+    data = @ssh.exec!('ls -l #{@path}/tags').split(/\n/)
+    metadata = @tags_json['tags'].map { |ent| ent['name'] }
+    result = []
+    metadata.each do |ent|
+      if data.include? ent['name'] + '.zfs.xz'
+        result << ent['name']
+      else
+        logger.error "metadata is not correct; remote tag #{ent['name']} does not exist"
+      end
+    end
+    result
   end
   
   def logger
@@ -158,7 +168,7 @@ class Room
     @name = name
     user = `whoami`.chomp
     @mountpoint = "/room/#{user}/#{name}"
-    @dataset = `df -h /room/mark/FreeBSD-11.0-RELEASE/ | tail -1 | awk '{ print \$1 }'`.chomp
+    @dataset = `df -h /room/#{user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
     @json = JSON.parse options_json
     @logger = logger
   end

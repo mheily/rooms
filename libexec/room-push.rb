@@ -53,6 +53,11 @@ def upload_tag(ssh, room, index, tagfile)
       while !zfs.eof?
         channel.send_data(zfs.read(1024**2))
       end
+      zfs.close
+      unless $?.to_i == 0
+        logger.error "zfs send failed"
+        raise 'Failed to send tag'
+      end
 
       channel.eof!
       channel.close
