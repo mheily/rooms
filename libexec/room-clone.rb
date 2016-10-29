@@ -39,7 +39,7 @@ def main
   base_uri = URI(base_uri)
   room = RemoteRoom.new(base_uri, logger)
   room.connect
-  room.clone
+  room.clone(name)
     
   logger.debug 'done'
 end

@@ -78,12 +78,12 @@ class RemoteRoom
     fetch
   end
   
-  def clone
-    system('room', name, 'create', '--empty') or raise "unable to create room"
+  def clone(local_name)
+    system('room', local_name, 'create', '--empty') or raise "unable to create room"
     tags.each do |tag|
-      download_tag(tag, name)
+      download_tag(tag, local_name)
     end
-    room = Room.new(@name, logger)
+    room = Room.new(local_name, logger)
     room.origin = @uri.to_s
   end
   
