@@ -16,7 +16,7 @@
 <para>
 <literallayout>
 <emphasis role="bold">room</emphasis> <emphasis role="bold">build</emphasis> <replaceable>path</replaceable>
-<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable> [<replaceable>name</replaceable>]
+<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable> [<replaceable>destination</replaceable>]
 <emphasis role="bold">room list</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
@@ -80,15 +80,16 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>URI</replaceable> [<replaceable>name</replaceable>]
+<emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable> [<replaceable>destination</replaceable>]
 </literallayout>
 		</term>
 	
 		<listitem>
 			<para>
-	Clone a room from a remote <replaceable>URI</replaceable>.
-	You can optionally provide a different [<replaceable>name</replaceable>] for
-	the room; if none is provided, the name will be derived from the last component of the URI. 
+	Create a clone of the given <replaceable>source</replaceable> room, which may be the URI to a remote
+	room, or the name of a local room. When cloning a remote room, you can optionally 
+	provide a different [<replaceable>destination</replaceable>] name for
+	the room; if none is provided, the last component of the URI will be used. 
 			</para>
 		</listitem>
 	</varlistentry>
@@ -410,21 +411,21 @@ $ room FreeBSD-11.0-RELEASE create \
 	</programlisting>
 
 	<para>
-	The following example clones a room named "FreeBSD-11.0-RELEASE" from
+	The following example clones a room named "FreeBSD-11.0" from
 	a remote repository. 
 	</para>
 	<programlisting>
 	<![CDATA[
-$ room FreeBSD-11.0-RELEASE clone http://arise.daemonspawn.org/rooms/FreeBSD-11.0-RELEASE
+$ room clone http://example.com/rooms/FreeBSD-11.0
 ]]>
 	</programlisting>
 	
 	<para>
-	Clone the FreeBSD-10.3 room and call it "myroom".
+	The following example clones the FreeBSD-11.0 room and call it "myroom".
 	</para>
 	<programlisting>
 <![CDATA[
-$ room myroom create --clone FreeBSD-10.3 
+$ room clone FreeBSD-11.0 myroom 
 ]]>
 	</programlisting>
 

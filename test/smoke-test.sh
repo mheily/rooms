@@ -40,6 +40,14 @@ test3() {
 	ssh arise.daemonspawn.org rm -rf ~/rooms/smoketest.$uuid
 }
 
+test4() {
+	room smoketest create --uri=file://`pwd`/base.txz
+	room smoketest tag base create -v
+	room clone smoketest smoketest2 -v
+	room smoketest2 destroy -v
+	room smoketest destroy -v
+}
+
 if [ -n "$1" ] ; then
 	room smoketest destroy || true # in case a test failed
 	sudo make -C .. install

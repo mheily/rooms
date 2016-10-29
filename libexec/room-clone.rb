@@ -29,17 +29,21 @@ def main
   user = `whoami`.chomp
   base_uri = ARGV[0]
   name = ARGV[1] || base_uri.gsub(/.*\//, '')
-  raise "usage: #{$PROGRAM_NAME} <uri> [name]" unless base_uri
+  raise "usage: #{$PROGRAM_NAME} <uri or name> [name]" unless base_uri
   
   setup_logger
   #setup_tmpdir
 
-  logger.debug "cloning: base_uri=#{base_uri} name=#{name}"
+  if base_uri =~ /^http|ssh/
+    logger.debug "cloning: base_uri=#{base_uri} name=#{name}"
 
-  base_uri = URI(base_uri)
-  room = RemoteRoom.new(base_uri, logger)
-  room.connect
-  room.clone(name)
+    base_uri = URI(base_uri)
+    room = RemoteRoom.new(base_uri, logger)
+    room.connect
+    room.clone(name)
+  else
+    system('room', name, 'create', '--clone', base_uri) or raise 'failed to create room'
+  end
     
   logger.debug 'done'
 end
