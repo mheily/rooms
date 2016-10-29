@@ -118,12 +118,20 @@ def push_via_ssh(room_name, uri)
     else
       remote_tags = JSON.parse(buf)
     end
-    logger.debug "remote_tags=#{remote_tags.inspect}"
+    logger.debug "tags: local=#{room.tags.inspect} remote=#{remote_tags.inspect}"
      
     remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
     i = 0
     refresh = false
     room.tags.each do |tag|
+      
+      # Special case: do not upload the first tag if the room is a clone
+      if i == 0 and room.is_clone?
+        logger.debug "skipping #{tag['name']}; room is a clone"
+        i += 1
+        next
+      end
+
       if remote_tag_names.include? tag
         logger.debug "tag #{tag} already exists; skipping"
       else

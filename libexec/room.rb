@@ -193,6 +193,10 @@ class Room
     `#{command}`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
   end
   
+  def is_clone?
+    @json['template']['uri'] != ''
+  end
+  
   def has_tag?(name)
     tags.each do |tag|
       return true if tag == name
