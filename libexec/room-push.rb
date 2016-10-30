@@ -38,11 +38,15 @@ def upload_tag(ssh, room, index, tagfile)
   ssh.open_channel do |channel|
     channel.exec("cat > #{tagfile}.tmp#{$$}") do |ch, success|
       raise 'command failed' unless success
-      
+       
       # If this is the first snapshot in the list, send the entire stream
       # Otherwise, send an incremental stream
       if index == 0
-        command = "zfs send #{room.dataset}/share@#{tag}"
+        if room.is_clone?
+          command = "zfs send -I #{room.dataset_origin} #{room.dataset}/share@#{tag}"
+        else
+          command = "zfs send #{room.dataset}/share@#{tag}"
+        end
       else
         command = "zfs send -i #{room.tags[index - 1]} #{room.dataset}/share@#{tag}"
       end
@@ -126,11 +130,11 @@ def push_via_ssh(room_name, uri)
     room.tags.each do |tag|
       
       # Special case: do not upload the first tag if the room is a clone
-      if i == 0 and room.is_clone?
-        logger.debug "skipping #{tag['name']}; room is a clone"
-        i += 1
-        next
-      end
+#      if i == 0 and room.is_clone?
+#        logger.debug "skipping #{tag['name']}; room is a clone"
+#        i += 1
+#        next
+#      end
 
       if remote_tag_names.include? tag
         logger.debug "tag #{tag} already exists; skipping"

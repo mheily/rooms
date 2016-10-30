@@ -72,6 +72,7 @@ public:
 	void start();
 	void stop();
 	void destroy();
+	static void destroy(const string& name);
 	void enter();
 	void send();
 	void exec(std::vector<std::string> execVec, const string& runAsUser);

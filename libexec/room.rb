@@ -86,6 +86,7 @@ class RemoteRoom
   
   def initialize(uri, logger)
     @uri = URI(uri)
+    @user = `whoami`.chomp
     @name = @uri.path.sub(/.*\//, '')
     @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
     @logger = logger
@@ -106,26 +107,19 @@ class RemoteRoom
     tags_copy = tags.dup
     
     if is_clone?
+      logger.info "Cloning #{local_name} from the local template #{template_name}"
+
       download_template
       args = ['room', local_name, 'create', '--clone', template_name, '--tag', template_tag]
       args << '-v' if ENV['ROOM_DEBUG']
       system(*args) or raise "unable to create room"
-      tags_copy.shift # The first tag comes from the template, not the remote room.
+      #TESTING: tags_copy.shift # The first tag comes from the template, not the remote room.
 
       template_dataset = `df -h /room/#{@user}/#{template_name} | tail -1 | awk '{ print \$1 }'`.chomp
-      
+
       local_room = Room.new(local_name, logger)
-           
-      args = ['room', local_name, '__promote', local_room.dataset + '/share']
-      args << '-v' if ENV['ROOM_DEBUG']
-      system(*args) or raise 'unable to promote dataset'
-      at_exit do
-        logger.info "Promoting the original template dataset #{template_dataset}"
-        args = ['room', local_name, '__promote', template_dataset + '/share']
-        args << '-v' if ENV['ROOM_DEBUG']
-        system(*args) or warn 'unable to promote dataset'
-      end
     else
+      logger.info "Creating an empty room named #{local_name}"
       system('room', local_name, 'create', '--empty') or raise "unable to create room"
     end
     
@@ -226,7 +220,7 @@ end
 
 # A room on localhost
 class Room
-  attr_reader :name, :mountpoint, :dataset, :tags
+  attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
   
   include RoomUtility
   
@@ -235,6 +229,7 @@ class Room
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
     @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
+    @dataset_origin = `zfs get -H -o value origin #{@dataset}/share`.chomp
     @json = JSON.parse options_json
     @logger = logger
   end

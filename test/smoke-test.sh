@@ -1,5 +1,7 @@
 #!/bin/sh -ex
 
+remote_base="ssh://arise.daemonspawn.org/home/mark/rooms"
+
 rebuild() {
 	cd ..
 	make clean
@@ -57,6 +59,26 @@ test5() {
 	room smoketest destroy -v
 }
 
+test6() {
+	#room smoketest-base create --uri=file://`pwd`/base.txz
+	#room smoketest-base tag tag1 create
+	#room smoketest-base push -u $remote_base/smoketest-base
+	
+	room smoketest-clone destroy || true
+	room smoketest-base destroy || true
+	
+	room clone $remote_base/smoketest-base
+	room clone smoketest-base smoketest-clone
+	room smoketest-clone exec -u root -- mkdir /test1
+	room smoketest-clone tag tag2 create
+	room smoketest-clone push -u $remote_base/smoketest-clone
+	
+	room clone -v $remote_base/smoketest-clone
+	
+	room smoketest-clone destroy || true
+	room smoketest-base destroy || true
+}
+
 test_zfs_clones() {
 	dataset=tank/zfstest
 	
@@ -106,6 +128,8 @@ else
 	test3
 	test4
 	test5
+	test6
+	#test_zfs_clones
 fi
 
 echo "SUCCESS: No errors detected"

@@ -262,7 +262,6 @@ void Room::validateName(const string& name)
 	}
 }
 
-// SEE ALSO: cloneFromOrigin()
 void Room::clone(const string& snapshot, const string& destRoom, const RoomOptions& roomOpt)
 {
 	log_debug("cloning room");
@@ -306,7 +305,7 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 #endif
 
 	cloneRoom.syncRoomOptions();
-	cloneRoom.snapshotCreate(snapshot);
+	//cloneRoom.snapshotCreate(snapshot);
 	log_debug("clone complete");
 }
 
@@ -403,8 +402,9 @@ void Room::promoteClone(const string& cloneDataset) {
 	// XXX-SECURITY need to verify dataset is mounted at /room/$USER; otherwise this allows
 	// promoting arbitrary datasets, such as /var
 
-	SetuidHelper::raisePrivileges();
-	Shell::execute("/sbin/zfs", { "promote", cloneDataset });
+//	SetuidHelper::raisePrivileges();
+//	Shell::execute("/sbin/zfs", { "promote", cloneDataset });
+	throw; // DEADWOOD
 }
 
 void Room::snapshotReceive(const string& name)
@@ -412,8 +412,8 @@ void Room::snapshotReceive(const string& name)
 	Subprocess proc;
 
 	SetuidHelper::raisePrivileges();
-	proc.execve("/sbin/zfs", { "receive", "-Fv",
-			roomDataset + "/" + roomName + "/share@" + name,
+	proc.execve("/sbin/zfs", { "receive", "-Fev",
+			roomDataset + "/" + roomName, // + "/share@" + name,
 	});
 }
 
@@ -633,6 +633,11 @@ void Room::stop()
 	SetuidHelper::lowerPrivileges();
 
 	log_notice("room `%s' has been stopped", roomName.c_str());
+}
+
+void Room::destroy(const string& name)
+{
+	throw; //NOT IMPLEMENTED YET
 }
 
 void Room::destroy()
