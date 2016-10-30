@@ -57,6 +57,45 @@ test5() {
 	room smoketest destroy -v
 }
 
+test_zfs_clones() {
+	dataset=tank/zfstest
+	sudo zfs destroy -R $dataset || true
+	sudo zfs destroy -R ${dataset}_clone || true
+	sudo zfs destroy -R ${dataset}_clone2 || true
+	sudo zfs create -o mountpoint=/zfstest $dataset
+	sudo touch /zfstest/base
+	sudo zfs snapshot $dataset@base
+	sudo zfs clone -o mountpoint=/zfstest.2 $dataset@base ${dataset}_clone
+	sudo zfs snapshot ${dataset}_clone@base
+	sudo touch /zfstest.2/snap1
+	sudo zfs snapshot ${dataset}_clone@snap1
+	sudo zfs clone -o mountpoint=/zfstest.3 ${dataset}@base ${dataset}_clone2
+	sudo zfs snapshot ${dataset}_clone2@base
+	zfs list | grep zfstest
+	zfs list -t snapshot | grep zfstest
+	## ALternate solution: receive snap1 into the template, clone to a new dataset, destroy template@snap1
+	## TEST THIS
+	    	sudo zfs destroy -R ${dataset}_clone2 || true  #undo previous
+	    	sudo zfs create ${dataset}_clone2
+	
+	sudo zfs send -i base ${dataset}_clone@snap1 > /tmp/snap1
+	sudo zfs destroy ${dataset}_clone@snap1 # pretend it only existed in the remote
+	sudo zfs recv -o origin=${dataset}_clone -F ${dataset}_clone2@snap1 < /tmp/snap1
+	sudo zfs clone ${dataset}_clone@snap1 ${dataset}_clone2
+	#sudo zfs promote ${dataset}_clone2
+	#sudo zfs destroy ${dataset}_clone2@snap1
+	#sudo zfs promote ${dataset}_clone
+	echo 'wow'
+	false
+	## PROBLEM STARTS HERE
+	sudo zfs promote ${dataset}_clone2
+	sudo zfs send -P -i base ${dataset}_clone@snap1 | sudo zfs recv -F -o origin=${dataset}_clone ${dataset}_clone2@snap1
+	sudo zfs promote ${dataset}_clone
+	sudo zfs destroy -R $dataset
+	sudo zfs destroy -R ${dataset}_clone || true
+	sudo zfs destroy -R ${dataset}_clone2 || true
+}
+
 if [ -n "$1" ] ; then
 	room smoketest destroy || true # in case a test failed
 	sudo make -C .. install
@@ -66,4 +105,7 @@ else
 	rebuild
 	test1
 	test2
+	test3
+	test4
+	test5
 fi
