@@ -111,6 +111,20 @@ class RemoteRoom
       args << '-v' if ENV['ROOM_DEBUG']
       system(*args) or raise "unable to create room"
       tags_copy.shift # The first tag comes from the template, not the remote room.
+
+      template_dataset = `df -h /room/#{@user}/#{template_name} | tail -1 | awk '{ print \$1 }'`.chomp
+      
+      local_room = Room.new(local_name, logger)
+           
+      args = ['room', local_name, '__promote', local_room.dataset + '/share']
+      args << '-v' if ENV['ROOM_DEBUG']
+      system(*args) or raise 'unable to promote dataset'
+      at_exit do
+        logger.info "Promoting the original template dataset #{template_dataset}"
+        args = ['room', local_name, '__promote', template_dataset + '/share']
+        args << '-v' if ENV['ROOM_DEBUG']
+        system(*args) or warn 'unable to promote dataset'
+      end
     else
       system('room', local_name, 'create', '--empty') or raise "unable to create room"
     end
@@ -144,7 +158,8 @@ class RemoteRoom
         raise 'command failed' unless success
         
         command = "xz -d | room #{local_room_name} snapshot #{name} receive"
-        
+        #command += '-v' if ENV['ROOM_DEBUG']
+
         logger.debug("popen command: #{command}")
         zfs = IO.popen(command, "w")
         
@@ -194,7 +209,6 @@ class RemoteRoom
       logger.debug "template #{template_name} already exists"
     else
       logger.debug "downloading base template #{template_name} from #{uri}"
-      raise 'no'
       system('room', 'clone', uri) or raise "failed to clone template"
     end
   end

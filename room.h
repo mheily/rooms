@@ -83,6 +83,8 @@ public:
 	//void pushToOrigin();
 	void setOriginUri(const string& uri);
 
+	// Cloned datasets need to use "zfs promote" in conjunction with "zfs receive"
+	void promoteClone(const string& cloneDataset);
 
 	static bool isValidName(const string& name)
 	{
@@ -133,6 +135,10 @@ private:
 /*	struct {
 		string tarballUri; // URI to the tarball for the root fs
 	} installOpts;*/
+
+	bool isClone() const {
+		return (roomOptions.templateSnapshot != "");
+	}
 
 	void enterJail(const string& runAsUser);
 	bool jailExists();

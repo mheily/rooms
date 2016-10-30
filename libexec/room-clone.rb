@@ -51,7 +51,7 @@ def main
       args << '--tag'
       args << template_tag
     end
-    system(args) or raise 'failed to create room'
+    system(*args) or raise 'failed to create room'
     dst_room = Room.new(name, logger)
     dst_room.uuid = `uuid -v4`.chomp
     dst_room.template_uri = src_room.origin

@@ -43,6 +43,7 @@ extern "C" {
 #include "jail_getid.h"
 #include "room.h"
 #include "setuidHelper.h"
+#include "zfsDataset.h"
 #include "zfsPool.h"
 #include "UuidGenerator.hpp"
 
@@ -306,7 +307,6 @@ void Room::clone(const string& snapshot, const string& destRoom, const RoomOptio
 
 	cloneRoom.syncRoomOptions();
 	cloneRoom.snapshotCreate(snapshot);
-
 	log_debug("clone complete");
 }
 
@@ -390,11 +390,29 @@ void Room::snapshotDestroy(const string& name)
 	SetuidHelper::lowerPrivileges();
 }
 
+// TODO: Move this into ZfsDataset::
+void Room::promoteClone(const string& cloneDataset) {
+	string msg;
+
+	// FIXME: does not like full dataset paths like tank/foo/whatever
+/*	if (!ZfsDataset::validateName(cloneDataset, msg)) {
+		log_error("bad name: %s", msg.c_str());
+		throw std::runtime_error("bad dataset name");
+	}*/
+
+	// XXX-SECURITY need to verify dataset is mounted at /room/$USER; otherwise this allows
+	// promoting arbitrary datasets, such as /var
+
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/sbin/zfs", { "promote", cloneDataset });
+}
+
 void Room::snapshotReceive(const string& name)
 {
-	SetuidHelper::raisePrivileges();
 	Subprocess proc;
-	proc.execve("/sbin/zfs", { "receive", "-F",
+
+	SetuidHelper::raisePrivileges();
+	proc.execve("/sbin/zfs", { "receive", "-Fv",
 			roomDataset + "/" + roomName + "/share@" + name,
 	});
 }

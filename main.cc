@@ -187,6 +187,9 @@ static void get_options(int argc, char *argv[])
 	    exit(0);
 	}
 
+	if (getenv("ROOM_DEBUG") != NULL) {
+		isVerbose = true;
+	}
 	mgr.setVerbose(isVerbose);
 	if (isVerbose) {
 		setenv("ROOM_DEBUG", "YES", 1);
@@ -299,6 +302,8 @@ static void get_options(int argc, char *argv[])
 				exit(1);
 			}
 		}
+	} else if (popt1 == "__promote") {
+		mgr.getRoomByName(popt0).promoteClone(popt2);
 	} else if (popt1 == "send") {
 		mgr.getRoomByName(popt0).send();
 	} else if (popt1 == "start") {
