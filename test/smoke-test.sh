@@ -59,41 +59,39 @@ test5() {
 
 test_zfs_clones() {
 	dataset=tank/zfstest
+	
+	# Cleanup any half-broken stuff from last time
 	sudo zfs destroy -R $dataset || true
 	sudo zfs destroy -R ${dataset}_clone || true
-	sudo zfs destroy -R ${dataset}_clone2 || true
+	
+	# Create the freebsd-11 template
 	sudo zfs create -o mountpoint=/zfstest $dataset
 	sudo touch /zfstest/base
 	sudo zfs snapshot $dataset@base
+	#sudo zfs bookmark $dataset@base $dataset#base
+	
+	# Create a shallow clone of the template
 	sudo zfs clone -o mountpoint=/zfstest.2 $dataset@base ${dataset}_clone
-	sudo zfs snapshot ${dataset}_clone@base
+	
+	# Make changes to the clone, and create a new tag
 	sudo touch /zfstest.2/snap1
 	sudo zfs snapshot ${dataset}_clone@snap1
-	sudo zfs clone -o mountpoint=/zfstest.3 ${dataset}@base ${dataset}_clone2
-	sudo zfs snapshot ${dataset}_clone2@base
-	zfs list | grep zfstest
-	zfs list -t snapshot | grep zfstest
-	## ALternate solution: receive snap1 into the template, clone to a new dataset, destroy template@snap1
-	## TEST THIS
-	    	sudo zfs destroy -R ${dataset}_clone2 || true  #undo previous
-	    	sudo zfs create ${dataset}_clone2
 	
-	sudo zfs send -i base ${dataset}_clone@snap1 > /tmp/snap1
-	sudo zfs destroy ${dataset}_clone@snap1 # pretend it only existed in the remote
-	sudo zfs recv -o origin=${dataset}_clone -F ${dataset}_clone2@snap1 < /tmp/snap1
-	sudo zfs clone ${dataset}_clone@snap1 ${dataset}_clone2
-	#sudo zfs promote ${dataset}_clone2
-	#sudo zfs destroy ${dataset}_clone2@snap1
-	#sudo zfs promote ${dataset}_clone
-	echo 'wow'
-	false
-	## PROBLEM STARTS HERE
-	sudo zfs promote ${dataset}_clone2
-	sudo zfs send -P -i base ${dataset}_clone@snap1 | sudo zfs recv -F -o origin=${dataset}_clone ${dataset}_clone2@snap1
-	sudo zfs promote ${dataset}_clone
+	# Push the clone to origin
+	sudo zfs send -v -I ${dataset}@base ${dataset}_clone@snap1 > /tmp/clone1.snap1
+	sudo zfs destroy -r ${dataset}_clone
+	
+	# Reconstruct the clone
+	#sudo zfs clone -o mountpoint=/zfstest.2 $dataset@base ${dataset}_clone
+	#sudo zfs snapshot ${dataset}_clone@base
+	sudo zfs recv -v -o origin="tank/zfstest@base" -F ${dataset}_clone < /tmp/clone1.snap1
+	sudo zfs set mountpoint=/zfstest.2 ${dataset}_clone
+	test -e /zfstest.2/snap1
+	
+	# Cleanup
 	sudo zfs destroy -R $dataset
 	sudo zfs destroy -R ${dataset}_clone || true
-	sudo zfs destroy -R ${dataset}_clone2 || true
+	sudo rm /tmp/clone1.snap1
 }
 
 if [ -n "$1" ] ; then
@@ -109,3 +107,5 @@ else
 	test4
 	test5
 fi
+
+echo "SUCCESS: No errors detected"
