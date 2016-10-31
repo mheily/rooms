@@ -84,12 +84,15 @@ end
 class RemoteRoom
   attr_reader :uri, :name, :path, :tags
   
-  def initialize(uri, logger)
+  def initialize(uri: nil, local_name: nil, logger: nil, tmpdir: nil)
+    raise 'invalid usage' unless uri and local_name and logger and tmpdir
     @uri = URI(uri)
+    @local_name = local_name
     @user = `whoami`.chomp
     @name = @uri.path.sub(/.*\//, '')
     @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
     @logger = logger
+    @tmpdir = tmpdir
     logger.debug "initialized; name=#{@name} uri=#{@uri} path=#{@path}"
   end
 
@@ -134,41 +137,38 @@ class RemoteRoom
   # Get information about the remote room
   def fetch
     @options_json = download_json "#{@path}/options.json"
-    @tags_json = download_json "#{@path}/tags.json"
   end
-  
-  def tags
-    @tags_json['tags'].map { |ent| ent['name'] }
-  end
-  
+   
   def logger
     @logger
   end
 
-  def download_tag(name, local_room_name)
-    logger.debug "downloading tag '#{name}'"  
+  def download_tags
+    remote_path = "#{@path}/tags.zfs.xz"
+    archive = "#{@tmpdir}/tags.zfs.xz"
+    
+    logger.debug "downloading #{remote_path} to #{archive}"
+    f = File.open(archive, 'w')
     @ssh.open_channel do |channel|
-      channel.exec("cat #{@path}/tags/#{name}.zfs.xz") do |ch, success|
+      channel.exec("cat #{Shellwords.escape remote_path}") do |ch, success|
         raise 'command failed' unless success
-        
-        command = "xz -d | room #{local_room_name} snapshot #{name} receive"
-        #command += '-v' if ENV['ROOM_DEBUG']
-
-        logger.debug("popen command: #{command}")
-        zfs = IO.popen(command, "w")
-        
+               
         channel.on_data do |ch, data|
-          zfs.write(data)
+          f.write(data)
         end
         
         channel.on_close do |ch, data|
-          zfs.close
+          f.close
         end
       end
     end
   
     @ssh.loop
 
+    system('unxz', archive) or raise 'unxz failed'
+    archive.sub!(/\.xz\z/, '')
+    #TODO zfs recv this
+    raise archive
     logger.debug 'tag downloaded successfully'
   end
   
@@ -229,7 +229,7 @@ class Room
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
     @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
-    @dataset_origin = `zfs get -H -o value origin #{@dataset}/share`.chomp
+    @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
     @json = JSON.parse options_json
     @logger = logger
   end
@@ -297,6 +297,35 @@ class Room
     save_options  
   end
   
+  # Create a ZFS replication stream and save it at [+path+]
+  def create_tags_archive(path)
+    cmd = [ 'zfs', 'send', '-v' ]
+    if @dataset_origin == '-'
+      # This room is not a ZFS clone
+      if oldest_snapshot == current_snapshot
+        cmd << current_snapshot
+      else
+        cmd << ['-I', oldest_snapshot, current_snapshot]
+      end
+    else
+      raise 'TODO: send incremental based on origin snapshot'
+    end
+    cmd << [ '>', path]
+    cmd.flatten!
+    cmd = cmd.join(' ') #FIXME: workaround for weird issue when array is passed
+    system(cmd) or raise 'send operation failed'
+  end
+  
+  # The most recent snapshot of the 'share' dataset
+  def current_snapshot
+    `zfs list -r -H -t snapshot -o name -S creation #{@dataset}/share | head -1`.chomp
+  end
+
+  # The oldest snapshot of the 'share' dataset
+  def oldest_snapshot
+    `zfs list -r -H -t snapshot -o name -S creation #{@dataset}/share | tail -1`.chomp
+  end
+    
   private
   
   def save_options

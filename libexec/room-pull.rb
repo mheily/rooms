@@ -30,20 +30,13 @@ def main
   raise 'usage: room-pull <name>' unless name
 
   setup_logger
-  #setup_tmpdir  
+  setup_tmpdir  
   
   room = Room.new(name, logger)
-  remote = RemoteRoom.new(room.origin, logger)
+  remote = RemoteRoom.new(local_name: name, uri: room.origin, logger: logger, tmpdir: @tmpdir)
   remote.connect
   
-  logger.debug "local room #{name} current_tags=#{room.tags.inspect}" 
-  remote.tags.each do |tag|
-  	if room.has_tag?(tag)
-  	  logger.debug "tag #{tag} already exists"
-  	else
-  	  remote.download_tag(tag, name)
-  	end
-  end
+  remote.download_tags
   
   logger.debug 'done'
 end

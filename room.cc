@@ -412,8 +412,8 @@ void Room::snapshotReceive(const string& name)
 	Subprocess proc;
 
 	SetuidHelper::raisePrivileges();
-	proc.execve("/sbin/zfs", { "receive", "-Fev",
-			roomDataset + "/" + roomName, // + "/share@" + name,
+	proc.execve("/sbin/zfs", { "receive", "-Fv",
+			roomDataset + "/" + roomName, "/share",
 	});
 }
 

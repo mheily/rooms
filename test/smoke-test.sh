@@ -10,6 +10,13 @@ rebuild() {
 	cd test
 }
 
+quick_rebuild() {
+	cd ..
+	make
+	sudo make install
+	cd test
+}
+
 fetch_base() {
 	test -e base.txz || fetch ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/amd64/11.0-RELEASE/base.txz
 }
@@ -37,7 +44,7 @@ test3() {
 	room smoketest push -u ssh://arise.daemonspawn.org/~/rooms/smoketest.$uuid -v
 	room smoketest pull -v
 	room smoketest destroy
-	
+	false
 	# TODO : would like to run "room smoketest destroy --remote" instead
 	ssh arise.daemonspawn.org rm -rf ~/rooms/smoketest.$uuid
 }
@@ -67,8 +74,8 @@ test6() {
 	room smoketest-clone destroy || true
 	room smoketest-base destroy || true
 	
-	room clone $remote_base/smoketest-base
-	room clone smoketest-base smoketest-clone
+	room clone -v $remote_base/smoketest-base
+	room clone -v smoketest-base smoketest-clone
 	room smoketest-clone exec -u root -- mkdir /test1
 	room smoketest-clone tag tag2 create
 	room smoketest-clone push -u $remote_base/smoketest-clone
@@ -77,6 +84,11 @@ test6() {
 	
 	room smoketest-clone destroy || true
 	room smoketest-base destroy || true
+}
+
+test_fbsd11_push() {
+	room fbsd11 push -u $remote_base/fbsd11 -v
+	room fbsd11 pull -v
 }
 
 test_zfs_clones() {

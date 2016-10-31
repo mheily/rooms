@@ -27,6 +27,32 @@ require_relative 'room'
 
 include RoomUtility
 
+def upload_file(ssh, src, dest)
+  logger.debug "uploading #{src} to #{dest}"
+  dest_uri = URI(dest)
+  system('scp', src, dest_uri.host + ':' + dest_uri.path) or raise 'scp failed'
+  return
+  # DEADWOOD
+  logger.debug "uploading #{src} to #{dest}"
+  ssh.open_channel do |channel|
+    channel.exec("cat > #{Shellwords.escape(dest)}") do |ch, success|
+      raise 'command failed' unless success
+         
+      File.open(src, 'r') do |f|
+        until f.eof?
+          buf = f.read(10 * 1024**3)
+          channel.send_data(buf)
+          puts '.' # FIXME: use a progress bar
+        end
+      end
+ 
+      channel.eof!
+      channel.close
+    end
+  end
+  raise 'lookatme'
+end
+
 def upload_tag(ssh, room, index, tagfile)
   tags = room.tags
   tag = tags[index]
@@ -114,20 +140,20 @@ def push_via_ssh(room_name, uri)
     logger.debug "uploading options.json"
     ssh.exec!("echo #{Shellwords.escape room.options_json} > #{Shellwords.escape(basedir)}/options.json")
 
-    logger.debug "getting tags from remote server"
-    remote_tags_path = Shellwords.escape(basedir) + "/tags.json"
-    buf = ssh.exec!("test -e #{remote_tags_path} && cat #{remote_tags_path}")
-    if buf.empty?
-      remote_tags = {'tags'=> []}
-    else
-      remote_tags = JSON.parse(buf)
-    end
-    logger.debug "tags: local=#{room.tags.inspect} remote=#{remote_tags.inspect}"
+#    logger.debug "getting tags from remote server"
+#    remote_tags_path = Shellwords.escape(basedir) + "/tags.json"
+#    buf = ssh.exec!("test -e #{remote_tags_path} && cat #{remote_tags_path}")
+#    if buf.empty?
+#      remote_tags = {'tags'=> []}
+#    else
+#      remote_tags = JSON.parse(buf)
+#    end
+#    logger.debug "tags: local=#{room.tags.inspect} remote=#{remote_tags.inspect}"
      
-    remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
-    i = 0
-    refresh = false
-    room.tags.each do |tag|
+#    remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
+#    i = 0
+#    refresh = false
+#    room.tags.each do |tag|
       
       # Special case: do not upload the first tag if the room is a clone
 #      if i == 0 and room.is_clone?
@@ -136,21 +162,31 @@ def push_via_ssh(room_name, uri)
 #        next
 #      end
 
-      if remote_tag_names.include? tag
-        logger.debug "tag #{tag} already exists; skipping"
-      else
-        tagfile = basedir + '/tags/' + tag
-        upload_tag(ssh, room, i, tagfile)
-        refresh = true
-      end
-      i += 1
+#      if remote_tag_names.include? tag
+#        logger.debug "tag #{tag} already exists; skipping"
+#      else
+#        tagfile = basedir + '/tags/' + tag
+#        upload_tag(ssh, room, i, tagfile)
+#        refresh = true
+#      end
+#      i += 1
+#    end
+#    
+#    if refresh
+#      logger.debug "uploading tags.json: #{room.tags_json}"
+#      ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
+#    end
+    # XXX-should have a 'tmp' directory in each room for this kind of thing
+    archive = room.mountpoint + "/local/#{room.name}.zfs"
+    if File.exist?(archive + '.xz')
+      logger.warn "Archive #{archive}.xz already exists; will try re-uploading it"
+    else
+      room.create_tags_archive(archive)
+      system('xz', archive) or raise 'xz failed'
     end
-    
-    if refresh
-      logger.debug "uploading tags.json: #{room.tags_json}"
-      ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
-    end
-
+    archive += '.xz'
+    upload_file(ssh, archive, uri.to_s + '/tags.zfs.xz')
+    File.unlink archive
   end
 end
 
@@ -160,7 +196,7 @@ def main
   raise "usage: #{$PROGRAM_NAME} <room> [origin]" unless room
   
   setup_logger
-  #setup_tmpdir
+  setup_tmpdir
 
   push_via_ssh room, origin
   logger.debug 'push complete'
