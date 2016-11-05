@@ -42,3 +42,13 @@ class TestTagIndex < Minitest::Test
     assert_equal %w(base), @index.names
   end
 end
+
+class TestRemoteTagIndex < Minitest::Test
+  require 'net/scp'
+  
+  def test_remote_fetch
+    scp = Net::SCP.start("arise.daemonspawn.org", ENV['LOGNAME'])
+    index = TagIndex.new(scp: scp, remote_path: '/home/mark/rooms/fbsd11') 
+    assert_equal %w(base), index.names
+  end
+end

@@ -19,9 +19,12 @@ class RemoteRoom
   require 'json'
   require 'logger'
   require 'net/ssh'
+  require 'net/scp'
   require 'uri'
-    
-  attr_reader :uri, :name, :path, :tags
+  
+  require_relative 'tag_index'
+
+  attr_reader :uri, :name, :path
   
   def initialize(uri: nil, local_name: nil, logger: nil, tmpdir: nil)
     raise 'invalid usage' unless uri and local_name and logger and tmpdir
@@ -40,13 +43,14 @@ class RemoteRoom
     raise 'host missing' unless host
     logger.debug "connecting to #{host}"
     @ssh = Net::SSH.start(host)
+    @scp = Net::SCP.start(host, @user)
     fetch
   end
   
   def clone(local_name)
     local_name = @name if local_name.empty?
     
-    tags_copy = tags.dup
+    tags_copy = @tag_index.names.dup
     
     if is_clone?
       logger.info "Cloning #{local_name} from the local template #{template_name}"
@@ -76,7 +80,7 @@ class RemoteRoom
   # Get information about the remote room
   def fetch
     @options_json = download_json "#{@path}/options.json"
-    @tags_json = download_json "#{@path}/tags.json"
+    @tag_index = TagIndex.new(scp: @scp, remote_path: @path)
   end
    
   def logger
@@ -120,11 +124,7 @@ class RemoteRoom
     logger.debug "got: #{json}"
     return JSON.parse(json)
   end
-  
-  def tags
-      @tags_json['tags'].map { |ent| ent['name'] }
-  end
-  
+   
   def is_clone?
     @options_json['template']['uri'] != ''
   end

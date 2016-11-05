@@ -46,7 +46,7 @@ To build the Rooms website, you will need the 'xmlto' package.
 <para>Install the required packages.</para>
 <programlisting>
 $ su -
-# pkg install -y git groff docbook2X xmlto boost-all ruby rubygem-rake rubygem-minitest
+# pkg install -y git groff docbook2X xmlto boost-all ruby rubygem-rake rubygem-minitest rubygem-net-scp
 </programlisting>
 </listitem>
 

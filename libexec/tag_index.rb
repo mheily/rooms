@@ -19,12 +19,24 @@ class TagIndex
   require 'json'
   require 'pp'
   
-  def initialize(json: nil)
+  attr_accessor :scp
+  
+  # @param scp [Net::SCP] open connection to the remote server
+  # @param remote_path [String] path to the remote room
+  def initialize(json: nil, scp: nil, remote_path: nil)
     parse(json) if json
+    @scp = scp
+    @remote_path = remote_path
+    fetch if @scp and @remote_path
   end
   
   def parse(json)
     @json = JSON.parse(json)
+  end
+  
+  def fetch
+    data = @scp.download!(@remote_path + '/tags.json')
+    @json = JSON.parse(data)
   end
   
   # The names of all tags
