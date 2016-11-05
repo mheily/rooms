@@ -18,10 +18,10 @@
 class RemoteRoom
   require 'json'
   require 'logger'
-  require 'net/ssh'
   require 'net/scp'
   require 'uri'
-  
+
+  require_relative 'room_options' 
   require_relative 'tag_index'
 
   attr_reader :uri, :name, :path
@@ -42,7 +42,6 @@ class RemoteRoom
     host = uri.host
     raise 'host missing' unless host
     logger.debug "connecting to #{host}"
-    @ssh = Net::SSH.start(host)
     @scp = Net::SCP.start(host, @user)
     fetch
   end
@@ -79,69 +78,33 @@ class RemoteRoom
   
   # Get information about the remote room
   def fetch
-    @options_json = download_json "#{@path}/options.json"
+    @options = RoomOptions.new(scp: @scp, remote_path: @path)
     @tag_index = TagIndex.new(scp: @scp, remote_path: @path)
   end
    
   def logger
     @logger
   end
-
-  def download_tags
-    remote_path = "#{@path}/tags.zfs.xz"
-    archive = "#{@tmpdir}/tags.zfs.xz"
-    
-    logger.debug "downloading #{remote_path} to #{archive}"
-    f = File.open(archive, 'w')
-    @ssh.open_channel do |channel|
-      channel.exec("cat #{Shellwords.escape remote_path}") do |ch, success|
-        raise 'command failed' unless success
-               
-        channel.on_data do |ch, data|
-          f.write(data)
-        end
-        
-        channel.on_close do |ch, data|
-          f.close
-        end
-      end
-    end
-  
-    @ssh.loop
-
-    system('unxz', archive) or raise 'unxz failed'
-    archive.sub!(/\.xz\z/, '')
-    #TODO zfs recv this
-    raise archive
-    logger.debug 'tag downloaded successfully'
-  end
   
   private
-  
-  def download_json(path)
-    logger.debug "downloading #{path}"
-    json = @ssh.exec!("cat #{Shellwords.escape(path)}") # XXX-error checking
-    logger.debug "got: #{json}"
-    return JSON.parse(json)
-  end
-   
+    
   def is_clone?
-    @options_json['template']['uri'] != ''
+    @options['template']['uri'] != ''
   end
   
   # The name of the template
   # KLUDGE: this forces the local room name to match the remote
   def template_name
-    @options_json['template']['uri'].sub(/.*\//, '')
+    @options['template']['uri'].sub(/.*\//, '')
   end
 
   def template_tag
-    @options_json['template']['snapshot']
+    @options['template']['snapshot']
   end
     
   # Download the base template, if it does not already exist
   def download_template
-    uri = @options_json['template']['uri']
+    uri = @options['template']['uri']
   
     if Room.exist? template_name
       logger.debug "template #{template_name} already exists"

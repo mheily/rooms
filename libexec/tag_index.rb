@@ -57,3 +57,34 @@ class TagIndex
     @json['tags'] = new_tags
   end
 end
+
+__END__
+
+def download_tags
+  remote_path = "#{@path}/tags.zfs.xz"
+  archive = "#{@tmpdir}/tags.zfs.xz"
+  
+  logger.debug "downloading #{remote_path} to #{archive}"
+  f = File.open(archive, 'w')
+  @ssh.open_channel do |channel|
+    channel.exec("cat #{Shellwords.escape remote_path}") do |ch, success|
+      raise 'command failed' unless success
+             
+      channel.on_data do |ch, data|
+        f.write(data)
+      end
+      
+      channel.on_close do |ch, data|
+        f.close
+      end
+    end
+  end
+
+  @ssh.loop
+
+  system('unxz', archive) or raise 'unxz failed'
+  archive.sub!(/\.xz\z/, '')
+  #TODO zfs recv this
+  raise archive
+  logger.debug 'tag downloaded successfully'
+end
