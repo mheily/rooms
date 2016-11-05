@@ -38,13 +38,7 @@ class Room
     parse_options if exist?
     @logger = logger
   end
-
-  def parse_options
-    @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
-    @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
-    @json = JSON.parse options_json
-  end  
-  
+ 
   def exist?
     Room.exist?(@name)
   end
@@ -154,6 +148,31 @@ class Room
   end
   
   private
+
+  # Return the CLI options to room that match the requested permissions
+  def permissions
+    perms = @json['permissions']
+    return '' unless perms
+    result = []
+    options = { 
+      'allowX11Clients' => '--allow-x11',
+      'shareTempDir' => '--share-tempdir',
+      'shareHomeDir' => '--share-home',
+    }
+    ['allowX11Clients', 'shareTempDir', 'shareHomeDir'].each do |key|
+      if perms.has_key?(key.downcase) and perms[key.downcase] == true
+        result << options[key]
+      end
+    end 
+    result.join(' ')
+  end
+  
+  # Load options.json and get some other random info
+  def parse_options
+    @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
+    @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
+    @json = JSON.parse options_json
+  end  
   
   def save_options
     File.open("#{mountpoint}/etc/options.json", "w") do |f|

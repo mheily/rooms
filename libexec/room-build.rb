@@ -23,37 +23,6 @@ require_relative 'room'
 
 include RoomUtility
 
-# Return the CLI options to room that match the requested permissions
-def permissions(json)
-  perms = json['permissions']
-  return '' unless perms
-  result = []
-  options = { 
-    'allowX11Clients' => '--allow-x11',
-    'shareTempDir' => '--share-tempdir',
-    'shareHomeDir' => '--share-home',
-  }
-  ['allowX11Clients', 'shareTempDir', 'shareHomeDir'].each do |key|
-    if perms.has_key?(key.downcase) and perms[key.downcase] == true
-      result << options[key]
-    end
-  end 
-  result.join(' ')
-end
-
-def create_base(json)
-  archive = @tmpdir + '/' + json['label'] + '-base.txz'
-  unless File.exist?(archive)
-    system("fetch -o #{archive} #{json['base']['uri']}") or raise 'fetch failed'    
-  end
-  system("sha512 -c #{json['base']['sha512']} #{archive} >/dev/null") or raise 'checksum mismatch'
-  system "room #{json['label']} create #{permissions(json)} --uri=file://#{archive}"
-  
-  run_script json['base']['script']
-  
-  system "room #{json['label']} snapshot #{json['base']['tag']} create"
-end
-
 def main
   path = ARGV[0]
   raise 'usage: room-build <configuration file>' unless path
