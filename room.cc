@@ -335,6 +335,7 @@ void Room::createEmpty()
 	FileUtil::mkdir_idempotent(roomDataDir + "/local", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/home", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/tmp", 0700, ownerUid, ownerGid);
+	FileUtil::mkdir_idempotent(roomDataDir + "/tags", 0700, ownerUid, ownerGid);
 
 	SetuidHelper::lowerPrivileges();
 }
