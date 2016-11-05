@@ -2,8 +2,8 @@
   "api": {
     "version": 0
   },
-  "label": "com.heily.FreeBSD-11.0",
-  "name": "FreeBSD-11.0",
+  "label": "com.heily.tc_spec",
+  "name": "com.heily.tc_spec",
   "description": "FreeBSD 11.0",
   "permissions": {
  	"allowX11Clients": false,

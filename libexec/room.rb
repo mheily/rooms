@@ -19,11 +19,11 @@
 class Room
   require "json"
   require "pp"
-  require 'logger'
   require 'tempfile'
   require 'net/ssh'
   require 'shellwords'
 
+  require_relative 'log'
   require_relative 'room_uri'
   require_relative 'utility'
   
@@ -31,12 +31,12 @@ class Room
   
   include RoomUtility
   
-  def initialize(name, logger)
+  def initialize(name)
     @name = name
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
     parse_options if exist?
-    @logger = logger
+    @logger = Room::Log.instance.logger
   end
  
   def exist?
@@ -142,30 +142,12 @@ class Room
     f.puts buf
     f.flush
     path = '/.room-script-tmp'
-    system "cat #{f.path} | room #{@label} exec -u root -- dd of=#{path} status=none" or raise 'command failed'
-    system "room #{@label} exec -u root -- sh -c 'chmod 755 #{path} && #{path} && rm #{path}'" or raise 'command failed'
+    system "cat #{f.path} | room #{@name} exec -u root -- dd of=#{path} status=none" or raise 'command failed'
+    system "room #{@name} exec -u root -- sh -c 'chmod 755 #{path} && #{path} && rm #{path}'" or raise 'command failed'
     f.close
   end
   
   private
-
-  # Return the CLI options to room that match the requested permissions
-  def permissions
-    perms = @json['permissions']
-    return '' unless perms
-    result = []
-    options = { 
-      'allowX11Clients' => '--allow-x11',
-      'shareTempDir' => '--share-tempdir',
-      'shareHomeDir' => '--share-home',
-    }
-    ['allowX11Clients', 'shareTempDir', 'shareHomeDir'].each do |key|
-      if perms.has_key?(key.downcase) and perms[key.downcase] == true
-        result << options[key]
-      end
-    end 
-    result.join(' ')
-  end
   
   # Load options.json and get some other random info
   def parse_options

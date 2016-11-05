@@ -11,7 +11,13 @@ class TestSpec < Minitest::Test
   end
 
   def test_initialize
-    assert_equal 'com.heily.FreeBSD-11.0', @spec['label']
+    assert_equal 'com.heily.tc_spec', @spec['label']
   end
   
+  def test_build
+    @spec.build
+    system "room com.heily.tc_spec stop"
+    sleep 3 # getting "busy" error
+    system "room com.heily.tc_spec destroy" or raise 'destroy failed'
+  end
 end

@@ -142,6 +142,9 @@ void RoomManager::initUserRoomSpace()
 			zpool + "/room/" + ownerLogin
 	});
 	FileUtil::rmdir(tempdir);
+
+	FileUtil::mkdir_idempotent("/room/" + ownerLogin + "/.tmp", 0700, ownerUid, ownerGid);
+
 	SetuidHelper::lowerPrivileges();
 }
 
@@ -265,7 +268,7 @@ void RoomManager::enumerateRooms() {
 
 	std::vector<string> roomVec;
 	while ((dp = readdir(dir)) != NULL) {
-		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, "..")) {
+		if (dp->d_name[0] == '.') {
 			continue;
 		}
 

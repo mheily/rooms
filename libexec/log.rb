@@ -14,30 +14,20 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# A snapshot of a room
+# A logfile
 class Room
-  class Tag
-    require 'json'
-    require 'pp'
-  
-    require_relative 'log'
+  class Log
+    require 'singleton'
     
-    def initialize(parsed_json)
-      @data = parsed_json
-      @uuid = @data['uuid']
-      @logger = Room::Log.instance.logger
+    include ::Singleton
+
+    require 'logger'
+
+    attr_reader :logger
+
+    def initialize
+      @logger = Logger.new(STDOUT)
+      @logger.level = Logger::DEBUG
     end
-  
-    # @param scp [Net::SCP] a session
-    # @param remote_path [String] the remote directory where the room is stored
-    # @param destdir [String] the directory to download the tag to   
-    def fetch(scp: nil, remote_path: nil, destdir: nil)
-      raise ArgumentError unless scp && remote_path && destdir
-      src = remote_path + '/tags/' + @uuid
-      dst = destdir + '/tags'
-      @logger.info "Dowloading #{src} to #{dst}"
-      data = scp.download!(src, dst)
-    end
-  
   end
 end
