@@ -16,6 +16,7 @@
 
 # An URI of a Room
 class RoomURI
+  require 'uri'
   
   attr_reader :uri
   

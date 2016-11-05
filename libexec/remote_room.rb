@@ -19,16 +19,16 @@ class RemoteRoom
   require 'json'
   require 'logger'
   require 'net/scp'
-  require 'uri'
 
   require_relative 'room_options' 
   require_relative 'tag_index'
+  require_relative 'room_uri'
 
   attr_reader :uri, :name, :path
   
   def initialize(uri: nil, local_name: nil, logger: nil, tmpdir: nil)
     raise 'invalid usage' unless uri and local_name and logger and tmpdir
-    @uri = URI(uri)
+    @uri = RoomURI.new(uri).uri
     @local_name = local_name
     @user = `whoami`.chomp
     @name = @uri.path.sub(/.*\//, '')
