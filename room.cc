@@ -655,8 +655,8 @@ void Room::destroy()
 	if (useZfs) {
 
 		log_debug("unmounting root filesystem");
-		FileUtil::unmount(roomDataDir + "/share");
-		FileUtil::unmount(roomDataDir);
+		FileUtil::unmount(roomDataDir + "/share", MNT_FORCE);
+		FileUtil::unmount(roomDataDir, MNT_FORCE);
 
 		// this used to race with "jail -r", but doesn't anymore
 		bool success = false;

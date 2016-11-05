@@ -109,8 +109,8 @@ public:
 		}
 	}
 
-	static void unmount(const string& path) {
-		if (::unmount(path.c_str(), 0) < 0) {
+	static void unmount(const string& path, int flags) {
+		if (::unmount(path.c_str(), flags) < 0) {
 			log_errno("unmount(2) of `%s'", path.c_str());
 			throw std::system_error(errno, std::system_category());
 		}
