@@ -15,9 +15,9 @@ class TestSpec < Minitest::Test
   end
   
   def test_build
+    system "room com.heily.tc_spec destroy >/dev/null 2>&1"
+
     @spec.build
-    system "room com.heily.tc_spec stop"
-    sleep 3 # getting "busy" error
     system "room com.heily.tc_spec destroy" or raise 'destroy failed'
   end
 end

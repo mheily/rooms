@@ -57,16 +57,17 @@ class Room
     def load_file(path)
       raise Errno::ENOENT unless File.exist?(path)
       
-      data = `uclcmd get --file #{path} -c ''`
+      @ucl = `uclcmd get --file #{path} -c ''`
       if $? != 0
         raise 'libucl parse error'
       end
       
-      parse(data)
+      parse(@ucl)
       self
     end
     
     def parse(buf)
+      @ucl = buf
       @json = JSON.parse(buf)
     end
     
@@ -89,6 +90,11 @@ class Room
       room.run_script @json['base']['script']
       
       system "room #{@json['label']} snapshot #{@json['base']['tag']} create"
+      
+      # Save the spec file
+      File.open(room.mountpoint + "/etc/Roomfile", 'w') do |f|
+        f.puts @ucl
+      end
     end
   
     private
