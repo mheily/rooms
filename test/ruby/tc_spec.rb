@@ -16,7 +16,6 @@ class TestSpec < Minitest::Test
   
   def test_build
     system "room com.heily.tc_spec destroy >/dev/null 2>&1"
-
     @spec.build
     system "room com.heily.tc_spec destroy" or raise 'destroy failed'
   end

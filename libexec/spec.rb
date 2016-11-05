@@ -95,9 +95,28 @@ class Room
       File.open(room.mountpoint + "/etc/Roomfile", 'w') do |f|
         f.puts @ucl
       end
+      
+      create_tags(room)
     end
   
     private
+    
+    # For each tag, run the associated script and create the tag
+    def create_tags(room)
+      label = @json['label']
+      current_tags = `room #{label} snapshot list`.split(/\n/)
+      logger.debug "current_tags=#{current_tags.inspect}" 
+      @json['tags'] ||= []
+      @json['tags'].each do |tag|
+        if current_tags.include?(tag['name'])
+          logger.debug "tag #{tag['name']} already exists"
+        else
+          logger.debug "creating tag: #{tag['name']}"
+          room.run_script(tag['script']) if tag.has_key? 'script'
+          system "room #{label} snapshot #{tag['name']} create"
+        end
+      end
+    end
     
     # Return the CLI options to room that match the requested permissions
     def permissions
@@ -115,6 +134,10 @@ class Room
         end
       end 
       result.join(' ')
+    end
+    
+    def logger
+      Room::Log.instance.logger
     end
   end
 end

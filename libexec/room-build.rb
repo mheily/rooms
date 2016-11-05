@@ -20,6 +20,7 @@ require "pp"
 require 'logger'
 require 'tempfile'
 require_relative 'room'
+require_relative 'spec'
 
 include RoomUtility
 
@@ -29,31 +30,17 @@ def main
   raise Errno::ENOENT unless File.exist?(path)
   
   setup_logger
-  setup_tmpdir
+ # setup_tmpdir
   
-  data = `uclcmd get --file #{path} -c ''`
-  json = JSON.parse data
-  logger.debug "json=#{json}"
+  spec = Room::Spec.new.load_file(path)
 
-  @label = json['label']
-  if `room list`.split(/\n/).grep(/\A#{@label}\z/).length > 0
-  	logger.debug "room #{@label} exists"
-  else
-  	create_base(json)
+  if Room.exist?(spec['label'])
+    puts "ERROR: Room already exists"
+    exit 1
   end
   
-  current_tags = `room #{json['label']} snapshot list`.split(/\n/)
-  logger.debug "current_tags=#{current_tags.inspect}" 
-  json['tags'] ||= []
-  json['tags'].each do |tag|
-  	if current_tags.include?(tag['name'])
-  	  logger.debug "tag #{tag['name']} already exists"
-  	else
-  	  logger.debug "creating tag: #{tag['name']}"
-  	  run_script tag['script'] if tag.has_key? 'script'
-  	  system "room #{@label} snapshot #{tag['name']} create"
-  	end
-  end
+  @spec.build
+ 
   
   logger.debug 'done'
 end
