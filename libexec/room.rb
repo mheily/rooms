@@ -15,37 +15,18 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-require "json"
-require "pp"
-require 'logger'
-require 'tempfile'
-require 'net/ssh'
-require 'shellwords'
-
-# An URI of a Room
-class RoomURI
-  
-  attr_reader :uri
-  
-  def initialize(uri)
-    @original = uri
-    @canonical = canonicalize(uri)
-    @uri = URI(@canonical)
-  end
-  
-  private
-  
-  def canonicalize(s)
-    if s =~ /:\/\//
-      s
-    else
-      'room://localhost/' + s 
-    end
-  end
-end
-
 # A room on localhost
 class Room
+  require "json"
+  require "pp"
+  require 'logger'
+  require 'tempfile'
+  require 'net/ssh'
+  require 'shellwords'
+
+  require_relative 'uri'
+  require_relative 'room'
+  
   attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
   
   include RoomUtility
