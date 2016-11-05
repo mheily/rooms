@@ -35,4 +35,13 @@ class TagIndex
   def to_s
     @json['tags'].pretty_inspect
   end
+  
+  # Delete a tag from the index.
+  # Does not actually touch the ZFS snapshot.
+  def delete(name: nil, uuid: nil)
+    raise ArgumentError if name && uuid
+    raise ArgumentError, 'UUID not implemented' unless name
+    new_tags = [@json['tags'].find { |ent| ent['name'] != name }].flatten
+    @json['tags'] = new_tags
+  end
 end

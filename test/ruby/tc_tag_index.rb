@@ -36,4 +36,9 @@ class TestTagIndex < Minitest::Test
   def test_to_s
     assert @index.to_s
   end
+  
+  def test_delete
+    @index.delete(name: 'tag1')
+    assert_equal %w(base), @index.names
+  end
 end
