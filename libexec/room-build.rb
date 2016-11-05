@@ -15,34 +15,19 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-require "json"
-require "pp"
-require 'logger'
-require 'tempfile'
-require_relative 'room'
 require_relative 'spec'
 
-include RoomUtility
+path = ARGV[0]
+raise 'usage: room-build <configuration file>' unless path
+raise Errno::ENOENT unless File.exist?(path)
+  
+spec = Room::Spec.new.load_file(path)
 
-def main
-  path = ARGV[0]
-  raise 'usage: room-build <configuration file>' unless path
-  raise Errno::ENOENT unless File.exist?(path)
-  
-  setup_logger
- # setup_tmpdir
-  
-  spec = Room::Spec.new.load_file(path)
-
-  if Room.exist?(spec['label'])
-    puts "ERROR: Room already exists"
-    exit 1
-  end
-  
-  @spec.build
- 
-  
-  logger.debug 'done'
+if Room.exist?(spec['label'])
+  puts "ERROR: Room already exists"
+  exit 1
 end
+  
+spec.build
 
-main
+exit 0
