@@ -22,42 +22,6 @@ require 'tempfile'
 require 'net/ssh'
 require 'shellwords'
 
-#
-# Utility functions for working with rooms
-#
-module RoomUtility
-  def setup_logger
-    @logger = Logger.new(STDOUT)
-    if ENV['ROOM_DEBUG']
-      @logger.level = Logger::DEBUG
-    else
-      @logger.level = Logger::INFO
-    end
-  end
-  
-  def setup_tmpdir
-    @tmpdir = Dir.mktmpdir($PROGRAM_NAME.sub(/.*\//, ''))
-    at_exit { system "rm -rf #{@tmpdir}" if File.exist?(@tmpdir) }
-  end
-    
-  def logger
-    @logger
-  end
-  
-  def parse_options_json(path)
-    data = `uclcmd get --file #{path} -c ''`
-    json = JSON.parse data
-    logger.debug "json=#{json.pretty_inspect}"
-    json
-  end
-  
-  def system(*args)
-    logger.debug 'running: ' + args.join(' ')
-    Kernel.system(*args)
-  end
-  
-end
-
 # An URI of a Room
 class RoomURI
   
@@ -79,18 +43,6 @@ class RoomURI
     end
   end
 end
-
-
-
-## The options.json for a room
-#class RoomOptions
-#  def initialize(path)
-#    @path = path
-#    @json = JSON.parse(File.read(path))
-#    pp json
-#    raise 'hi'
-#  end
-#end
 
 # A room on localhost
 class Room
