@@ -5,7 +5,25 @@ require_relative '../../libexec/tag_index.rb'
 
 class TestTagIndex < Minitest::Test
 
-  @@fixture = DATA.read
+  @@fixture = <<-__EOF__
+  {
+    "api": {
+      "version": 0
+    },
+    "tags": [
+      {
+        "name": "base",
+        "compression": "xz",
+        "format": "zfs"
+      },
+      {
+        "name": "tag1",
+        "compression": "xz",
+        "format": "zfs"
+      }
+    ]
+  }
+  __EOF__
   
   def setup
     @index = TagIndex.new(json: @@fixture) 
@@ -19,22 +37,3 @@ class TestTagIndex < Minitest::Test
     assert @index.to_s
   end
 end
-
-__END__
-{
-  "api": {
-    "version": 0
-  },
-  "tags": [
-    {
-      "name": "base",
-      "compression": "xz",
-      "format": "zfs"
-    },
-    {
-      "name": "tag1",
-      "compression": "xz",
-      "format": "zfs"
-    }
-  ]
-}
