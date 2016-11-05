@@ -24,8 +24,8 @@ class Room
   require 'net/ssh'
   require 'shellwords'
 
-  require_relative 'uri'
-  require_relative 'room'
+  require_relative 'room_uri'
+  require_relative 'utility'
   
   attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
   
@@ -35,10 +35,18 @@ class Room
     @name = name
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
+    parse_options if exist?
+    @logger = logger
+  end
+
+  def parse_options
     @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
     @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
     @json = JSON.parse options_json
-    @logger = logger
+  end  
+  
+  def exist?
+    Room.exist?(@name)
   end
   
   def Room.exist?(name)
@@ -132,7 +140,19 @@ class Room
   def oldest_snapshot
     `zfs list -r -H -t snapshot -o name -S creation #{@dataset}/share | tail -1`.chomp
   end
-    
+  
+  # Run a script inside the room
+  def run_script(buf)
+    raise ArgumentError unless buf.kind_of? String
+    f = Tempfile.new('room-build-script')
+    f.puts buf
+    f.flush
+    path = '/.room-script-tmp'
+    system "cat #{f.path} | room #{@label} exec -u root -- dd of=#{path} status=none" or raise 'command failed'
+    system "room #{@label} exec -u root -- sh -c 'chmod 755 #{path} && #{path} && rm #{path}'" or raise 'command failed'
+    f.close
+  end
+  
   private
   
   def save_options

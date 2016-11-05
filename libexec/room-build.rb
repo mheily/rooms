@@ -23,17 +23,6 @@ require_relative 'room'
 
 include RoomUtility
 
-def run_script(buf)
-  raise ArgumentError unless buf.kind_of? String
-  f = Tempfile.new('room-build-script')
-  f.puts buf
-  f.flush
-  path = '/.room-script-tmp'
-  system "cat #{f.path} | room #{@label} exec -u root -- dd of=#{path} status=none" or raise 'command failed'
-  system "room #{@label} exec -u root -- sh -c 'chmod 755 #{path} && #{path} && rm #{path}'" or raise 'command failed'
-  f.close
-end
-
 # Return the CLI options to room that match the requested permissions
 def permissions(json)
   perms = json['permissions']
