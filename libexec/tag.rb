@@ -43,12 +43,14 @@ class Room
       if snapshot_name == all_tags[0]
         meta['zfs']['incremental_source'] = ''
         meta['zfs']['origin'] = room.dataset_origin
+        incremental_opts = ''
       else
-        raise 'boom, need to figure out source'
+        meta['zfs']['incremental_source'] = room.previous_snapshot(snapshot_name)
+        incremental_opts = '-i ' + meta['zfs']['incremental_source']
       end
       outfile = room.mountpoint + '/tags/' + meta['uuid']
       snapshot_ref = "#{room.dataset}/share@#{snapshot_name}"
-      system("/sbin/zfs send #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
+      system("/sbin/zfs send #{incremental_opts} #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
       system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
       File.unlink(outfile + '.raw')
       meta['sha512'] = `sha512 -q #{outfile}`.chomp

@@ -142,6 +142,19 @@ class Room
   def oldest_snapshot
     `zfs list -r -H -t snapshot -o name -S creation #{@dataset}/share | tail -1`.chomp
   end
+
+  # The snapshot immediately prior to [+snapname+]
+  def previous_snapshot(snapname)
+    prev = nil
+    tags.each do |tag|
+      if tag == snapname
+        return prev
+      else
+        prev = tag
+      end
+    end
+    raise 'Snapshot not found'
+  end
   
   # Run a script inside the room
   def run_script(buf)

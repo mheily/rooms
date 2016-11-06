@@ -46,10 +46,11 @@ class TestTagIndex < Minitest::Test
   
   def test_construct
     label = 'test.construct.' + $$.to_s
+    at_exit { system "room #{label} destroy" }
     room = Room.build(MicroRoom.new(label).specfile)
     @index = TagIndex.new
     @index.construct(room)
-    raise 'hi'
+    system "cat /room/mark/#{label}/etc/tags.json"
   end
 end
 

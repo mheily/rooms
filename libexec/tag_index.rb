@@ -37,18 +37,16 @@ class TagIndex
     raise ArgumentError unless room.kind_of?Room
     indexfile = room.mountpoint + '/etc/tags.json'
     if File.exist?(indexfile)
-      raise 'todo'
+      raise indexfile + ': already exists'
     else
       system "rm -f #{room.mountpoint}/tags/*"
+      result = {'api' => { 'version' => 0 }, 'tags' => []}
       room.tags.each do |tag|
-        puts tag
         meta = Room::Tag.from_snapshot(tag, room)
-        pp meta
-        raise 'todo'
+        result['tags'] << meta
       end
+      File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
     end
-    
-    raise 'woot'
   end
   
   def parse(json)
