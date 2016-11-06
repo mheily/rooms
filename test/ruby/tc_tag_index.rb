@@ -1,9 +1,10 @@
 #!/usr/bin/env ruby
 
 require 'minitest/autorun'
-require_relative '../../libexec/tag_index.rb'
 
 class TestTagIndex < Minitest::Test
+  require_relative '../../libexec/tag_index.rb'
+  require_relative '../../libexec/room.rb'
 
   @@fixture = <<-__EOF__
   {
@@ -40,6 +41,15 @@ class TestTagIndex < Minitest::Test
   def test_delete
     @index.delete(name: 'tag1')
     assert_equal %w(base), @index.names
+  end
+  
+  def test_construct
+    # FIXME: depends on the existence of com.heily.FreeBSD-11.0
+    label = 'com.heily.FreeBSD-11.0'
+    room = Room.new(label)
+    @index = TagIndex.new
+    @index.construct(room)
+    raise 'hi'
   end
 end
 

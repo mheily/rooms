@@ -19,6 +19,7 @@ class Room
   class Tag
     require 'json'
     require 'pp'
+    require 'securerandom'
   
     require_relative 'log'
     
@@ -26,6 +27,38 @@ class Room
       @data = parsed_json
       @uuid = @data['uuid']
       @logger = Room::Log.instance.logger
+    end
+    
+    # Given a simple ZFS snapshot, create a tag
+    def self.from_snapshot(snapshot_name, room)
+      meta = { 
+        'name' => snapshot_name,
+        'uuid' => SecureRandom.uuid,
+        'format' => 'zfs',
+        'compression' => 'xz',
+        'zfs' => Hash.new,
+      }
+      
+      all_tags = room.tags
+      if snapshot_name == all_tags[0]
+        meta['zfs']['incremental_source'] = ''
+        meta['zfs']['origin'] = room.dataset_origin
+      else
+        raise 'boom, need to figure out source'
+      end
+      outfile = room.mountpoint + '/tags/' + meta['uuid']
+      snapshot_ref = "#{room.dataset}/share@#{snapshot_name}"
+      system("/sbin/zfs send #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
+      system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
+      File.unlink(outfile + '.raw')
+      meta['sha512'] = `sha512 -q #{outfile}`.chomp
+      raise 'sha512 failed' if $? != 0
+      
+      File.open("#{outfile}.json", "w") { |f|
+        f.puts JSON.pretty_generate(meta)
+      }
+ 
+      meta
     end
   
     # @param scp [Net::SCP] a session

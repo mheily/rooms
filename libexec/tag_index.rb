@@ -19,6 +19,8 @@ class TagIndex
   require 'json'
   require 'pp'
   
+  require_relative 'tag'
+  
   attr_accessor :scp
   
   # @param scp [Net::SCP] open connection to the remote server
@@ -28,6 +30,25 @@ class TagIndex
     @scp = scp
     @remote_path = remote_path
     fetch if @scp and @remote_path
+  end
+  
+  # Construct an index for a local room
+  def construct(room)
+    raise ArgumentError unless room.kind_of?Room
+    indexfile = room.mountpoint + '/etc/tags.json'
+    if File.exist?(indexfile)
+      raise 'todo'
+    else
+      system "rm -f #{room.mountpoint}/tags/*"
+      room.tags.each do |tag|
+        puts tag
+        meta = Room::Tag.from_snapshot(tag, room)
+        pp meta
+        raise 'todo'
+      end
+    end
+    
+    raise 'woot'
   end
   
   def parse(json)

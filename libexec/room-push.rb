@@ -103,7 +103,7 @@ end
 def push_via_ssh(room_name, uri)
   user = `whoami`.chomp
   
-  room = Room.new(room_name, logger)
+  room = Room.new(room_name)
   
   if uri.nil? or uri.empty?
     uri = room.origin 
