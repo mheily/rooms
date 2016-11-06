@@ -5,6 +5,7 @@ require 'minitest/autorun'
 class TestTagIndex < Minitest::Test
   require_relative '../../libexec/tag_index.rb'
   require_relative '../../libexec/room.rb'
+  require_relative 'micro_room'
 
   @@fixture = <<-__EOF__
   {
@@ -44,9 +45,8 @@ class TestTagIndex < Minitest::Test
   end
   
   def test_construct
-    # FIXME: depends on the existence of com.heily.FreeBSD-11.0
-    label = 'com.heily.FreeBSD-11.0'
-    room = Room.new(label)
+    label = 'test.construct.' + $$.to_s
+    room = Room.build(MicroRoom.new(label).specfile)
     @index = TagIndex.new
     @index.construct(room)
     raise 'hi'

@@ -25,6 +25,7 @@ class Room
 
   require_relative 'log'
   require_relative 'room_uri'
+  require_relative 'spec'
   require_relative 'utility'
   
   attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
@@ -39,6 +40,13 @@ class Room
     @logger = Room::Log.instance.logger
   end
  
+  def Room.build(specfile)
+    spec = Room::Spec.new
+    spec.load_file(specfile)
+    spec.build
+    Room.new(spec['label'])
+  end
+
   def exist?
     Room.exist?(@name)
   end

@@ -1,6 +1,7 @@
 #!/bin/sh -ex
 
 remote_base="ssh://arise.daemonspawn.org/home/mark/rooms"
+base_txz="file://$(pwd)/fixtures/test/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz"
 
 rebuild() {
 	cd ..

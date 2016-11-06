@@ -1,0 +1,36 @@
+{
+  "api": {
+    "version": 0
+  },
+  "label": "<%= @label %>",
+  "name": "<%= @label %>",
+  "description": "FreeBSD 11.0 micro instance",
+  "permissions": {
+ 	"allowX11Clients": false,
+    "shareTempDir": false,
+    "shareHomeDir": false,
+  },
+  "base": {
+    "uri": "file://<%= @fixturedir %>/FreeBSD-11.0-micro-jailroot.tar.xz",
+    "sha512": "01470c7a745771397abd18c92306f2ac78d9f73fef11ddc1c4f01e9a50aee844f267f8acf399d0cd83e54966ddae9b8158812f2148ba23b74d6265be13c579ed",
+    "type": "archive",
+    "tag": "base",
+    "script": <<EOF
+mkdir /test-base
+EOF
+  },
+  "tags": [
+    {
+      "name": "test-tag1",
+      "script": <<EOF
+mkdir /test-tag1
+EOF
+    },
+    {
+      "name": "test-tag2",  
+      "script": <<EOF
+mkdir /test-test2
+EOF
+    }
+  ]
+}
