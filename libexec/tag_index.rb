@@ -15,68 +15,98 @@
 #
 
 # A data structure containing metadata for all of the tags of a room
-class TagIndex
-  require 'json'
-  require 'pp'
-  
-  require_relative 'tag'
-  
-  attr_accessor :scp
-  
-  # @param scp [Net::SCP] open connection to the remote server
-  # @param remote_path [String] path to the remote room
-  def initialize(json: nil, scp: nil, remote_path: nil)
-    parse(json) if json
-    @scp = scp
-    @remote_path = remote_path
-    fetch if @scp and @remote_path
-  end
-  
-  # Construct an index for a local room
-  def construct(room)
-    raise ArgumentError unless room.kind_of?Room
-    indexfile = room.mountpoint + '/etc/tags.json'
-    if File.exist?(indexfile)
-      raise indexfile + ': already exists'
-    else
-      system "rm -f #{room.mountpoint}/tags/*"
-      result = {'api' => { 'version' => 0 }, 'tags' => []}
-      room.tags.each do |tag|
-        meta = Room::Tag.from_snapshot(tag, room)
-        result['tags'] << meta
+class Room
+  class TagIndex
+    require 'json'
+    require 'pp'
+    
+    require_relative 'tag'
+    require_relative 'log'
+    
+    attr_accessor :scp, :local_path
+    
+    # @param scp [Net::SCP] open connection to the remote server
+    # @param remote_path [String] path to the remote room
+    def initialize(json: nil, scp: nil, local_path: nil, remote_path: nil)
+      raise ArgumentError if local_path && json
+      
+      load_file(local_path) if local_path
+      parse(json) if json
+      @scp = scp
+      @local_path = nil
+      @remote_path = remote_path
+      fetch if @scp and @remote_path
+    end
+    
+    def load_file(path)
+      @local_path = path + '/etc/tags.json'
+      logger.debug "loading index from #{@local_path}"
+      raise Errno::ENOENT, @local_path unless File.exist?(@local_path)
+      buf = File.open(path, 'r').readlines.join
+      parse(buf)
+    end
+    
+    # Construct an index for a local room
+    def construct(room)
+      raise ArgumentError unless room.kind_of?Room
+      
+      indexfile = room.mountpoint + '/etc/tags.json'
+      if File.exist?(indexfile)
+        logger.debug "skipping; index already exists"
+      else
+        system "rm -f #{room.mountpoint}/tags/*"
+        result = {'api' => { 'version' => 0 }, 'tags' => []}
+        room.tags.each do |tag|
+          meta = Room::Tag.from_snapshot(tag, room)
+          result['tags'] << meta
+        end
+        File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
       end
-      File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
+    end
+    
+    def parse(json)
+      begin
+      @json = JSON.parse(json)
+      rescue => e
+        puts "error in JSON: #{json}"
+        raise e
+      end
+    end
+    
+    def fetch
+      data = @scp.download!(@remote_path + '/tags.json')
+      @json = JSON.parse(data)
+    end
+  
+    def push
+      @scp.upload!(@local_path, @remote_path + '/tags.json')
+    end
+      
+    # The names of all tags
+    def names
+      @json['tags'].map { |ent| ent['name'] }
+    end
+    
+    def to_s
+      @json['tags'].pretty_inspect
+    end
+    
+    # Delete a tag from the index.
+    # Does not actually touch the ZFS snapshot.
+    def delete(name: nil, uuid: nil)
+      raise ArgumentError if name && uuid
+      raise ArgumentError, 'UUID not implemented' unless name
+      new_tags = [@json['tags'].find { |ent| ent['name'] != name }].flatten
+      @json['tags'] = new_tags
+    end
+    
+    private
+    
+    def logger
+      Room::Log.instance.logger
     end
   end
-  
-  def parse(json)
-    @json = JSON.parse(json)
-  end
-  
-  def fetch
-    data = @scp.download!(@remote_path + '/tags.json')
-    @json = JSON.parse(data)
-  end
-  
-  # The names of all tags
-  def names
-    @json['tags'].map { |ent| ent['name'] }
-  end
-  
-  def to_s
-    @json['tags'].pretty_inspect
-  end
-  
-  # Delete a tag from the index.
-  # Does not actually touch the ZFS snapshot.
-  def delete(name: nil, uuid: nil)
-    raise ArgumentError if name && uuid
-    raise ArgumentError, 'UUID not implemented' unless name
-    new_tags = [@json['tags'].find { |ent| ent['name'] != name }].flatten
-    @json['tags'] = new_tags
-  end
 end
-
 __END__
 
 def download_tags

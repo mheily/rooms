@@ -44,7 +44,10 @@ class Room
     spec = Room::Spec.new
     spec.load_file(specfile)
     spec.build
-    Room.new(spec['label'])
+    room = Room.new(spec['label'])
+    index = Room::TagIndex.new
+    index.construct(room)
+    return room
   end
 
   def exist?
@@ -175,6 +178,9 @@ class Room
     @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
     @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
     @json = JSON.parse options_json
+    if File.exist? "#{@mountpoint}/etc/tags.json"
+      @tag_index = Room::TagIndex.new(local_path: @mountpoint)
+    end
   end  
   
   def save_options

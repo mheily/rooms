@@ -28,7 +28,6 @@ class MicroRoom
     renderer = ERB.new(template)
     result = renderer.result(binding)
     ucl_tempfile.write(result)
-    puts result
     ucl_tempfile.flush
     @specfile = ucl_tempfile.path
   end

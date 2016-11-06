@@ -28,7 +28,7 @@ class TestTagIndex < Minitest::Test
   __EOF__
   
   def setup
-    @index = TagIndex.new(json: @@fixture) 
+    @index = Room::TagIndex.new(json: @@fixture) 
   end
   
   def test_names
@@ -48,18 +48,18 @@ class TestTagIndex < Minitest::Test
     label = 'test.construct.' + $$.to_s
     at_exit { system "room #{label} destroy" }
     room = Room.build(MicroRoom.new(label).specfile)
-    @index = TagIndex.new
+    @index = Room::TagIndex.new
     @index.construct(room)
     system "cat /room/mark/#{label}/etc/tags.json"
   end
 end
 
-class TestRemoteTagIndex < Minitest::Test
-  require 'net/scp'
-  
-  def test_remote_fetch
-    scp = Net::SCP.start("arise.daemonspawn.org", ENV['LOGNAME'])
-    index = TagIndex.new(scp: scp, remote_path: '/home/mark/rooms/fbsd11') 
-    assert_equal %w(base), index.names
-  end
-end
+#class TestRemoteTagIndex < Minitest::Test
+#  require 'net/scp'
+#  
+#  def test_remote_fetch
+#    scp = Net::SCP.start("arise.daemonspawn.org", ENV['LOGNAME'])
+#    index = Room::TagIndex.new(scp: scp, remote_path: '/home/mark/rooms/fbsd11') 
+#    assert_equal %w(base), index.names
+#  end
+#end

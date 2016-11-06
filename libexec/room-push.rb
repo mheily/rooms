@@ -27,32 +27,6 @@ require_relative 'room'
 
 include RoomUtility
 
-def upload_file(ssh, src, dest)
-  logger.debug "uploading #{src} to #{dest}"
-  dest_uri = URI(dest)
-  system('scp', src, dest_uri.host + ':' + dest_uri.path) or raise 'scp failed'
-  return
-  # DEADWOOD
-  logger.debug "uploading #{src} to #{dest}"
-  ssh.open_channel do |channel|
-    channel.exec("cat > #{Shellwords.escape(dest)}") do |ch, success|
-      raise 'command failed' unless success
-         
-      File.open(src, 'r') do |f|
-        until f.eof?
-          buf = f.read(10 * 1024**3)
-          channel.send_data(buf)
-          puts '.' # FIXME: use a progress bar
-        end
-      end
- 
-      channel.eof!
-      channel.close
-    end
-  end
-  raise 'lookatme'
-end
-
 def upload_tag(ssh, room, index, tagfile)
   tags = room.tags
   tag = tags[index]
