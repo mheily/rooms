@@ -22,6 +22,7 @@ require 'net/http'
 require 'tempfile'
 require 'uri'
 require_relative 'room'
+require_relative 'remote_room'
 
 include RoomUtility
 
@@ -32,7 +33,6 @@ def main
   template_tag = ARGV[2]
   raise "usage: #{$PROGRAM_NAME} <uri or name> [name] [tag]" unless base_uri
   
-  setup_logger
   #setup_tmpdir
 
   uri = base_uri.uri

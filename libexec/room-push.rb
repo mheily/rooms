@@ -19,6 +19,7 @@ require "json"
 require "pp"
 require 'logger'
 require 'net/http'
+require 'net/scp'
 require 'net/ssh'
 require 'shellwords'
 require 'tempfile'
@@ -73,12 +74,7 @@ def upload_tag(ssh, room, index, tagfile)
   logger.debug 'tag uploaded successfully'
 end
 
-# FIXME: uri is modified by this function, would be better to have a #canonicalize_uri method do this 
-def push_via_ssh(room_name, uri)
-  user = `whoami`.chomp
-  
-  room = Room.new(room_name)
-  
+def check_origin(room, uri)
   if uri.nil? or uri.empty?
     uri = room.origin 
     if uri.nil?
@@ -88,46 +84,66 @@ def push_via_ssh(room_name, uri)
   end
    
   if room.tags.empty?
-    raise "Room has no tags. You must create at least one tag before pushing."
+    logger.error "Room has no tags. You must create at least one tag before pushing."
+    exit 1
   end
-
-  Net::SSH.start(URI(uri).host) do |ssh|
-    
-    if uri =~ /\/~\//
-      logger.debug "converting ~ into a real path; uri=#{uri}"
-      remote_home = ssh.exec!('echo $HOME').chomp
-      uri.sub!(/\/~\//, remote_home + '/')
-      logger.debug "remote home is #{remote_home}, new URI is #{uri}"
-    end
   
-    room.origin = uri
-    uri = URI(uri)
-    path = uri.path
-  
-    raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
-    puts "pushing room #{room.name} to #{uri.to_s}"
-      
-    basedir = path
-    logger.debug "creating #{basedir} directory tree"
-    ssh.exec!("install -d -m 755 #{Shellwords.escape(basedir)} #{Shellwords.escape(basedir + '/tags')}")
-    
-    logger.debug "uploading options.json"
-    ssh.exec!("echo #{Shellwords.escape room.options_json} > #{Shellwords.escape(basedir)}/options.json")
+  logger.debug 'All preflight checks passed'
+  return uri
+end
 
-    logger.debug "getting tags from remote server"
-    remote_tags_path = Shellwords.escape(basedir) + "/tags.json"
-    buf = ssh.exec!("test -e #{remote_tags_path} && cat #{remote_tags_path}")
-    if buf.empty?
-      remote_tags = {'tags'=> []}
-    else
-      remote_tags = JSON.parse(buf)
-    end
-    logger.debug "tags: local=#{room.tags.inspect} remote=#{remote_tags.inspect}"
+def push_via_ssh(room_name, uri)
+  user = `whoami`.chomp
+  room = Room.new(room_name)
+  uri = check_origin(room, uri) # FIXME: uri is modified by this function, would be better to have a #canonicalize_uri method do this 
+  
+  room.reindex
+  
+  @ssh = Net::SSH.start(URI(uri).host)
+
+    # DEADWOOD - Bad idea, lets just force fully qualified paths
+#    if uri =~ /\/~\//
+#      logger.debug "converting ~ into a real path; uri=#{uri}"
+#      remote_home = ssh.exec!('echo $HOME').chomp
+#      uri.sub!(/\/~\//, remote_home + '/')
+#      logger.debug "remote home is #{remote_home}, new URI is #{uri}"
+#    end
+  
+   room.origin = uri
+   uri = URI(uri)
+   path = uri.path
+  
+   raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
+   puts "pushing room #{room.name} to #{uri.to_s}"
+   
+   basedir = path
+   safe_basedir = Shellwords.escape(basedir)
+   
+   logger.debug "checking if #{basedir} exists"
+   remote_exists = ! @ssh.exec!("ls #{safe_basedir} 2>/dev/null").chomp.empty?
+   unless remote_exists
+     logger.debug "creating #{basedir} directory tree"
+     @ssh.exec!("install -d -m 755 #{safe_basedir} #{safe_basedir + '/tags'}")
+   end
+
+   logger.debug "uploading options.json"
+   @ssh.scp.upload!(room.mountpoint + '/etc/options.json', "#{basedir}/options.json")
+
+   remote_tags = {'tags'=> []}
+   remote_tags_path = basedir + "/tags.json"
+   if remote_exists
+     logger.debug "getting tags from remote server; path=#{remote_tags_path}"
+     buf = @ssh.scp.download!(remote_tags_path)
+     remote_tags = JSON.parse(buf)
+   else
+     logger.debug "newly created remote; no tags exist yet"
+   end
+   logger.debug "tags: local=#{room.tags.inspect} remote=#{remote_tags.inspect}"
      
-    remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
-    i = 0
-    refresh = false
-    room.tags.each do |tag|
+   remote_tag_names = remote_tags['tags'].map { |ent| ent['name'] }
+   i = 0
+   refresh = false
+   room.tags.each do |tag|
       
     # Special case: do not upload the first tag if the room is a clone
     if i == 0 and room.is_clone?
@@ -136,32 +152,18 @@ def push_via_ssh(room_name, uri)
         next
     end
 
-      if remote_tag_names.include? tag
-        logger.debug "tag #{tag} already exists; skipping"
-      else
-        tagfile = basedir + '/tags/' + tag
-        upload_tag(ssh, room, i, tagfile)
-        refresh = true
-      end
-      i += 1
-    end
-    
-    if refresh
-      logger.debug "uploading tags.json: #{room.tags_json}"
-      ssh.exec!("echo #{Shellwords.escape room.tags_json} > #{Shellwords.escape(basedir)}/tags.json")
-    end
-
-    # XXX-should have a 'tmp' directory in each room for this kind of thing
-    archive = room.mountpoint + "/local/#{room.name}.zfs"
-    if File.exist?(archive + '.xz')
-      logger.warn "Archive #{archive}.xz already exists; will try re-uploading it"
+    if remote_tag_names.include? tag
+      logger.debug "tag #{tag} already exists; skipping"
     else
-      room.create_tags_archive(archive)
-      system('xz', archive) or raise 'xz failed'
+      room.index.tag(name: tag).upload(scp: @ssh.scp, remote_path: basedir)
+      refresh = true
     end
-    archive += '.xz'
-    upload_file(ssh, archive, uri.to_s + '/tags.zfs.xz')
-    File.unlink archive
+    i += 1
+  end
+    
+  if refresh
+    logger.debug "uploading tags.json: #{room.tags_json}"
+    @ssh.scp.upload!(room.mountpoint + '/etc/tags.json', "#{basedir}/tags.json")
   end
 end
 
@@ -170,8 +172,7 @@ def main
   room, origin = ARGV[0], ARGV[1].dup
   raise "usage: #{$PROGRAM_NAME} <room> [origin]" unless room
   
-  setup_logger
-  setup_tmpdir
+  #setup_tmpdir
 
   push_via_ssh room, origin
   logger.debug 'push complete'

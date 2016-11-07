@@ -27,7 +27,11 @@ class Room
 
     def initialize
       @logger = Logger.new(STDOUT)
-      @logger.level = Logger::DEBUG
+      if ENV['ROOM_DEBUG']
+        @logger.level = Logger::DEBUG
+      else
+        @logger.level = Logger::INFO
+      end
     end
   end
 end

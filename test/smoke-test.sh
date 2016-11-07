@@ -1,6 +1,7 @@
 #!/bin/sh -ex
 
-remote_base="ssh://arise.daemonspawn.org/home/mark/rooms"
+remote_host="arise.daemonspawn.org"
+remote_base="ssh://${remote_host}/home/mark/rooms"
 base_txz="file://$(pwd)/fixtures/test/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz"
 
 rebuild() {
@@ -68,10 +69,13 @@ test5() {
 }
 
 test6() {
-	#room smoketest-base create --uri=file://`pwd`/base.txz
-	#room smoketest-base tag tag1 create
-	#room smoketest-base push -u $remote_base/smoketest-base
-	
+	room list | grep -q smoketest-base || {
+		room smoketest-base create --uri=file://`pwd`/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz
+		room smoketest-base tag tag1 create
+	}
+	ssh $remote_host 'rm -rf ~/rooms/smoketest-base'
+	room smoketest-base push -v -u $remote_base/smoketest-base
+	echo 'testing';exit 1
 	room smoketest-clone destroy || true
 	room smoketest-base destroy || true
 	

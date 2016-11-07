@@ -29,7 +29,6 @@ def main
   name = ARGV[0]
   raise 'usage: room-pull <name>' unless name
 
-  setup_logger
   setup_tmpdir  
   
   room = Room.new(name, logger)

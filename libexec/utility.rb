@@ -15,25 +15,16 @@
 #
 
 # Utility functions for working with rooms
-module RoomUtility
-  def setup_logger
-    @logger = Logger.new(STDOUT)
-    if ENV['ROOM_DEBUG']
-      @logger.level = Logger::DEBUG
-    else
-      @logger.level = Logger::INFO
-    end
-  end
-  
+module RoomUtility 
   def setup_tmpdir
     @tmpdir = Dir.mktmpdir($PROGRAM_NAME.sub(/.*\//, ''))
     at_exit { system "rm -rf #{@tmpdir}" if File.exist?(@tmpdir) }
   end
-    
+
   def logger
-    @logger
+    @logger ||= Room::Log.instance.logger
   end
-  
+    
   def system(*args)
     logger.debug 'running: ' + args.join(' ')
     Kernel.system(*args)

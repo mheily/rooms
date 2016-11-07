@@ -23,12 +23,14 @@ class Room
   
     require_relative 'log'
     
-    def initialize(parsed_json)
+    def initialize(room, parsed_json)
+      @room = room
       @data = parsed_json
       @uuid = @data['uuid']
-      @logger = Room::Log.instance.logger
     end
     
+    def name ; @data['name'] ; end
+      
     # Given a simple ZFS snapshot, create a tag
     def self.from_snapshot(snapshot_name, room)
       meta = { 
@@ -70,9 +72,23 @@ class Room
       raise ArgumentError unless scp && remote_path && destdir
       src = remote_path + '/tags/' + @uuid
       dst = destdir + '/tags'
-      @logger.info "Dowloading #{src} to #{dst}"
+      logger.info "Dowloading #{src} to #{dst}"
       data = scp.download!(src, dst)
     end
-  
+
+    # @param scp [Net::SCP] a session
+    # @param remote_path [String] the remote directory where the room is stored
+    # @param destdir [String] the directory to download the tag to   
+    def upload(scp: nil, remote_path: nil)
+      raise ArgumentError unless scp && remote_path
+      tagdir = @room.mountpoint + '/tags' 
+      [@data['uuid'], @data['uuid'] + '.json'].each do |filename|
+        src = tagdir + '/' + filename
+        dst = remote_path + '/tags/' + filename
+        logger.info "Uploading #{src} to #{dst}"
+        data = scp.upload!(src, dst)
+      end
+    end    
+    
   end
 end

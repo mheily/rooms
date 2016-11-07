@@ -22,42 +22,50 @@ class Room
     
     require_relative 'tag'
     require_relative 'log'
-    
-    attr_accessor :scp, :local_path
-    
-    # @param scp [Net::SCP] open connection to the remote server
-    # @param remote_path [String] path to the remote room
-    def initialize(json: nil, scp: nil, local_path: nil, remote_path: nil)
-      raise ArgumentError if local_path && json
-      
-      load_file(local_path) if local_path
-      parse(json) if json
-      @scp = scp
-      @local_path = nil
-      @remote_path = remote_path
-      fetch if @scp and @remote_path
+
+    def initialize(room)
+      @room = room
     end
     
     def load_file(path)
       @local_path = path + '/etc/tags.json'
       logger.debug "loading index from #{@local_path}"
       raise Errno::ENOENT, @local_path unless File.exist?(@local_path)
-      buf = File.open(path, 'r').readlines.join
+      buf = File.open(@local_path, 'r').readlines.join
+      logger.debug "loaded; buf=#{buf}"
       parse(buf)
     end
     
+    def tags
+      if @tags.nil?
+        @tags = []
+        @json['tags'].each do |ent|
+          @tags << Room::Tag.new(@room, ent)
+        end
+      end
+      @tags
+    end
+    
+    def tag(name: nil, uuid: nil)
+      raise ArgumentError if name && uuid     
+      if name
+        tags.each { |x| return x if x.name == name }
+      elsif uuid
+        raise 'todo'
+      end
+      raise Errno::ENOENT
+    end
+    
     # Construct an index for a local room
-    def construct(room)
-      raise ArgumentError unless room.kind_of?Room
-      
-      indexfile = room.mountpoint + '/etc/tags.json'
+    def construct   
+      indexfile = @room.mountpoint + '/etc/tags.json'
       if File.exist?(indexfile)
         logger.debug "skipping; index already exists"
       else
-        system "rm -f #{room.mountpoint}/tags/*"
+        system "rm -f #{@room.mountpoint}/tags/*"
         result = {'api' => { 'version' => 0 }, 'tags' => []}
         room.tags.each do |tag|
-          meta = Room::Tag.from_snapshot(tag, room)
+          meta = Room::Tag.from_snapshot(tag, @room)
           result['tags'] << meta
         end
         File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
@@ -72,8 +80,16 @@ class Room
         raise e
       end
     end
+
+    # @param scp [Net::SCP] open connection to the remote server
+    # @param remote_path [String] path to the remote room       
+    def connect(scp, remote_path)
+      @scp = scp
+      @remote_path = remote_path
+    end
     
     def fetch
+      raise 'not connected' unless @scp
       data = @scp.download!(@remote_path + '/tags.json')
       @json = JSON.parse(data)
     end

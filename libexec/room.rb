@@ -27,6 +27,7 @@ class Room
   require_relative 'room_uri'
   require_relative 'spec'
   require_relative 'utility'
+  require_relative 'tag_index'
   
   attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
   
@@ -45,11 +46,23 @@ class Room
     spec.load_file(specfile)
     spec.build
     room = Room.new(spec['label'])
-    index = Room::TagIndex.new
-    index.construct(room)
+    reindex
     return room
   end
 
+  def index
+    if @index.nil?
+      @index = Room::TagIndex.new(self)
+      @index.load_file(@mountpoint)
+    end
+    @index
+  end
+  
+  def reindex
+    index = Room::TagIndex.new(self)
+    index.construct
+  end
+  
   def exist?
     Room.exist?(@name)
   end
