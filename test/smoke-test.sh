@@ -68,14 +68,24 @@ test5() {
 	room smoketest destroy -v
 }
 
+test6_clone() {
+	echo 'testing room-clone of remote'
+	room clone -v $remote_base/smoketest-base
+}
+
 test6() {
 	room list | grep -q smoketest-base || {
 		room smoketest-base create --uri=file://`pwd`/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz
 		room smoketest-base tag tag1 create
 	}
+	
+	echo 'testing room-push'
 	ssh $remote_host 'rm -rf ~/rooms/smoketest-base'
 	room smoketest-base push -v -u $remote_base/smoketest-base
-	echo 'testing';exit 1
+
+	test6_clone
+		
+	echo 'FIXME--INCOMPLETE';exit 1
 	room smoketest-clone destroy || true
 	room smoketest-base destroy || true
 	

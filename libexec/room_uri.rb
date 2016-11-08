@@ -22,8 +22,13 @@ class RoomURI
   
   def initialize(uri)
     @original = uri
-    @canonical = canonicalize(uri)
+    @canonical = canonicalize(uri.to_s)
     @uri = URI(@canonical)
+  end
+  
+  # The room name
+  def name
+    @original.gsub(/.*\//, '')
   end
   
   private

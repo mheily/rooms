@@ -20,21 +20,22 @@ class RemoteRoom
   require 'logger'
   require 'net/scp'
 
+  require_relative 'log'
   require_relative 'room_options' 
   require_relative 'tag_index'
   require_relative 'room_uri'
 
+  include RoomUtility
+  
   attr_reader :uri, :name, :path
   
-  def initialize(uri: nil, local_name: nil, logger: nil, tmpdir: nil)
-    raise 'invalid usage' unless uri and local_name and logger and tmpdir
+  def initialize(uri: nil, local_name: nil)
+    raise 'invalid usage' unless uri and local_name
     @uri = RoomURI.new(uri).uri
     @local_name = local_name
     @user = `whoami`.chomp
     @name = @uri.path.sub(/.*\//, '')
     @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
-    @logger = logger
-    @tmpdir = tmpdir
     logger.debug "initialized; name=#{@name} uri=#{@uri} path=#{@path}"
   end
 
@@ -79,11 +80,7 @@ class RemoteRoom
   # Get information about the remote room
   def fetch
     @options = RoomOptions.new(scp: @scp, remote_path: @path)
-    @tag_index = TagIndex.new(scp: @scp, remote_path: @path)
-  end
-   
-  def logger
-    @logger
+    @tag_index = Room::TagIndex.new(scp: @scp, remote_path: @path)
   end
   
   private

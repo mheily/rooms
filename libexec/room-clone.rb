@@ -28,18 +28,24 @@ include RoomUtility
 
 def main
   user = `whoami`.chomp
+  
   base_uri = RoomURI.new(ARGV[0])
-  name = ARGV[1] || base_uri.gsub(/.*\//, '')
+
+  if ARGV[1].empty?
+    name = base_uri.name
+  else
+    name = ARGV[1]
+  end
+
   template_tag = ARGV[2]
   raise "usage: #{$PROGRAM_NAME} <uri or name> [name] [tag]" unless base_uri
-  
-  #setup_tmpdir
 
   uri = base_uri.uri
   
   if %w(http https ssh).include? uri.scheme
     logger.debug "cloning: uri=#{uri} name=#{name}"
-    room = RemoteRoom.new(uri, logger)
+
+    room = RemoteRoom.new(uri: uri, local_name: name)
     room.connect
     room.clone(name)
   elsif uri.scheme == 'room' and uri.host == 'localhost'
