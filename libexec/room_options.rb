@@ -18,14 +18,55 @@
 class RoomOptions
   require 'json'
   require 'pp'
-   
-  # @param scp [Net::SCP] open connection to the remote server
-  # @param remote_path [String] path to the remote room
-  def initialize(json: nil, scp: nil, remote_path: nil)
-    parse(json) if json
-    @scp = scp
-    @remote_path = remote_path
-    fetch if @scp and @remote_path
+     
+  def initialize(basedir)
+    @basedir = basedir
+    @json = {
+        "api" => {
+          "version" => "0"
+        },
+        "permissions"  => {
+          "allowX11Clients" => "false",
+          "shareTempDir" => "false",
+          "shareHomeDir" => "false"
+        },
+        "uuid" => nil,
+        "display" => {
+          "isHidden" => "false"
+        },
+        "template" => {
+          "uri" => "",
+          "snapshot" => ""
+        },
+        "remotes" => {
+          "origin" => ""
+        }
+    }
+    
+    if exist?
+      buf = File.open(conffile).readlines.join('')
+      parse(buf)
+    end    
+  end
+
+  def exist?
+    File.exist?(conffile)
+  end
+  
+  def template_uri
+    @json['template']['uri']
+  end
+  
+  def origin
+    @json['remotes']['origin']
+  end
+  
+  def origin=(uri)
+    @json['remotes']['origin'] = uri
+  end
+  
+  def validate
+    raise 'uuid cannot be empty' if @json['uuid'].nil?
   end
   
   def parse(json)
@@ -36,12 +77,25 @@ class RoomOptions
     data = @scp.download!(@remote_path + '/options.json')
     @json = JSON.parse(data)
   end
-   
+  
+  # FIXME:
+  def sync
+    File.open("#{mountpoint}/etc/options.json", "w") do |f|
+      f.puts JSON.pretty_generate(@json)
+    end
+  end
+  
   def to_s
     @json.pretty_inspect
   end
   
   def [](key)
     @json[key.to_s]
+  end
+  
+  private
+  
+  def conffile
+    @basedir + '/etc/options.json'
   end
 end

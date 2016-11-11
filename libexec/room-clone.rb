@@ -22,7 +22,6 @@ require 'net/http'
 require 'tempfile'
 require 'uri'
 require_relative 'room'
-require_relative 'remote_room'
 
 include RoomUtility
 
@@ -45,9 +44,9 @@ def main
   if %w(http https ssh).include? uri.scheme
     logger.debug "cloning: uri=#{uri} name=#{name}"
 
-    room = RemoteRoom.new(uri: uri, local_name: name)
-    room.connect
-    room.clone(name)
+    room = Room.new(name)
+    room.options.origin = uri
+    room.clone
   elsif uri.scheme == 'room' and uri.host == 'localhost'
     src_room = Room.new(uri.path, logger)
     src_name = uri.path.sub(/^\//, '')

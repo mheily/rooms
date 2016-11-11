@@ -22,16 +22,19 @@ class Room
     
     require_relative 'tag'
     require_relative 'log'
+    require_relative 'platform'
 
-    def initialize(room)
-      @room = room
+    attr_reader :tagdir
+    
+    def initialize(roomdir)
+      raise ArgumentError unless roomdir.is_a?(String)
+      @tagdir = roomdir + '/tags'
     end
     
-    def load_file(path)
-      @local_path = path + '/etc/tags.json'
-      logger.debug "loading index from #{@local_path}"
-      raise Errno::ENOENT, @local_path unless File.exist?(@local_path)
-      buf = File.open(@local_path, 'r').readlines.join
+    def load_file
+      logger.debug "loading index from #{indexfile}"
+      raise Errno::ENOENT,indexfile unless File.exist?(indexfile)
+      buf = File.open(indexfile, 'r').readlines.join
       logger.debug "loaded; buf=#{buf}"
       parse(buf)
     end
@@ -40,17 +43,19 @@ class Room
       if @tags.nil?
         @tags = []
         @json['tags'].each do |ent|
-          @tags << Room::Tag.new(@room, ent)
+          tag = Room::Tag.new(@tagdir)
+          tag.parse(ent)
+          @tags << tag
         end
       end
       @tags
     end
     
-    def tag(name: nil, uuid: nil)
-      raise ArgumentError if name && uuid     
-      if name
-        tags.each { |x| return x if x.name == name }
-      elsif uuid
+    def tag(opts)
+      raise ArgumentError unless opts.is_a? Hash     
+      if opts[:name]
+        tags.each { |x| return x if x.name == opts[:name] }
+      elsif opts[:name]
         raise 'todo'
       end
       raise Errno::ENOENT
@@ -58,11 +63,9 @@ class Room
     
     # Construct an index for a local room
     def construct   
-      indexfile = @room.mountpoint + '/etc/tags.json'
       if File.exist?(indexfile)
         logger.debug "skipping; index already exists"
       else
-        system "rm -f #{@room.mountpoint}/tags/*"
         result = {'api' => { 'version' => 0 }, 'tags' => []}
         room.tags.each do |tag|
           meta = Room::Tag.from_snapshot(tag, @room)
@@ -81,21 +84,36 @@ class Room
       end
     end
 
-    # @param scp [Net::SCP] open connection to the remote server
+    # @param sftp [Net::sftp] open connection to the remote server
     # @param remote_path [String] path to the remote room       
-    def connect(scp, remote_path)
-      @scp = scp
+    def connect(sftp, remote_path)
+      @sftp = sftp
       @remote_path = remote_path
     end
     
+    # Download the index and any new tags
     def fetch
-      raise 'not connected' unless @scp
-      data = @scp.download!(@remote_path + '/tags.json')
+      raise 'not connected' unless connected?
+      
+      # TODO: avoid using index.json and look at all the tags via SFTP
+      # Download all new tags
+#      @sftp.dir.foreach(path) do |entry|
+#        next if %w(. ..).include?(entry.name)
+#        puts entry.name
+#      end
+      
+      data = @sftp.download!(@remote_path + '/tags/index.json')
       @json = JSON.parse(data)
+      logger.debug "writing new #{indexfile}"
+      File.open(indexfile, 'w') { |f| f.puts data }
+      tags.each do |tag|
+        tag.connect(@sftp, @remote_path)
+        tag.fetch unless tag.exist?
+      end
     end
   
     def push
-      @scp.upload!(@local_path, @remote_path + '/tags.json')
+      @sftp.upload!(indexfile, @remote_path + '/tags/index.json')
     end
       
     # The names of all tags
@@ -109,15 +127,24 @@ class Room
     
     # Delete a tag from the index.
     # Does not actually touch the ZFS snapshot.
-    def delete(name: nil, uuid: nil)
-      raise ArgumentError if name && uuid
-      raise ArgumentError, 'UUID not implemented' unless name
+    def delete(opts)
+      raise ArgumentError unless opts.is_a?(Hash)
+      name = opts[:name]
       new_tags = [@json['tags'].find { |ent| ent['name'] != name }].flatten
       @json['tags'] = new_tags
     end
     
     private
+
+    # If we are connected to a remote index
+    def connected?
+      @sftp ? true : false
+    end
     
+    def indexfile
+      @tagdir + '/index.json'
+    end
+        
     def logger
       Room::Log.instance.logger
     end

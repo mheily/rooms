@@ -15,30 +15,33 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-# A room on localhost
+# A room on localhost with a optional remote associated with it
 class Room
   require "json"
   require "pp"
   require 'tempfile'
-  require 'net/ssh'
+  require 'net/sftp'
   require 'shellwords'
 
   require_relative 'log'
+  require_relative 'room_options'
   require_relative 'room_uri'
   require_relative 'spec'
   require_relative 'utility'
   require_relative 'tag_index'
   
-  attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags
+  attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags, :options
   
   include RoomUtility
   
   def initialize(name)
+    raise ArgumentError unless name.is_a?(String)
     @name = name
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
-    parse_options if exist?
     @logger = Room::Log.instance.logger
+    @options = RoomOptions.new(@mountpoint)
+    @tag_index = Room::TagIndex.new(@mountpoint)
   end
  
   def Room.build(specfile)
@@ -80,7 +83,7 @@ class Room
   end
   
   def is_clone?
-    @json['template']['uri'] != ''
+    @options.template_uri != ''
   end
   
   def has_tag?(name)
@@ -105,16 +108,7 @@ class Room
   def options_json
     `cat #{mountpoint}/etc/options.json`.chomp
   end
-  
-  def origin
-    @json['remotes']['origin']
-  end
-  
-  def origin=(uri)
-    @json['remotes']['origin'] = uri
-    save_options
-  end
-  
+    
   def template_uri=(s)
     @json['template']['uri'] = s
     save_options  
@@ -184,23 +178,56 @@ class Room
     f.close
   end
   
+  def clone
+    connect if @sftp.nil?
+    
+    if is_clone?
+      logger.info "Cloning #{@name} from the local template #{template_name}"
+
+      download_template
+      args = ['room', @name, 'create', '--clone', template_name, '--tag', template_tag]
+      args << '-v' if ENV['ROOM_DEBUG']
+      system(*args) or raise "unable to create room"
+      #TESTING: tags_copy.shift # The first tag comes from the template, not the remote room.
+
+      template_dataset = `df -h /room/#{@user}/#{template_name} | tail -1 | awk '{ print \$1 }'`.chomp
+    else
+      logger.info "Creating an empty room named #{@name}"
+      system('room', @name, 'create', '--empty') or raise "unable to create room"
+    end
+    
+    fetch
+  end
+  
   private
+
+  # Fetch remote metadata
+  def fetch
+    path = @options.origin.path
+    logger.debug "examining remote path #{path}"
+    
+    @tag_index.connect(@sftp, path)
+    @tag_index.fetch
+  end
+  
+  # Establish a SFTPconnection with the @origin
+  def connect
+    host = @options.origin.host
+    raise 'host missing' unless host
+    logger.debug "connecting to #{host}"
+    @sftp = Net::SFTP.start(host, @user)
+  end  
   
   # Load options.json and get some other random info
-  def parse_options
+  def DEADWOODISH_parse_options
     @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
     @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
     @json = JSON.parse options_json
     if File.exist? "#{@mountpoint}/etc/tags.json"
-      @tag_index = Room::TagIndex.new(local_path: @mountpoint)
+      @tag_index = Room::TagIndex.new(self)
     end
   end  
-  
-  def save_options
-    File.open("#{mountpoint}/etc/options.json", "w") do |f|
-      f.puts JSON.pretty_generate(@json)
-    end
-  end
+
   
 end
 

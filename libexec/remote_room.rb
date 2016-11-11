@@ -15,7 +15,7 @@
 #
 
 # A room on a remote server
-class RemoteRoom
+class RemoteRoomDEADWOOD
   require 'json'
   require 'logger'
   require 'net/scp'
@@ -36,58 +36,21 @@ class RemoteRoom
     @user = `whoami`.chomp
     @name = @uri.path.sub(/.*\//, '')
     @path = @uri.path.sub(/^\/~\//, './')  # support ssh://$host/~/foo notation
+    @local_room = Room.new(local_name)
+    @local_room.origin = @uri.to_s
     logger.debug "initialized; name=#{@name} uri=#{@uri} path=#{@path}"
-  end
-
-  def connect
-    host = uri.host
-    raise 'host missing' unless host
-    logger.debug "connecting to #{host}"
-    @scp = Net::SCP.start(host, @user)
-    fetch
-  end
-  
-  def clone(local_name)
-    local_name = @name if local_name.empty?
-    
-    tags_copy = @tag_index.names.dup
-    
-    if is_clone?
-      logger.info "Cloning #{local_name} from the local template #{template_name}"
-
-      download_template
-      args = ['room', local_name, 'create', '--clone', template_name, '--tag', template_tag]
-      args << '-v' if ENV['ROOM_DEBUG']
-      system(*args) or raise "unable to create room"
-      #TESTING: tags_copy.shift # The first tag comes from the template, not the remote room.
-
-      template_dataset = `df -h /room/#{@user}/#{template_name} | tail -1 | awk '{ print \$1 }'`.chomp
-
-      local_room = Room.new(local_name, logger)
-    else
-      logger.info "Creating an empty room named #{local_name}"
-      system('room', local_name, 'create', '--empty') or raise "unable to create room"
-    end
-    
-    tags_copy.each do |tag|
-      download_tag(tag, local_name)
-    end
-    
-    room = Room.new(local_name, logger)
-    room.origin = @uri.to_s
   end
   
   # Get information about the remote room
   def fetch
     @options = RoomOptions.new(scp: @scp, remote_path: @path)
-    @tag_index = Room::TagIndex.new(scp: @scp, remote_path: @path)
+    @tag_index = Room::TagIndex.new(@local_room)
+    @tag_index.connect(@scp, @path)
+    @tag_index.fetch
   end
   
   private
-    
-  def is_clone?
-    @options['template']['uri'] != ''
-  end
+   
   
   # The name of the template
   # KLUDGE: this forces the local room name to match the remote

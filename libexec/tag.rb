@@ -23,9 +23,20 @@ class Room
   
     require_relative 'log'
     
-    def initialize(room, parsed_json)
-      @room = room
-      @data = parsed_json
+    attr_accessor :tagdir
+    
+    def initialize(tagdir)
+      @data = nil
+      @tagdir = tagdir
+      #@room = room
+      #@data = parsed_json
+      #@uuid = @data['uuid']
+      #@tagdir = room.mountpoint + '/tags'
+    end
+    
+    def parse(h)
+      raise ArgumentError unless h.is_a? Hash
+      @data = h
       @uuid = @data['uuid']
     end
     
@@ -65,23 +76,25 @@ class Room
       meta
     end
   
-    # @param scp [Net::SCP] a session
-    # @param remote_path [String] the remote directory where the room is stored
-    # @param destdir [String] the directory to download the tag to   
-    def fetch(scp: nil, remote_path: nil, destdir: nil)
-      raise ArgumentError unless scp && remote_path && destdir
-      src = remote_path + '/tags/' + @uuid
-      dst = destdir + '/tags'
-      logger.info "Dowloading #{src} to #{dst}"
-      data = scp.download!(src, dst)
+    def connect(sftp, remote_path)
+      @sftp = sftp
+      @remote_path = remote_path
     end
-
-    # @param scp [Net::SCP] a session
-    # @param remote_path [String] the remote directory where the room is stored
-    # @param destdir [String] the directory to download the tag to   
-    def upload(scp: nil, remote_path: nil)
-      raise ArgumentError unless scp && remote_path
-      tagdir = @room.mountpoint + '/tags' 
+    
+    # Does the tag exist on the local host?
+    def exist?
+      File.exist? datafile
+    end
+    
+    def fetch
+      # TODO: Download the .json file too, even though it's not used yet
+      src = @remote_path + '/tags/' + @uuid
+      logger.info "Downloading #{src} to #{datafile}"
+      data = @sftp.download!(src, datafile)
+    end
+ 
+    def push
+      tagdir = @tagdir + '/tags' 
       [@data['uuid'], @data['uuid'] + '.json'].each do |filename|
         src = tagdir + '/' + filename
         dst = remote_path + '/tags/' + filename
@@ -90,5 +103,11 @@ class Room
       end
     end    
     
+    private
+    
+    # The file containing the actual tag data 
+    def datafile
+      @tagdir + '/' + @uuid
+    end
   end
 end
