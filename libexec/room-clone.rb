@@ -44,9 +44,17 @@ def main
   if %w(http https ssh).include? uri.scheme
     logger.debug "cloning: uri=#{uri} name=#{name}"
 
-    room = Room.new(name)
-    room.options.origin = uri
-    room.clone
+    begin
+      room = Room.new(name)
+      room.options.origin = uri
+      room.clone
+    rescue => e
+      logger.error "caught an exception in Room.clone"
+      logger.debug "destroying partially cloned room #{name}"
+      system "room #{name} destroy >/dev/null 2>&1"
+      raise e
+    end
+      
   elsif uri.scheme == 'room' and uri.host == 'localhost'
     src_room = Room.new(uri.path, logger)
     src_name = uri.path.sub(/^\//, '')

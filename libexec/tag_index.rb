@@ -109,14 +109,23 @@ class Room
 #        puts entry.name
 #      end
       
-      data = @sftp.download!(@remote_path + '/tags/index.json')
-      @json = JSON.parse(data)
-      logger.debug "writing new #{indexfile}"
-      File.open(indexfile, 'w') { |f| f.puts data }
-      tags.each do |tag|
-        tag.connect(@sftp, @remote_path)
-        tag.fetch unless tag.exist?
+      snaplist = snapshots
+      @sftp.dir.entries(@remote_path).each do |ent|
+        if ent.name =~ /\.json\z/
+          puts ent.name
+          snapname = ent.name.sub(/\.json\z/, '')
+          if snaplist.include? snapname
+            logger.debug 'skipping ' + snapname
+          else
+            logger.debug 'downloading ' + snapname
+            tag = Room::Tag.new(tagdir, snapname)
+            tag.connect(@sftp, @remote_path)
+            tag.fetch
+          end
+        end
       end
+      puts 'TODO - run ZFS recv on the tags'
+      exit 0
     end
   
     def push
@@ -162,7 +171,7 @@ class Room
         logger.debug "parsing #{path}"
         buf = File.open(path, 'r').readlines.join("\n")
         parsed_json = JSON.parse(buf)
-        tag = Room::Tag.new(@tagdir)
+        tag = Room::Tag.new(@tagdir, parsed_json['name'])
         tag.parse(parsed_json)
         @tags << tag
       end

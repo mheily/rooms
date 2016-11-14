@@ -26,9 +26,11 @@ class Room
     
     attr_accessor :tagdir, :logger
     
-    def initialize(tagdir)
+    def initialize(tagdir, name)
       @data = nil
       @tagdir = tagdir
+      @name = name
+      
       @logger = Room::Log.instance.logger
       #@room = room
       #@data = parsed_json
@@ -39,10 +41,11 @@ class Room
     def parse(h)
       raise ArgumentError unless h.is_a? Hash
       @data = h
+      raise 'name mismatch' unless @name == @data['name'] 
       @uuid = @data['uuid']
-      @name = @data['name']
+      @logger.debug "parsed: #{@data.pretty_inspect}"
     end
-    
+      
     def name ; @data['name'] ; end
       
     # Given a simple ZFS snapshot, create a tag
@@ -69,11 +72,14 @@ class Room
       outfile = room.mountpoint + '/tags/' + meta['name']
       snapshot_ref = "#{room.dataset}/share@#{snapshot_name}"
       system("/sbin/zfs send #{incremental_opts} #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
-      logger.error 'XZ is disabled for testing!! FIXME'
-#      system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
-#      File.unlink(outfile + '.raw')
-      meta['compression'] = 'none'
-      system "mv #{outfile}.raw #{outfile}.tag" or raise 'mv failed'
+      # TODO: support other compression engines
+      if true
+        system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
+        File.unlink(outfile + '.raw')
+      else
+        meta['compression'] = 'none'
+        system "mv #{outfile}.raw #{outfile}.tag" or raise 'mv failed'
+      end
       
       meta['sha512'] = `sha512 -q #{outfile}.tag`.chomp
       raise 'sha512 failed' if $? != 0
@@ -96,8 +102,14 @@ class Room
     end
     
     def fetch
-      # TODO: Download the .json file too, even though it's not used yet
-      src = @remote_path + '/' + @uuid
+      raise 'not connected' unless @remote_path
+
+      src = @remote_path + '/' + @name + '.json'
+      logger.info "Downloading #{src} to #{metadatafile}"
+      data = @sftp.download!(src, metadatafile)
+      load_metadata
+      
+      src = @remote_path + '/' + @name + '.tag'
       logger.info "Downloading #{src} to #{datafile}"
       data = @sftp.download!(src, datafile)
     end
@@ -127,6 +139,12 @@ class Room
     # The file containing the tag metadata 
     def metadatafile
       @tagdir + '/' + @name + '.json'
+    end
+
+    # Load metadata
+    def load_metadata
+      logger.debug 'loading ' + metadatafile
+      parse(JSON.parse(File.open(metadatafile, 'r').readlines.join('')))
     end
   end
 end

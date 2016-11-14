@@ -82,7 +82,7 @@ test6() {
 	echo 'testing room-push'
 	ssh $remote_host 'rm -rf ~/rooms/smoketest-base'
 	room smoketest-base push -v -u $remote_base/smoketest-base
-
+	room smoketest-base destroy
 	test6_clone
 		
 	echo 'FIXME--INCOMPLETE';exit 1
