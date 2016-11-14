@@ -20,14 +20,16 @@ class Room
     require 'json'
     require 'pp'
     require 'securerandom'
-  
+ 
     require_relative 'log'
+    require_relative 'platform'
     
-    attr_accessor :tagdir
+    attr_accessor :tagdir, :logger
     
     def initialize(tagdir)
       @data = nil
       @tagdir = tagdir
+      @logger = Room::Log.instance.logger
       #@room = room
       #@data = parsed_json
       #@uuid = @data['uuid']
@@ -38,12 +40,15 @@ class Room
       raise ArgumentError unless h.is_a? Hash
       @data = h
       @uuid = @data['uuid']
+      @name = @data['name']
     end
     
     def name ; @data['name'] ; end
       
     # Given a simple ZFS snapshot, create a tag
     def self.from_snapshot(snapshot_name, room)
+      raise 'bad dataset' unless room.dataset
+      
       meta = { 
         'name' => snapshot_name,
         'uuid' => SecureRandom.uuid,
@@ -61,12 +66,16 @@ class Room
         meta['zfs']['incremental_source'] = room.previous_snapshot(snapshot_name)
         incremental_opts = '-i ' + meta['zfs']['incremental_source']
       end
-      outfile = room.mountpoint + '/tags/' + meta['uuid']
+      outfile = room.mountpoint + '/tags/' + meta['name']
       snapshot_ref = "#{room.dataset}/share@#{snapshot_name}"
       system("/sbin/zfs send #{incremental_opts} #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
-      system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
-      File.unlink(outfile + '.raw')
-      meta['sha512'] = `sha512 -q #{outfile}`.chomp
+      logger.error 'XZ is disabled for testing!! FIXME'
+#      system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
+#      File.unlink(outfile + '.raw')
+      meta['compression'] = 'none'
+      system "mv #{outfile}.raw #{outfile}.tag" or raise 'mv failed'
+      
+      meta['sha512'] = `sha512 -q #{outfile}.tag`.chomp
       raise 'sha512 failed' if $? != 0
       
       File.open("#{outfile}.json", "w") { |f|
@@ -88,18 +97,23 @@ class Room
     
     def fetch
       # TODO: Download the .json file too, even though it's not used yet
-      src = @remote_path + '/tags/' + @uuid
+      src = @remote_path + '/' + @uuid
       logger.info "Downloading #{src} to #{datafile}"
       data = @sftp.download!(src, datafile)
     end
  
     def push
-      tagdir = @tagdir + '/tags' 
-      [@data['uuid'], @data['uuid'] + '.json'].each do |filename|
+      tagdir = @tagdir
+      [name + '.tag', name + '.json'].each do |filename|
         src = tagdir + '/' + filename
-        dst = remote_path + '/tags/' + filename
-        logger.info "Uploading #{src} to #{dst}"
-        data = scp.upload!(src, dst)
+        dst = @remote_path + '/' + filename
+        if @sftp.dir.entries(File.dirname(dst)).index { |e| e.name == File.basename(dst) }
+          logger.info "Skipping #{dst}; it already exists"
+        else
+          logger.info "Uploading #{src} to #{dst}"
+          @sftp.upload!(src, dst + ".tmp")
+          @sftp.rename!(dst + ".tmp", dst)
+        end
       end
     end    
     
@@ -107,7 +121,12 @@ class Room
     
     # The file containing the actual tag data 
     def datafile
-      @tagdir + '/' + @uuid
+      @tagdir + '/' + @name + '.tag'
+    end
+    
+    # The file containing the tag metadata 
+    def metadatafile
+      @tagdir + '/' + @name + '.json'
     end
   end
 end

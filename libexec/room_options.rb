@@ -19,7 +19,10 @@ class RoomOptions
   require 'json'
   require 'pp'
      
+  attr_accessor :logger
+  
   def initialize(basedir)
+    @logger = Room::Log.instance.logger
     @basedir = basedir
     @json = {
         "api" => {
@@ -62,6 +65,7 @@ class RoomOptions
   end
   
   def origin=(uri)
+    logger.debug "setting origin=#{uri}"
     @json['remotes']['origin'] = uri
   end
   
@@ -71,6 +75,10 @@ class RoomOptions
   
   def parse(json)
     @json = JSON.parse(json)
+  end
+  
+  def load_file(path)
+    parse(File.open(path, 'r').readlines.join(''))
   end
   
   def fetch

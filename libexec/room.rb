@@ -24,6 +24,7 @@ class Room
   require 'shellwords'
 
   require_relative 'log'
+  require_relative 'platform'
   require_relative 'room_options'
   require_relative 'room_uri'
   require_relative 'spec'
@@ -40,8 +41,14 @@ class Room
     @user = `whoami`.chomp
     @mountpoint = "/room/#{@user}/#{name}"
     @logger = Room::Log.instance.logger
+    @platform = Room::Platform.new
     @options = RoomOptions.new(@mountpoint)
     @tag_index = Room::TagIndex.new(@mountpoint)
+    if File.exist? @mountpoint
+      @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
+      @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
+      @options.load_file(@mountpoint + '/etc/options.json')
+    end
   end
  
   def Room.build(specfile)
@@ -61,11 +68,6 @@ class Room
     @index
   end
   
-  def reindex
-    index = Room::TagIndex.new(self)
-    index.construct
-  end
-  
   def exist?
     Room.exist?(@name)
   end
@@ -74,6 +76,7 @@ class Room
     File.exist? "/room/#{`whoami`.chomp}/#{name}"
   end
   
+  # DEADWOOD - should stop using this, it's moved to TagIndex
   def tags
     # Strangely, this only lists the first snapshot. If you remove '-o name', it lists them all
     #command = "zfs list -H -r -t snapshot -o name #{@dataset}/share"
@@ -198,9 +201,57 @@ class Room
     
     fetch
   end
+
+  # Push to origin via SSH  
+  def push
+    if options.origin.nil?
+      logger.error "No origin URI has been defined for this room"
+      exit 1
+    end
+       
+    if tags.empty?
+      logger.error "Room has no tags. You must create at least one tag before pushing."
+      exit 1
+    end
+
+    connect if @sftp.nil?
+ 
+      # DEADWOOD - Bad idea, lets just force fully qualified paths
+  #    if uri =~ /\/~\//
+  #      logger.debug "converting ~ into a real path; uri=#{uri}"
+  #      remote_home = ssh.exec!('echo $HOME').chomp
+  #      uri.sub!(/\/~\//, remote_home + '/')
+  #      logger.debug "remote home is #{remote_home}, new URI is #{uri}"
+  #    end
+    
+    uri = URI(options.origin)
+
+    raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
+    puts "pushing room #{name} to #{uri.to_s}"
+
+    basedir = uri.path
+    safe_basedir = Shellwords.escape(basedir)
+
+    begin
+      @sftp.mkdir! basedir
+    rescue
+      # WORKAROUND: not idempotent
+    end
+
+    unless @sftp.dir.entries(basedir).index { |e| e.name == 'tags' }
+      @sftp.mkdir!(basedir + '/tags')
+    end
+    @platform.mkdir(@sftp, basedir + '/tags')
+
+    logger.debug "uploading options.json"
+    @sftp.upload!(mountpoint + '/etc/options.json', "#{basedir}/options.json")
+
+    @tag_index.construct(self) # KLUDGE
+    @tag_index.push
+  end
   
   private
-
+  
   # Fetch remote metadata
   def fetch
     path = @options.origin.path
@@ -212,22 +263,11 @@ class Room
   
   # Establish a SFTPconnection with the @origin
   def connect
-    host = @options.origin.host
+    uri = URI(@options.origin)
+    host = uri.host
     raise 'host missing' unless host
     logger.debug "connecting to #{host}"
     @sftp = Net::SFTP.start(host, @user)
+    @tag_index.connect(@sftp, uri.path)
   end  
-  
-  # Load options.json and get some other random info
-  def DEADWOODISH_parse_options
-    @dataset = `df -h /room/#{@user}/#{name} | tail -1 | awk '{ print \$1 }'`.chomp
-    @dataset_origin = `zfs get -Hp -o value origin #{@dataset}/share`.chomp
-    @json = JSON.parse options_json
-    if File.exist? "#{@mountpoint}/etc/tags.json"
-      @tag_index = Room::TagIndex.new(self)
-    end
-  end  
-
-  
 end
-

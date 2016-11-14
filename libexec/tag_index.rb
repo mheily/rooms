@@ -28,9 +28,13 @@ class Room
     
     def initialize(roomdir)
       raise ArgumentError unless roomdir.is_a?(String)
+      @roomdir = roomdir
       @tagdir = roomdir + '/tags'
+      @dataset = `df -h #{roomdir}/share | tail -1 | awk '{ print \$1 }'`.chomp
+      @platform = Room::Platform.new
+      @tags = nil
     end
-    
+       
     def load_file
       logger.debug "loading index from #{indexfile}"
       raise Errno::ENOENT,indexfile unless File.exist?(indexfile)
@@ -41,12 +45,8 @@ class Room
     
     def tags
       if @tags.nil?
-        @tags = []
-        @json['tags'].each do |ent|
-          tag = Room::Tag.new(@tagdir)
-          tag.parse(ent)
-          @tags << tag
-        end
+        logger.debug "building the list of tags"
+        refresh
       end
       @tags
     end
@@ -62,17 +62,21 @@ class Room
     end
     
     # Construct an index for a local room
-    def construct   
-      if File.exist?(indexfile)
-        logger.debug "skipping; index already exists"
-      else
-        result = {'api' => { 'version' => 0 }, 'tags' => []}
-        room.tags.each do |tag|
-          meta = Room::Tag.from_snapshot(tag, @room)
+    def construct(room)
+      result = {'api' => { 'version' => 0 }, 'tags' => []}
+      snapshots.each do |snapshot|
+        tagfile = tagdir + '/' + snapshot + '.tag'
+        metadatafile = tagdir + '/' + snapshot + '.json'
+        if File.exist? tagfile
+          buf = File.open(metadatafile, 'r').readlines.join('')
+          result['tags'] << JSON.parse(buf)
+        else
+          meta = Room::Tag.from_snapshot(snapshot, room)
           result['tags'] << meta
         end
-        File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
       end
+      # DEADWOOD: try to avoid this
+      #File.open(indexfile, 'w') { |f| f.puts JSON.pretty_generate(result) }
     end
     
     def parse(json)
@@ -88,7 +92,10 @@ class Room
     # @param remote_path [String] path to the remote room       
     def connect(sftp, remote_path)
       @sftp = sftp
-      @remote_path = remote_path
+      @remote_path = remote_path + '/tags/' + @platform.to_s
+      tags.each do |tag|
+        tag.connect(@sftp, @remote_path)
+      end
     end
     
     # Download the index and any new tags
@@ -113,7 +120,18 @@ class Room
     end
   
     def push
-      @sftp.upload!(indexfile, @remote_path + '/tags/index.json')
+      # DEADWOOD: avoid this
+      #destfile =  @remote_path + '/index.json'
+      #logger.debug "uploading index to #{destfile}"
+      #@sftp.upload!(indexfile, destfile)
+      
+      refresh # WORKAROUND: somehow the cache gets stale
+      logger.debug 'pushing tags'
+      tags.each { |tag| 
+        tag.connect(@sftp, @remote_path)
+        tag.push
+      }
+      logger.debug 'push complete'
     end
       
     # The names of all tags
@@ -136,6 +154,29 @@ class Room
     
     private
 
+    # Refresh the list of tags
+    def refresh
+      @tags = []
+      Dir.glob("#{@tagdir}/*.json").each do |path|
+        next if File.basename(path) == 'index.json'
+        logger.debug "parsing #{path}"
+        buf = File.open(path, 'r').readlines.join("\n")
+        parsed_json = JSON.parse(buf)
+        tag = Room::Tag.new(@tagdir)
+        tag.parse(parsed_json)
+        @tags << tag
+      end
+    end
+
+    # A list of ZFS snapshots associated with the room
+    def snapshots
+      # Strangely, this only lists the first snapshot. If you remove '-o name', it lists them all
+      #command = "zfs list -H -r -t snapshot -o name #{@dataset}/share"
+      command = "ls -1 #{@roomdir}/share/.zfs/snapshot"
+      logger.debug "running: #{command}"
+      `#{command}`.chomp.split(/\n/).map { |x| x.sub(/.*@/, '') }
+    end
+    
     # If we are connected to a remote index
     def connected?
       @sftp ? true : false

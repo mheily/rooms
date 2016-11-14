@@ -16,12 +16,13 @@
 class Room
   # Detect the current platform and return a unique platform ID
   class Platform
-    attr_accessor :architecture
+    attr_accessor :architecture, :logger
     
     def initialize
       @architecture = detect_architecture
       @kernel = detect_kernel
       @abi_version = detect_abi_version
+      @logger = Room::Log.instance.logger
     end
     
     def to_s
@@ -31,22 +32,29 @@ class Room
     # Given an active SFTP connection and the path to the tags/ directory
     # of a room, create the directories for the current platform
     def mkdir(sftp, tagdir)
+      logger.debug("examining #{tagdir}")
       # Architecture
       dirent = sftp.dir.entries(tagdir).map { |e| e.name }
       unless dirent.include?(@architecture)
-        sftp.mkdir!(tagdir + '/' + @architecture)
+        dir = tagdir + '/' + @architecture
+        logger.debug "creating #{dir}"
+        sftp.mkdir!(dir)
       end
       
       # Kernel
       dirent = sftp.dir.entries(tagdir + '/' + @architecture).map { |e| e.name }
       unless dirent.include?(@kernel)
-        sftp.mkdir!(tagdir + '/' + @architecture + '/' + @kernel)
+        dir = tagdir + '/' + @architecture + '/' + @kernel
+        logger.debug "creating #{dir}"
+        sftp.mkdir!(dir)
       end
 
       # ABI version
       dirent = sftp.dir.entries(tagdir + '/' + @architecture + '/' + @kernel).map { |e| e.name }
       unless dirent.include?(@abi_version)
-        sftp.mkdir!(tagdir + '/' + @architecture + '/' + @kernel + '/' + @abi_version)
+        dir = tagdir + '/' + @architecture + '/' + @kernel + '/' + @abi_version
+        logger.debug "creating #{dir}"
+        sftp.mkdir!(dir)
       end
     end
     
