@@ -113,6 +113,8 @@ test_localhost_push() {
 	rm -rf /tmp/$room
 	mkdir /tmp/$room
 	room $room push -v -u file:///tmp/$room
+	rm -rf /tmp/$room
+	room $room destroy
 }
 
 test_fbsd11_push() {

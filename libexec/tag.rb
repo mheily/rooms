@@ -80,7 +80,7 @@ class Room
       system("/sbin/zfs send #{incremental_opts} #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
       # TODO: support other compression engines
       if true
-        system("xz < #{outfile}.raw > #{outfile}") or raise 'xz failed'
+        system("xz < #{outfile}.raw > #{outfile}.tag") or raise 'xz failed'
         File.unlink(outfile + '.raw')
       else
         meta['compression'] = 'none'
@@ -126,7 +126,7 @@ class Room
       [name + '.tag', name + '.json'].each do |filename|
         src = tagdir + '/' + filename
         dst = @remote_path + '/' + filename
-        if exp.ls(dst).include?(File.basename(dst))
+        if exp.ls(@remote_path).include?(File.basename(dst))
           logger.info "Skipping #{dst}; it already exists"
         else
           logger.info "Uploading #{src} to #{dst}"
