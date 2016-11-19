@@ -49,6 +49,10 @@ class TestUriExplorer < Minitest::Test
     assert_equal [], exp.ls('')
     exp.upload "/tmp/hello", '/foo' 
     assert_equal %w(foo), exp.ls('')
+    exp.rename "/foo", "/foo2"
+    assert_equal %w(foo2), exp.ls('')
+    exp.rename "/foo2", "/foo"
+    assert_equal %w(foo), exp.ls('')
     exp.mkdir 'bar'
     assert_equal [], exp.ls('/bar')
     
