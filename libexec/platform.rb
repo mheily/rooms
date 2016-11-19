@@ -29,32 +29,34 @@ class Room
       [@architecture, @kernel, @abi_version].join('/')
     end
     
-    # Given an active SFTP connection and the path to the tags/ directory
+    # Given an active connection and the path to the tags/ directory
     # of a room, create the directories for the current platform
-    def mkdir(sftp, tagdir)
+    def mkdir(exp, tagdir)
+      raise TypeError unless exp.is_a? UriExplorer
+
       logger.debug("examining #{tagdir}")
       # Architecture
-      dirent = sftp.dir.entries(tagdir).map { |e| e.name }
+      dirent = exp.ls(tagdir)
       unless dirent.include?(@architecture)
         dir = tagdir + '/' + @architecture
         logger.debug "creating #{dir}"
-        sftp.mkdir!(dir)
+        exp.mkdir(dir)
       end
       
       # Kernel
-      dirent = sftp.dir.entries(tagdir + '/' + @architecture).map { |e| e.name }
+      dirent = exp.ls(tagdir + '/' + @architecture)
       unless dirent.include?(@kernel)
         dir = tagdir + '/' + @architecture + '/' + @kernel
         logger.debug "creating #{dir}"
-        sftp.mkdir!(dir)
+        exp.mkdir(dir)
       end
 
       # ABI version
-      dirent = sftp.dir.entries(tagdir + '/' + @architecture + '/' + @kernel).map { |e| e.name }
+      dirent = exp.ls(tagdir + '/' + @architecture + '/' + @kernel)
       unless dirent.include?(@abi_version)
         dir = tagdir + '/' + @architecture + '/' + @kernel + '/' + @abi_version
         logger.debug "creating #{dir}"
-        sftp.mkdir!(dir)
+        exp.mkdir(dir)
       end
     end
     

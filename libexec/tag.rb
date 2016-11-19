@@ -17,13 +17,19 @@
 # A snapshot of a room
 class Room
   class Tag
+    private
+    
     require 'json'
     require 'pp'
     require 'securerandom'
- 
-    require_relative 'log'
-    require_relative 'platform'
     
+    require_relative 'log'
+    require_relative 'platform'    
+    
+    attr_accessor :exp
+    
+    public
+        
     attr_accessor :tagdir, :logger
     
     def initialize(tagdir, name)
@@ -91,8 +97,9 @@ class Room
       meta
     end
   
-    def connect(sftp, remote_path)
-      @sftp = sftp
+    def connect(exp, remote_path)
+      raise TypeError unless exp.is_a? UriExplorer
+      @exp = exp
       @remote_path = remote_path
     end
     
@@ -106,12 +113,12 @@ class Room
 
       src = @remote_path + '/' + @name + '.json'
       logger.info "Downloading #{src} to #{metadatafile}"
-      data = @sftp.download!(src, metadatafile)
+      data = exp.download!(src, metadatafile)
       load_metadata
       
       src = @remote_path + '/' + @name + '.tag'
       logger.info "Downloading #{src} to #{datafile}"
-      data = @sftp.download!(src, datafile)
+      data = exp.download(src, datafile)
     end
  
     def push
@@ -119,12 +126,12 @@ class Room
       [name + '.tag', name + '.json'].each do |filename|
         src = tagdir + '/' + filename
         dst = @remote_path + '/' + filename
-        if @sftp.dir.entries(File.dirname(dst)).index { |e| e.name == File.basename(dst) }
+        if exp.ls(dst).include?(File.basename(dst))
           logger.info "Skipping #{dst}; it already exists"
         else
           logger.info "Uploading #{src} to #{dst}"
-          @sftp.upload!(src, dst + ".tmp")
-          @sftp.rename!(dst + ".tmp", dst)
+          exp.upload(src, dst + ".tmp")
+          exp.rename(dst + ".tmp", dst)
         end
       end
     end    

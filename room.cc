@@ -847,8 +847,11 @@ void Room::parseRemoteUri(const string& uri, string& scheme, string& host, strin
 	} else if (buf.find("http://") == 0) {
 		schemelen = 7;
 		scheme = "http";
+	} else if (buf.find("file://") == 0) {
+		schemelen = 7;
+		scheme = "file";
 	} else {
-		throw std::runtime_error("invalid URI");
+		throw std::runtime_error(__FILE__": invalid URI");
 	}
 
 	buf = buf.substr(schemelen, string::npos);

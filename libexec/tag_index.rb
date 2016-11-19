@@ -17,6 +17,7 @@
 # A data structure containing metadata for all of the tags of a room
 class Room
   class TagIndex
+    private
     require 'json'
     require 'pp'
     
@@ -24,6 +25,10 @@ class Room
     require_relative 'log'
     require_relative 'platform'
 
+    attr_reader :exp
+    
+    public
+    
     attr_reader :tagdir
     
     def initialize(roomdir)
@@ -88,13 +93,13 @@ class Room
       end
     end
 
-    # @param sftp [Net::sftp] open connection to the remote server
     # @param remote_path [String] path to the remote room       
-    def connect(sftp, remote_path)
-      @sftp = sftp
-      @remote_path = remote_path + '/tags/' + @platform.to_s
+    def connect(exp)
+      raise TypeError unless exp.is_a? UriExplorer
+      @exp = exp
+      @remote_path = 'tags/' + @platform.to_s
       tags.each do |tag|
-        tag.connect(@sftp, @remote_path)
+        tag.connect(exp, @remote_path)
       end
     end
     
@@ -110,24 +115,33 @@ class Room
 #      end
       
       snaplist = snapshots
-      @sftp.dir.entries(@remote_path).each do |ent|
+      exp.ls(@remote_path).each do |ent|
         if ent.name =~ /\.json\z/
-          puts ent.name
           snapname = ent.name.sub(/\.json\z/, '')
           if snaplist.include? snapname
             logger.debug 'skipping ' + snapname
           else
             logger.debug 'downloading ' + snapname
             tag = Room::Tag.new(tagdir, snapname)
-            tag.connect(@sftp, @remote_path)
+            tag.connect(exp, @remote_path)
             tag.fetch
           end
         end
       end
-      puts 'TODO - run ZFS recv on the tags'
-      exit 0
+      recv_tags
     end
   
+    # After tags are downloaded, call "zfs recv" to apply them to the
+    # existing dataset
+    def recv_tags
+      # Examine all tags, to determine the order to apply them
+      tag_order = []
+      Dir.glob(tagdir + '/*.json') do |path|
+        puts path
+      end
+      raise 'hello'
+    end
+    
     def push
       # DEADWOOD: avoid this
       #destfile =  @remote_path + '/index.json'
@@ -137,7 +151,7 @@ class Room
       refresh # WORKAROUND: somehow the cache gets stale
       logger.debug 'pushing tags'
       tags.each { |tag| 
-        tag.connect(@sftp, @remote_path)
+        tag.connect(exp, @remote_path)
         tag.push
       }
       logger.debug 'push complete'
@@ -188,7 +202,7 @@ class Room
     
     # If we are connected to a remote index
     def connected?
-      @sftp ? true : false
+      exp ? true : false
     end
     
     def indexfile

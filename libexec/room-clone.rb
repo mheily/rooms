@@ -40,12 +40,12 @@ def main
   raise "usage: #{$PROGRAM_NAME} <uri or name> [name] [tag]" unless base_uri
 
   uri = base_uri.uri
+  room = Room.new(name)
   
-  if %w(http https ssh).include? uri.scheme
+  if %w(file http https ssh).include? uri.scheme
     logger.debug "cloning: uri=#{uri} name=#{name}"
 
     begin
-      room = Room.new(name)
       room.options.origin = uri
       room.clone
     rescue => e
@@ -54,9 +54,9 @@ def main
       system "room #{name} destroy >/dev/null 2>&1"
       raise e
     end
-      
-  elsif uri.scheme == 'room' and uri.host == 'localhost'
-    src_room = Room.new(uri.path, logger)
+
+  elsif uri.scheme == 'file' || (uri.scheme == 'room' and uri.host == 'localhost')
+    src_room = Room.new(uri.path)
     src_name = uri.path.sub(/^\//, '')
     logger.debug "cloning #{src_name}"
     args = ['room', name, 'create', '--clone', src_name]

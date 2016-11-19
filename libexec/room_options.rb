@@ -18,6 +18,7 @@
 class RoomOptions
   require 'json'
   require 'pp'
+  require 'uri'
      
   attr_accessor :logger
   
@@ -61,7 +62,7 @@ class RoomOptions
   end
   
   def origin
-    @json['remotes']['origin']
+    URI(@json['remotes']['origin'])
   end
   
   def origin=(uri)

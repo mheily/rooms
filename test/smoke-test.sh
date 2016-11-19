@@ -70,7 +70,7 @@ test5() {
 
 test6_clone() {
 	echo 'testing room-clone of remote'
-	room clone -v $remote_base/smoketest-base
+	room clone -v file:///tmp/smoketest-base
 }
 
 test6() {
@@ -80,8 +80,8 @@ test6() {
 	}
 	
 	echo 'testing room-push'
-	ssh $remote_host 'rm -rf ~/rooms/smoketest-base'
-	room smoketest-base push -v -u $remote_base/smoketest-base
+	rm -rf /tmp/smoketest-base
+	room smoketest-base push -v -u file:///tmp/smoketest-base
 	room smoketest-base destroy
 	test6_clone
 		
@@ -99,6 +99,20 @@ test6() {
 	
 	room smoketest-clone destroy || true
 	room smoketest-base destroy || true
+}
+
+test_localhost_push() {
+	room='localtest'
+	
+	room list | grep -q $room || {
+		room $room create --uri=file://`pwd`/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz
+		room $room tag tag1 create
+	}
+	
+	echo 'testing room-push'
+	rm -rf /tmp/$room
+	mkdir /tmp/$room
+	room $room push -v -u file:///tmp/$room
 }
 
 test_fbsd11_push() {

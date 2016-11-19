@@ -17,6 +17,8 @@
 
 # A room on localhost with a optional remote associated with it
 class Room
+  private
+  
   require "json"
   require "pp"
   require 'tempfile'
@@ -30,6 +32,11 @@ class Room
   require_relative 'spec'
   require_relative 'utility'
   require_relative 'tag_index'
+  require_relative 'uri_explorer'
+  
+  attr_reader :exp
+  
+  public
   
   attr_reader :name, :mountpoint, :dataset, :dataset_origin, :tags, :options
   
@@ -182,7 +189,7 @@ class Room
   end
   
   def clone
-    connect if @sftp.nil?
+    connect if exp.nil?
     
     if is_clone?
       logger.info "Cloning #{@name} from the local template #{template_name}"
@@ -214,7 +221,7 @@ class Room
       exit 1
     end
 
-    connect if @sftp.nil?
+    connect if exp.nil?
  
       # DEADWOOD - Bad idea, lets just force fully qualified paths
   #    if uri =~ /\/~\//
@@ -226,25 +233,25 @@ class Room
     
     uri = URI(options.origin)
 
-    raise "unsupported scheme; uri=#{uri}" unless uri.scheme == 'ssh'
+    raise "unsupported scheme; uri=#{uri}" unless %w(sftp file).include? uri.scheme
     puts "pushing room #{name} to #{uri.to_s}"
 
     basedir = uri.path
     safe_basedir = Shellwords.escape(basedir)
 
     begin
-      @sftp.mkdir! basedir
+      exp.mkdir basedir
     rescue
       # WORKAROUND: not idempotent
     end
 
-    unless @sftp.dir.entries(basedir).index { |e| e.name == 'tags' }
-      @sftp.mkdir!(basedir + '/tags')
+    unless exp.ls('').include? 'tags'
+      exp.mkdir('tags')
     end
-    @platform.mkdir(@sftp, basedir + '/tags')
+    @platform.mkdir(exp, 'tags')
 
     logger.debug "uploading options.json"
-    @sftp.upload!(mountpoint + '/etc/options.json', "#{basedir}/options.json")
+    exp.upload(mountpoint + '/etc/options.json', "options.json")
 
     @tag_index.construct(self) # KLUDGE
     @tag_index.push
@@ -257,17 +264,13 @@ class Room
     path = @options.origin.path
     logger.debug "examining remote path #{path}"
     
-    @tag_index.connect(@sftp, path)
+    @tag_index.connect(exp, path)
     @tag_index.fetch
   end
   
-  # Establish a SFTPconnection with the @origin
+  # Establish a connection with the @origin
   def connect
-    uri = URI(@options.origin)
-    host = uri.host
-    raise 'host missing' unless host
-    logger.debug "connecting to #{host}"
-    @sftp = Net::SFTP.start(host, @user)
-    @tag_index.connect(@sftp, uri.path)
+    @exp = UriExplorer.new(@options.origin)
+    @tag_index.connect(exp)
   end  
 end
