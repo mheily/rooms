@@ -56,6 +56,8 @@ def main
     end
 
   elsif uri.scheme == 'file' || (uri.scheme == 'room' and uri.host == 'localhost')
+    raise 'DEADWOOD'
+    
     src_room = Room.new(uri.path)
     src_name = uri.path.sub(/^\//, '')
     logger.debug "cloning #{src_name}"

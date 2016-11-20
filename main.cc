@@ -315,6 +315,7 @@ static void get_options(int argc, char *argv[])
 		printUsage(desc);
 		exit(1);
 	}
+	exit(0);
 }
 
 int

@@ -34,9 +34,10 @@ class Room
     def initialize(roomdir)
       raise ArgumentError unless roomdir.is_a?(String)
       @roomdir = roomdir
+      @roomname = File.basename(@roomdir)
       @tagdir = roomdir + '/tags'
-      @dataset = `df -h #{roomdir}/share | tail -1 | awk '{ print \$1 }'`.chomp
       @platform = Room::Platform.new
+      @dataset = nil
       @tags = nil
     end
        
@@ -134,12 +135,17 @@ class Room
     def recv_tags
       buf = File.open(local_indexfile, 'r').read
       index = JSON.parse(buf)
+      cur_tags = snapshots
+      logger.debug "current tags: #{cur_tags.pretty_inspect}"
       index.each do |ent|
-        #t = tag(name: ent['name'])
-        #pp t
-        raise 'todo'
+        if cur_tags.include? ent['name']
+          logger.debug "skipping #{ent['name']}; already received"
+        else
+          command = "room #{@roomname} recv < #{roomdir}/tags/#{ent['name']}.tag"
+          system command or raise "failed: #{command}"
+        end
       end
-      raise 'hello'
+      logger.debug "all tags received"
     end
     
     def push 
@@ -174,6 +180,14 @@ class Room
     end
     
     private
+
+    def dataset
+      if @dataset.nil?
+        @dataset = `df -h #{@roomdir}/share | tail -1 | awk '{ print \$1 }'`.chomp
+        raise 'unable to determine dataset' if @dataset.empty?
+      end
+      @dataset
+    end
 
     # Refresh the list of tags
     def refresh

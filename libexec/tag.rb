@@ -137,7 +137,7 @@ class Room
         end
       end
     end    
-    
+        
     private
     
     # The directory containing tags on the remote origin

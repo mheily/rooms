@@ -46,10 +46,13 @@ static void debugPrintUid() {
 			throw std::system_error(errno, std::system_category());
 		}
 		printf("getresuid(2): real=%d effective=%d saved=%d\n", real, effective, saved);
+		printf("priv state: lowered=%d dropped=%d\n", (int)isLoweredPrivs, (int)isDroppedPrivs);
 	}
 }
 
 void SetuidHelper::raisePrivileges() {
+	debugPrintUid();
+
 	if (isDroppedPrivs) {
 		throw std::logic_error("privileges are dropped");
 	}
@@ -84,6 +87,8 @@ void SetuidHelper::raisePrivileges() {
 }
 
 void SetuidHelper::lowerPrivileges() {
+	debugPrintUid();
+
 	if (!isInitialized) {
 		throw std::logic_error("must call checkPrivileges() first");
 	}

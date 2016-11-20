@@ -234,9 +234,11 @@ void RoomManager::importRoom(const string& roomName) {
 
 void RoomManager::receiveRoom(const string& name)
 {
-	SetuidHelper::raisePrivileges();
 	Subprocess proc;
-	proc.execve("/sbin/zfs", { "receive", getUserRoomDataset() + "/" + name });
+	string dataset = getUserRoomDataset() + "/" + name;
+
+	SetuidHelper::raisePrivileges();
+	proc.execve("/sbin/zfs", { "receive", "-eF", dataset });
 }
 
 void RoomManager::destroyRoom(const string& name) {
