@@ -60,10 +60,12 @@ class Room
       raise ArgumentError unless opts.is_a? Hash     
       if opts[:name]
         tags.each { |x| return x if x.name == opts[:name] }
-      elsif opts[:name]
+        raise Errno::ENOENT, opts[:name]
+      elsif opts[:uuid]
         raise 'todo'
+      else
+        raise ArgumentError
       end
-      raise Errno::ENOENT
     end
     
     # Construct an index for a local room
@@ -106,7 +108,9 @@ class Room
     # Download the index and any new tags
     def fetch
       raise 'not connected' unless connected?
-            
+      
+      exp.download(indexfile, local_indexfile)
+      
       snaplist = snapshots
       exp.ls(@tagdir).each do |name|
         if name =~ /\.json\z/
@@ -128,13 +132,12 @@ class Room
     # After tags are downloaded, call "zfs recv" to apply them to the
     # existing dataset
     def recv_tags
-      # Examine all tags, to determine the order to apply them
-      tag_order = []
-      system "find #{@roomdir}"
-      tags = Dir.glob(@roomdir + '/tags/*.json')
-      logger.debug "tags=#{tags.inspect}"
-      tags.each do |path|
-        puts path
+      buf = File.open(local_indexfile, 'r').read
+      index = JSON.parse(buf)
+      index.each do |ent|
+        #t = tag(name: ent['name'])
+        #pp t
+        raise 'todo'
       end
       raise 'hello'
     end
