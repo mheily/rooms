@@ -26,12 +26,9 @@
 
 #include <boost/program_options.hpp>
 
-extern "C" {
-#ifdef __FreeBSD__
-#include <sys/jail.h>
-#include <jail.h>
-#endif
+#include "jail_getid.h"
 
+extern "C" {
 #include <pwd.h>
 #include <sys/param.h>
 #include <sys/mount.h>

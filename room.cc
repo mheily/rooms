@@ -24,12 +24,9 @@
 #include <streambuf>
 #include <unordered_set>
 
-extern "C" {
-#ifdef __FreeBSD__
-#include <jail.h>
-#include <sys/jail.h>
-#endif /* __FreeBSD__ */
+#include "jail_getid.h"
 
+extern "C" {
 #include <getopt.h>
 #include <pwd.h>
 #include <sys/param.h>

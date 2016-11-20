@@ -17,7 +17,14 @@
 #pragma once
 
 #ifdef __FreeBSD__
-extern "C" int jail_getid(const char *name);
+
+extern "C" {
+#include <sys/param.h>
+#include <sys/jail.h>
+#include <jail.h>
+
+int jail_getid(const char *name);
+}
 #endif
 
 class JailUtil {

@@ -27,14 +27,14 @@ room_CXXFLAGS="-std=c++11 -Wall -Werror"
 room_LDFLAGS=""
 room_LDADD=""
 room_INSTALLFLAGS="-s -m 4755 -o 0 -g 0"
-room_SOURCES=`ls -1 *.cc | egrep -v jail_getid.c | tr '\n' ' '`
+room_SOURCES=`ls -1 *.cc | egrep -v jail_getid.cc | tr '\n' ' '`
 room_DEPENDS=""
 
 uname=$(uname)
 case $uname in
 FreeBSD)
 	room_CXXFLAGS="${room_CXXFLAGS} -isystem /usr/local/include"
-        room_SOURCES="${room_SOURCES} jail_getid.c"
+        room_SOURCES="${room_SOURCES} jail_getid.cc"
 	room_LDFLAGS="${room_LDFLAGS} -L/usr/local/lib"
         room_LDADD="${room_LDADD} /usr/local/lib/libboost_program_options.a"
         room_LDADD="${room_LDADD} -ljail "
