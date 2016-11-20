@@ -28,10 +28,8 @@
 
 extern "C" {
 #include <getopt.h>
-#include <jail.h>
 #include <pwd.h>
 #include <sys/param.h>
-#include <sys/jail.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -110,7 +108,11 @@ public:
 	}
 
 	static void unmount(const string& path, int flags) {
+#ifdef __linux__
+		if (::umount2(path.c_str(), flags) < 0) {
+#else
 		if (::unmount(path.c_str(), flags) < 0) {
+#endif
 			log_errno("unmount(2) of `%s'", path.c_str());
 			throw std::system_error(errno, std::system_category());
 		}

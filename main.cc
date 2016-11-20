@@ -27,10 +27,13 @@
 #include <boost/program_options.hpp>
 
 extern "C" {
+#ifdef __FreeBSD__
+#include <sys/jail.h>
 #include <jail.h>
+#endif
+
 #include <pwd.h>
 #include <sys/param.h>
-#include <sys/jail.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>

@@ -16,5 +16,19 @@
 
 #pragma once
 
+#ifdef __FreeBSD__
 extern "C" int jail_getid(const char *name);
+#endif
 
+class JailUtil {
+public:
+	static bool isRunning(const std::string& jailName) {
+#ifdef __FreeBSD__
+        	int jid = jail_getid(jailName.c_str());
+        	return (jid < 0 ? false: true);
+#else
+		(void) jailName;
+        	return (false);
+#endif
+        }
+};

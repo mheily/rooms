@@ -16,6 +16,7 @@
 
 #include "namespaceImport.h"
 
+#include "setuidHelper.h"
 #include "zfsPool.h"
 
 // Check for any ZFS pools.
@@ -41,11 +42,13 @@ string ZfsPool::getNameByPath(const string& path) {
 
 	int exit_status;
 	string child_stdout;
+	SetuidHelper::raisePrivileges();
 	Shell::execute("/sbin/zfs", { "list", "-H", "-o", "name", path },
 		exit_status, child_stdout);
 	if (exit_status != 0 || child_stdout == "") {
 		throw std::runtime_error("unable to determine pool name");
 	}
+	SetuidHelper::lowerPrivileges();
 
 	// Get the top-level pool name by removing any child datasets
 	size_t pos = child_stdout.find('/');

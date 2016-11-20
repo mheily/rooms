@@ -23,18 +23,28 @@ package 'rooms' '0.1'
 bin_PROGRAMS=room
 pkglibexec_SCRIPTS="$(ls libexec/*.rb)"
 
-room_CXXFLAGS="-std=c++11 -isystem /usr/local/include -Wall -Werror"
-room_LDFLAGS="-L/usr/local/lib"
-room_LDADD="/usr/local/lib/libboost_program_options.a"
+room_CXXFLAGS="-std=c++11 -Wall -Werror"
+room_LDFLAGS=""
+room_LDADD=""
 room_INSTALLFLAGS="-s -m 4755 -o 0 -g 0"
-room_SOURCES=`ls -1 *.cc | tr '\n' ' '`
+room_SOURCES=`ls -1 *.cc | egrep -v jail_getid.c | tr '\n' ' '`
 room_DEPENDS=""
 
-#uname=$(uname)
-#if [ "$uname" = 'FreeBSD' ] ; then
-#        room_SOURCES="${room_SOURCES} jail_getid.c"
-#        room_LDADD="${room_LDADD} -ljail"
-#fi
+uname=$(uname)
+case $uname in
+FreeBSD)
+	room_CXXFLAGS="${room_CXXFLAGS} -isystem /usr/local/include"
+        room_SOURCES="${room_SOURCES} jail_getid.c"
+	room_LDFLAGS="${room_LDFLAGS} -L/usr/local/lib"
+        room_LDADD="${room_LDADD} /usr/local/lib/libboost_program_options.a"
+        room_LDADD="${room_LDADD} -ljail "
+	;;
+Linux)
+        room_LDADD="${room_LDADD} -lboost_program_options"
+	;;
+*)
+	echo "WARNING: This platform is not explicitly supported"
+esac
 
 check_program 'docbook2man'
 check_program 'groff'

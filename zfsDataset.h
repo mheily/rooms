@@ -21,6 +21,7 @@
 #include "namespaceImport.h"
 #include "fileUtil.h"
 #include "shell.h"
+#include "setuidHelper.h"
 
 class ZfsDataset {
 public:

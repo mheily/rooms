@@ -31,11 +31,9 @@
 extern "C" {
 #include <dirent.h>
 #include <getopt.h>
-#include <jail.h>
 #include <pwd.h>
 #include <sys/file.h>
 #include <sys/param.h>
-#include <sys/jail.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>

@@ -14,7 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef __linux__
+// Required to get setgroups(2)
+#define _BSD_SOURCE
+#endif
+
 #include <sys/stat.h>
+#include <grp.h>
+
 
 #include "namespaceImport.h"
 #include "logger.h"
@@ -43,9 +50,6 @@ static void debugPrintUid() {
 }
 
 void SetuidHelper::raisePrivileges() {
-	uid_t uid;
-	gid_t gid;
-
 	if (isDroppedPrivs) {
 		throw std::logic_error("privileges are dropped");
 	}
@@ -59,8 +63,6 @@ void SetuidHelper::raisePrivileges() {
 	}
 
 	saved_umask = umask(S_IWGRP|S_IWOTH);
-	uid = getuid();
-	gid = getgid();
 
 	log_debug("raising privileges");
 

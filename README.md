@@ -23,3 +23,14 @@ ZFS and FreeBSD jails.
 
 For more information about building and using this software,
 see https://mheily.github.io/rooms
+
+# TODO: Linux build notes
+
+- quick notes on building on Debian-based systems
+
+sudo apt install libboost-program-options-dev
+
+### BUG:
+	it is expected that '<pool>/room/<blah>' exists
+	but what if you want the pool to be mounted at /room, so
+	the desired dataset is '<pool>/blah'

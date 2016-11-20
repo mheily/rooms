@@ -25,11 +25,14 @@
 #include <unordered_set>
 
 extern "C" {
-#include <getopt.h>
+#ifdef __FreeBSD__
 #include <jail.h>
+#include <sys/jail.h>
+#endif /* __FreeBSD__ */
+
+#include <getopt.h>
 #include <pwd.h>
 #include <sys/param.h>
-#include <sys/jail.h>
 #include <sys/mount.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -148,6 +151,8 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 	static char *clean_environment = NULL;
 	string loginName;
 	string homeDir;
+	char *path = NULL;
+
 	if (runAsUser == "") {
 		loginName = ownerLogin;
 	} else {
@@ -159,7 +164,7 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 		homeDir = pwent.getHome();
 	}
 
-	char *path = NULL;
+#ifdef __FreeBSD__
 	int jid = jail_getid(jailName.c_str());
 	if (jid < 0) {
 		log_debug("jail `%s' not running; will start it now", jailName.c_str());
@@ -167,6 +172,9 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 	}
 
 	enterJail(loginName);
+#else
+	log_error("FIXME -- linux jail not implemented");
+#endif
 
 	string jail_username = loginName;
 
@@ -218,9 +226,13 @@ void Room::enter() {
 
 bool Room::jailExists()
 {
+#ifdef __FreeBSD__
 	int jid = jail_getid(jailName.c_str());
 	log_debug("jail `%s' has jid %d", jailName.c_str(), jid);
 	return (jid >= 0);
+#else
+	return (false); //XXX -- not sure if linux can do this
+#endif
 }
 
 void Room::getJailName()
@@ -431,7 +443,7 @@ void Room::printSnapshotList()
 void Room::start() {
 	int rv;
 
-	if (jail_getid(jailName.c_str()) >= 0) {
+	if (JailUtil::isRunning(jailName)) {
 		log_debug("room already started");
 		return;
 	}
@@ -555,43 +567,25 @@ void Room::stop()
 	killAllProcesses();
 
 	log_debug("unmounting /dev");
-	if (unmount(string(chrootDir + "/dev").c_str(), unmount_flags) < 0) {
-		if (errno != EINVAL) {
-			log_errno("unmount(2)");
-			throw std::system_error(errno, std::system_category());
-		}
-	}
+	FileUtil::unmount(string(chrootDir + "/dev"), unmount_flags);
 
 	if (true || roomOptions.shareTempDir) {
 		log_debug("unmounting /tmp");
-		if (unmount(string(chrootDir + "/tmp").c_str(), unmount_flags) < 0) {
-			if (errno != EINVAL) {
-				log_errno("unmount(2)");
-				throw std::system_error(errno, std::system_category());
-			}
-		}
+		FileUtil::unmount(string(chrootDir + "/tmp"), unmount_flags);
+
 		log_debug("unmounting /var/tmp");
-		if (unmount(string(chrootDir + "/var/tmp").c_str(), unmount_flags) < 0) {
-			if (errno != EINVAL) {
-				log_errno("unmount(2)");
-				throw std::system_error(errno, std::system_category());
-			}
-		}
+		FileUtil::unmount(string(chrootDir + "/var/tmp"), unmount_flags);
 	}
 
 	log_debug("unmounting /home");
-	if (unmount(string(chrootDir + pwent.getHome()).c_str(), unmount_flags) < 0) {
-		if (errno != EINVAL) {
-			log_errno("unmount(2)");
-			throw std::system_error(errno, std::system_category());
-		}
-	}
+	FileUtil::unmount(string(chrootDir + pwent.getHome()), unmount_flags);
 
 	if (roomOptions.kernelABI == "Linux") {
 		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
 		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
 	}
 
+//FIXME: this duplicates code from 5 lines earlier!
 	if (roomOptions.shareHomeDir) {
 		if (roomOptions.shareHomeDir) {
 			PasswdEntry pwent(ownerUid);
@@ -600,12 +594,7 @@ void Room::stop()
 	}
 
 	log_debug("unmounting /data");
-	if (unmount(string(chrootDir + "/data").c_str(), unmount_flags) < 0) {
-		if (errno != EINVAL) {
-			log_errno("unmount(2)");
-			throw std::system_error(errno, std::system_category());
-		}
-	}
+	FileUtil::unmount(string(chrootDir + "/data"), unmount_flags);
 
 	if (jailExists()) {
 		log_debug("removing jail");
@@ -647,7 +636,7 @@ void Room::destroy()
 
 	log_debug("destroying room at %s", chrootDir.c_str());
 
-	if (jail_getid(jailName.c_str()) >= 0) {
+	if (JailUtil::isRunning(jailName)) {
 		stop();
 	}
 
@@ -687,17 +676,20 @@ void Room::killAllProcesses()
 
 	// TODO: have a "nice" option that uses SIGTERM as well
 
-	int jid = jail_getid(jailName.c_str());
-
-	if (jid < 0) {
+	if (!JailUtil::isRunning(jailName)) {
 		log_debug("jail does not exist; skipping");
 		return;
 	}
 
+#ifdef __FreeBSD__
+	int jid = jail_getid(jailName.c_str());
 	if (jail_remove(jid) < 0) {
 		log_errno("jail_remove(2)");
         throw std::system_error(errno, std::system_category());
 	}
+#else
+	log_error("FIXME -- not implemented yet");
+#endif
 }
 
 void Room::exportArchive()
