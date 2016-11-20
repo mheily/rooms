@@ -25,7 +25,7 @@ class Room
     require_relative 'log'
     require_relative 'platform'
 
-    attr_reader :exp
+    attr_reader :exp, :roomdir
     
     public
     
@@ -97,9 +97,9 @@ class Room
     def connect(exp)
       raise TypeError unless exp.is_a? UriExplorer
       @exp = exp
-      @remote_path = 'tags/' + @platform.to_s
+      @tagdir = 'tags/' + @platform.to_s
       tags.each do |tag|
-        tag.connect(exp, @remote_path)
+        tag.connect(exp)
       end
     end
     
@@ -115,15 +115,15 @@ class Room
 #      end
       
       snaplist = snapshots
-      exp.ls(@remote_path).each do |ent|
-        if ent.name =~ /\.json\z/
-          snapname = ent.name.sub(/\.json\z/, '')
+      exp.ls(@tagdir).each do |name|
+        if name =~ /\.json\z/
+          snapname = name.sub(/\.json\z/, '')
           if snaplist.include? snapname
             logger.debug 'skipping ' + snapname
           else
             logger.debug 'downloading ' + snapname
-            tag = Room::Tag.new(tagdir, snapname)
-            tag.connect(exp, @remote_path)
+            tag = Room::Tag.new(roomdir + '/tags', snapname)
+            tag.connect(exp)
             tag.fetch
           end
         end
@@ -136,7 +136,10 @@ class Room
     def recv_tags
       # Examine all tags, to determine the order to apply them
       tag_order = []
-      Dir.glob(tagdir + '/*.json') do |path|
+      system "find #{@roomdir}"
+      tags = Dir.glob(@roomdir + '/tags/*.json')
+      logger.debug "tags=#{tags.inspect}"
+      tags.each do |path|
         puts path
       end
       raise 'hello'
@@ -150,8 +153,7 @@ class Room
       
       refresh # WORKAROUND: somehow the cache gets stale
       logger.debug 'pushing tags'
-      tags.each { |tag| 
-        tag.connect(exp, @remote_path)
+      tags.each { |tag|
         tag.push
       }
       logger.debug 'push complete'
@@ -180,13 +182,14 @@ class Room
     # Refresh the list of tags
     def refresh
       @tags = []
-      Dir.glob("#{@tagdir}/*.json").each do |path|
+      Dir.glob("#{roomdir}/tags/*.json").each do |path|
         next if File.basename(path) == 'index.json'
         logger.debug "parsing #{path}"
         buf = File.open(path, 'r').readlines.join("\n")
         parsed_json = JSON.parse(buf)
-        tag = Room::Tag.new(@tagdir, parsed_json['name'])
+        tag = Room::Tag.new("#{roomdir}/tags", parsed_json['name'])
         tag.parse(parsed_json)
+        tag.connect(exp) if exp
         @tags << tag
       end
     end

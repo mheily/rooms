@@ -111,10 +111,16 @@ test_localhost_push() {
 	
 	echo 'testing room-push'
 	rm -rf /tmp/$room
+	
 	mkdir /tmp/$room
 	room $room push -v -u file:///tmp/$room
-	rm -rf /tmp/$room
+	echo 'Room after pushing:'
+	find /tmp/$room
+	
 	room $room destroy
+	room clone file:///tmp/$room
+	room $room destroy
+	rm -rf /tmp/$room
 }
 
 test_fbsd11_push() {

@@ -261,10 +261,8 @@ class Room
   
   # Fetch remote metadata
   def fetch
-    path = @options.origin.path
-    logger.debug "examining remote path #{path}"
-    
-    @tag_index.connect(exp, path)
+    logger.debug "fetching tag metadata"   
+    @tag_index.connect(exp)
     @tag_index.fetch
   end
   

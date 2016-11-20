@@ -33,9 +33,11 @@ class Room
     attr_accessor :tagdir, :logger
     
     def initialize(tagdir, name)
+      raise ArgumentError, tagdir unless File.exist? tagdir
       @data = nil
       @tagdir = tagdir
       @name = name
+      @platform = Platform.new
       
       @logger = Room::Log.instance.logger
       #@room = room
@@ -79,7 +81,7 @@ class Room
       snapshot_ref = "#{room.dataset}/share@#{snapshot_name}"
       system("/sbin/zfs send #{incremental_opts} #{snapshot_ref} > #{outfile}.raw") or raise "zfs send failed"
       # TODO: support other compression engines
-      if true
+      if false
         system("xz < #{outfile}.raw > #{outfile}.tag") or raise 'xz failed'
         File.unlink(outfile + '.raw')
       else
@@ -97,10 +99,9 @@ class Room
       meta
     end
   
-    def connect(exp, remote_path)
+    def connect(exp)
       raise TypeError unless exp.is_a? UriExplorer
       @exp = exp
-      @remote_path = remote_path
     end
     
     # Does the tag exist on the local host?
@@ -109,24 +110,25 @@ class Room
     end
     
     def fetch
-      raise 'not connected' unless @remote_path
+      raise 'not connected' unless exp
 
-      src = @remote_path + '/' + @name + '.json'
+      src = remote_tagdir + '/' + @name + '.json'
       logger.info "Downloading #{src} to #{metadatafile}"
-      data = exp.download!(src, metadatafile)
+      data = exp.download(src, metadatafile)
       load_metadata
       
-      src = @remote_path + '/' + @name + '.tag'
+      src = remote_tagdir + '/' + @name + '.tag'
       logger.info "Downloading #{src} to #{datafile}"
       data = exp.download(src, datafile)
     end
  
     def push
-      tagdir = @tagdir
+      remote_tags = exp.ls(remote_tagdir)
+      logger.debug "remote_tags=#{remote_tags.inspect}"
       [name + '.tag', name + '.json'].each do |filename|
-        src = tagdir + '/' + filename
-        dst = @remote_path + '/' + filename
-        if exp.ls(@remote_path).include?(File.basename(dst))
+        src = @tagdir + '/' + filename
+        dst = remote_tagdir + '/' + filename
+        if remote_tags.include?(File.basename(dst))
           logger.info "Skipping #{dst}; it already exists"
         else
           logger.info "Uploading #{src} to #{dst}"
@@ -137,6 +139,11 @@ class Room
     end    
     
     private
+    
+    # The directory containing tags on the remote origin
+    def remote_tagdir
+      'tags/' + @platform.to_s
+    end
     
     # The file containing the actual tag data 
     def datafile
@@ -151,7 +158,9 @@ class Room
     # Load metadata
     def load_metadata
       logger.debug 'loading ' + metadatafile
-      parse(JSON.parse(File.open(metadatafile, 'r').readlines.join('')))
+      buf = File.open(metadatafile, 'r').readlines.join('')
+      logger.debug "buf=#{buf}"
+      parse(JSON.parse(buf))
     end
   end
 end
