@@ -106,17 +106,11 @@ class Room
     # Download the index and any new tags
     def fetch
       raise 'not connected' unless connected?
-      
-      # TODO: avoid using index.json and look at all the tags via SFTP
-      # Download all new tags
-#      @sftp.dir.foreach(path) do |entry|
-#        next if %w(. ..).include?(entry.name)
-#        puts entry.name
-#      end
-      
+            
       snaplist = snapshots
       exp.ls(@tagdir).each do |name|
         if name =~ /\.json\z/
+          next if name =~ /\A_/
           snapname = name.sub(/\.json\z/, '')
           if snaplist.include? snapname
             logger.debug 'skipping ' + snapname
@@ -145,17 +139,16 @@ class Room
       raise 'hello'
     end
     
-    def push
-      # DEADWOOD: avoid this
-      #destfile =  @remote_path + '/index.json'
-      #logger.debug "uploading index to #{destfile}"
-      #@sftp.upload!(indexfile, destfile)
+    def push 
+      # WORKAROUND: somehow the cache gets stale   
+      refresh
+      update_index
       
-      refresh # WORKAROUND: somehow the cache gets stale
       logger.debug 'pushing tags'
       tags.each { |tag|
         tag.push
       }
+      exp.upload(local_indexfile, indexfile)
       logger.debug 'push complete'
     end
       
@@ -183,7 +176,7 @@ class Room
     def refresh
       @tags = []
       Dir.glob("#{roomdir}/tags/*.json").each do |path|
-        next if File.basename(path) == 'index.json'
+        next if File.basename(path) =~ /\A_/
         logger.debug "parsing #{path}"
         buf = File.open(path, 'r').readlines.join("\n")
         parsed_json = JSON.parse(buf)
@@ -192,6 +185,19 @@ class Room
         tag.connect(exp) if exp
         @tags << tag
       end
+    end
+    
+    # Write a new index file
+    def update_index
+      File.open(local_indexfile + '.tmp', 'w') do |f|
+        entries = []
+        snapshots.each do |snapname|
+          buf = File.open("#{roomdir}/tags/#{snapname}.json", 'r').readlines.join()
+          entries << JSON.parse(buf) 
+        end
+        f.puts JSON.pretty_generate(entries)
+      end
+      File.rename "#{local_indexfile}.tmp", local_indexfile
     end
 
     # A list of ZFS snapshots associated with the room
@@ -208,8 +214,12 @@ class Room
       exp ? true : false
     end
     
+    def local_indexfile
+      roomdir + '/tags/_index.json'
+    end
+    
     def indexfile
-      @tagdir + '/index.json'
+      @tagdir + '/_index.json'
     end
         
     def logger

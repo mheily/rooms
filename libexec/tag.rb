@@ -47,7 +47,7 @@ class Room
     end
     
     def parse(h)
-      raise ArgumentError unless h.is_a? Hash
+      raise ArgumentError, h.class.name unless h.is_a? Hash
       @data = h
       raise 'name mismatch' unless @name == @data['name'] 
       @uuid = @data['uuid']
