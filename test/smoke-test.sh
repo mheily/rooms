@@ -43,7 +43,7 @@ test1() {
 }
 
 test2() {
-	room smoketest create --uri=file://`pwd`/base.txz
+	room smoketest create --archive=`pwd`/base.txz
 	room smoketest exec -u root -- mkdir /test2
 	room smoketest exec test -d /test2
 	room smoketest exec test -d a_nonexistest_file && false || true
@@ -52,7 +52,7 @@ test2() {
 
 test3() {
 	uuid=`uuid -v 4`
-	room smoketest create --uri=file://`pwd`/base.txz
+	room smoketest create --archive=`pwd`/base.txz
 	room smoketest tag base create -v
 	room smoketest push -u ssh://arise.daemonspawn.org/~/rooms/smoketest.$uuid -v
 	room smoketest pull -v
@@ -63,7 +63,7 @@ test3() {
 }
 
 test4() {
-	room smoketest create --uri=file://`pwd`/base.txz
+	room smoketest create --archive=`pwd`/base.txz
 	room smoketest tag base create -v
 	room clone smoketest smoketest2 -v
 	room smoketest2 destroy -v
@@ -71,7 +71,7 @@ test4() {
 }
 
 test5() {
-	room smoketest create --uri=file://`pwd`/base.txz
+	room smoketest create --archive=`pwd`/base.txz
 	room smoketest tag base create -v
 	room clone smoketest smoketest2 -v
 	cat /room/$LOGNAME/smoketest2/etc/options.json
@@ -86,7 +86,7 @@ test6_clone() {
 
 test6() {
 	room list | grep -q smoketest-base || {
-		room smoketest-base create --uri=$base_txz
+		room smoketest-base create --archive=$base_txz
 		room smoketest-base tag tag1 create
 	}
 	
@@ -116,7 +116,7 @@ test_localhost_push() {
 	room='localtest'
 	
 	room list | grep -q $room || {
-		room $room create -v --uri=$base_txz
+		room $room create -v --archive=$base_txz
 		room $room tag tag1 create
 	}
 	

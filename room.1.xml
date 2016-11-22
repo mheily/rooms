@@ -19,7 +19,7 @@
 <emphasis role="bold">room</emphasis> <emphasis role="bold">clone</emphasis> <replaceable>source</replaceable> [<replaceable>destination</replaceable>]
 <emphasis role="bold">room list</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">configure</emphasis>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--archive <replaceable>path</replaceable>]
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">destroy</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">enter</emphasis>
 <emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">exec</emphasis> [-u <replaceable>user</replaceable>] <emphasis role="bold">--</emphasis> <replaceable>command [arguments]</replaceable>
@@ -127,7 +127,7 @@ The following subcommands and options are available:
 	<varlistentry>
 		<term>
 <literallayout>
-<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--uri <replaceable>URI</replaceable>]
+<emphasis role="bold">room</emphasis> <replaceable>name</replaceable> <emphasis role="bold">create</emphasis> [options] [--clone <replaceable>room-name</replaceable>] [--archive <replaceable>path</replaceable>]
 </literallayout>
 		</term>
 	
@@ -137,8 +137,8 @@ The following subcommands and options are available:
 	</para>
 	
 	<para>
-	If the <replaceable>--uri</replaceable> option is provided, the URI will be
-	downloaded and extracted into the root filesystem of the room.
+	If the <replaceable>--archive</replaceable> option is provided, the 
+	tar(1) formatted archive will be extracted into the root filesystem of the room.
 	</para>
 
 	<para>

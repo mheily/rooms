@@ -101,7 +101,7 @@ static void get_options(int argc, char *argv[])
 
 	po::options_description create_opts("Options when creating");
 	create_opts.add_options()
-	    ("uri", po::value<string>(&baseArchiveUri), "the URI of the base.txz to install from")
+	    ("archive", po::value<string>(&baseArchiveUri), "the path to the tar(1) archive to install from")
 	    ("clone", po::value<string>(&roomOpt.templateUri), "the action to perform")
 		("tag", po::value<string>(&roomOpt.templateSnapshot), "the tag to clone from")
 	    ("empty", po::bool_switch(&isEmpty)->default_value(false), "create an empty room")
