@@ -2,7 +2,18 @@
 
 remote_host="arise.daemonspawn.org"
 remote_base="ssh://${remote_host}/home/mark/rooms"
-base_txz="file://$(pwd)/fixtures/test/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz"
+if [ $(uname) = "FreeBSD" ] ; then
+	base_txz="$(pwd)/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz"
+else
+	base_txz="$(pwd)/fixtures/linux.tgz"
+	if [ ! -e $base_txz ] ; then
+  		wget -O $base_txz \
+			https://mirrors.kernel.org/archlinux/iso/2016.09.03/archlinux-bootstrap-2016.09.03-x86_64.tar.gz
+		# Remove the leading root.x86_64/ directory in the tarball
+		tar zxf $base_txz
+		tar -C root.x86_64 -zPpcf $base_txz .
+	fi
+fi
 
 rebuild() {
 	cd ..
@@ -75,7 +86,7 @@ test6_clone() {
 
 test6() {
 	room list | grep -q smoketest-base || {
-		room smoketest-base create --uri=file://`pwd`/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz
+		room smoketest-base create --uri=$base_txz
 		room smoketest-base tag tag1 create
 	}
 	
@@ -105,7 +116,7 @@ test_localhost_push() {
 	room='localtest'
 	
 	room list | grep -q $room || {
-		room $room create --uri=file://`pwd`/fixtures/FreeBSD-11.0-micro-jailroot.tar.xz
+		room $room create -v --uri=$base_txz
 		room $room tag tag1 create
 	}
 	

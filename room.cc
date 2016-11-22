@@ -357,8 +357,18 @@ void Room::extractTarball(const string& baseTarball)
 
 	syncRoomOptions();
 
+	string tarCommand;
+	if (FileUtil::checkExists("/bin/tar")) {
+		tarCommand = "/bin/tar";
+	} else if (FileUtil::checkExists("/usr/bin/tar")) {
+		tarCommand = "/usr/bin/tar";
+	} else {
+		log_error("unable to find tar(1)");
+		abort();
+	}
+
 	SetuidHelper::raisePrivileges();
-	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
+	Shell::execute(tarCommand.c_str(), { "-C", chrootDir, "-xf", baseTarball });
 	pushResolvConf();
 	SetuidHelper::lowerPrivileges();
 
@@ -749,21 +759,6 @@ void Room::setOriginUri(const string& uri)
 	syncRoomOptions();
 }
 
-void Room::downloadTarball(const string& uri, const string& path)
-{
-	string tarball = roomDataDir + "/base.txz";
-	log_debug("downloading %s", uri.c_str());
-	Shell::execute("/usr/bin/fetch", { "-q", "-o", path, uri });
-}
-
-void Room::installFromArchive(const string& uri)
-{
-	string tarball = roomDataDir + "/local/tmp/base.txz";
-	downloadTarball(uri, tarball);
-	extractTarball(tarball);
-	FileUtil::unlink(tarball);
-}
-
 void Room::install(const struct RoomInstallParams& rip)
 {
 	Room room(rip.roomDir, rip.name);
@@ -771,7 +766,7 @@ void Room::install(const struct RoomInstallParams& rip)
 	room.createEmpty();
 	room.syncRoomOptions();
 	if (rip.baseArchiveUri != "") {
-		room.installFromArchive(rip.baseArchiveUri);
+		room.extractTarball(rip.baseArchiveUri);
 	} else {
 		log_debug("created an empty room");
 	}
