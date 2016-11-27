@@ -29,6 +29,7 @@
 #include <boost/property_tree/json_parser.hpp>
 
 extern "C" {
+#include <err.h>
 #include <dirent.h>
 #include <getopt.h>
 #include <pwd.h>
@@ -384,6 +385,16 @@ void RoomManager::openConfigHome()
 
 	config_home_fd = fd;
 }
+
+/* TODO: use this
+void RoomManager::closeConfigHome()
+{
+	if (config_home_fd < 0)
+		errx(1, "FD not opened");
+	(void) close(config_home_fd);
+	config_home_fd == 0;
+}
+*/
 
 void RoomManager::installRoom(const string& name, const string& archive, const RoomOptions& options)
 {

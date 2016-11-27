@@ -38,6 +38,7 @@ extern "C" {
 #include <unistd.h>
 }
 
+#include "Container.hpp"
 #include "namespaceImport.h"
 #include "shell.h"
 #include "fileUtil.h"
@@ -310,6 +311,10 @@ static void get_options(int argc, char *argv[])
 		mgr.getRoomByName(popt0).start();
 	} else if (popt1 == "stop") {
 		mgr.getRoomByName(popt0).stop();
+	} else if (popt1 == "mount") {
+		mgr.getRoomByName(popt0).mount();
+	} else if ((popt1 == "unmount") || (popt1 == "umount")) {
+		mgr.getRoomByName(popt0).unmount();
 	} else {
 		cout << "ERROR: must specify a valid action\n";
 		printUsage(desc);
@@ -323,6 +328,7 @@ main(int argc, char *argv[])
 {
 	try {
 		SetuidHelper::checkPrivileges();
+		Container::runMainHook();
 		logfile = fopen("/dev/null", "w");
 		get_options(argc, argv);
 	} catch(const std::system_error& e) {

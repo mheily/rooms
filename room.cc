@@ -27,6 +27,7 @@
 #include "jail_getid.h"
 
 extern "C" {
+#include <err.h>
 #include <getopt.h>
 #include <pwd.h>
 #include <sys/param.h>
@@ -38,9 +39,11 @@ extern "C" {
 }
 
 #include "namespaceImport.h"
+#include "Container.hpp"
 #include "shell.h"
 #include "fileUtil.h"
 #include "jail_getid.h"
+#include "passwdEntry.h"
 #include "room.h"
 #include "setuidHelper.h"
 #include "zfsDataset.h"
@@ -75,43 +78,24 @@ Room::Room(const string& managerRoomDir, const string& name)
 	if (FileUtil::checkExists(roomOptionsPath)) {
 		loadRoomOptions();
 	}
+	container = Container::create(chrootDir); //XXX-FIXME: WILL LEAK, NEED UNIQUE_PTR
+	container->setInitPidfilePath(roomDataDir + "/etc/init.pid"); // TODO: move to a /var/run directory instead
+	container->setHostname(roomName + ".room");
 }
 
 void Room::enterJail(const string& runAsUser)
 {
+	PasswdEntry pwent(ownerUid);
+
 	SetuidHelper::raisePrivileges();
 
-#if __FreeBSD__
-	int jid = jail_getid(jailName.c_str());
-	if (jid < 0) {
-		throw std::runtime_error("unable to get jail ID");
-	}
-
-	//SetuidHelper::logPrivileges();
-
-	if (jail_attach(jid) < 0) {
-		log_errno("jail_attach(2) to jid %d", jid);
-		throw std::system_error(errno, std::system_category());
-	}
-#else
-	if (chdir(chrootDir.c_str()) < 0) {
-		log_errno("chdir(2) to `%s'", chrootDir.c_str());
-		throw std::system_error(errno, std::system_category());
-	}
-
-	if (chroot(chrootDir.c_str()) < 0) {
-		log_errno("chroot(2) to `%s'", chrootDir.c_str());
-		throw std::system_error(errno, std::system_category());
-	}
-#endif
-
-	PasswdEntry pwent(ownerUid);
-	if (chdir(pwent.getHome()) < 0) {
-		log_errno("chdir(2) to %s", pwent.getHome());
-		throw std::system_error(errno, std::system_category());
-	}
+	container->enter();
 
 	if (runAsUser == ownerLogin) {
+		if (chdir(pwent.getHome()) < 0) {
+			log_errno("ERROR: unable to chdir(2) to %s", pwent.getHome());
+		}
+
 		SetuidHelper::dropPrivileges();
 	} else {
 		// XXX-FIXME: assumes root here
@@ -161,24 +145,35 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 		homeDir = pwent.getHome();
 	}
 
-#ifdef __FreeBSD__
-	int jid = jail_getid(jailName.c_str());
-	if (jid < 0) {
-		log_debug("jail `%s' not running; will start it now", jailName.c_str());
-		start();
+	if (!container->isRunning()) {
+		log_debug("container `%s' not running; will start it now", jailName.c_str());
+		container->start();
 	}
 
 	enterJail(loginName);
-#else
-	log_error("FIXME -- linux jail not implemented");
-#endif
+
+	pid_t pid = fork();
+
+	if (pid < 0) err(1, "fork(2)");
+	if (pid == 0) {
 
 	string jail_username = loginName;
 
+#if defined(__linux__)
+	string login_shell = "/bin/bash";
+	string login_shell_proctitle = "bash";
+#elif defined(__FreeBSD__)
+	string login_shell = "/bin/csh";
+	string login_shell_proctitle = "-csh";
+#else
+	string login_shell = "/bin/sh";
+	string login_shell_proctitle = "sh";
+#endif
+
 	std::vector<char*> argsVec;
 	if (execVec.size() == 0) {
-		path = strdup("/bin/csh");
-		argsVec.push_back((char*)"-csh");
+		path = strdup(login_shell.c_str());
+		argsVec.push_back(strdup(login_shell_proctitle.c_str()));
 	} else {
 		path = strdup(execVec[0].c_str());
 		for (string& s : execVec) {
@@ -199,7 +194,7 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 
 	environ = &clean_environment;
 	setenv("HOME", homeDir.c_str(), 1);
-	setenv("SHELL", "/bin/csh", 1); //FIXME: should consult PasswdEntry
+	setenv("SHELL", login_shell.c_str(), 1); //FIXME: should consult PasswdEntry
 	setenv("PATH", "/sbin:/usr/sbin:/usr/local/sbin:/bin:/usr/bin:/usr/local/bin", 1);
 	setenv("TERM", "xterm", 1);
 	setenv("USER", loginName.c_str(), 1);
@@ -214,11 +209,17 @@ void Room::exec(std::vector<std::string> execVec, const string& runAsUser)
 		log_errno("execvp(2)");
 		throw std::system_error(errno, std::system_category());
 	}
+	} else {
+	//parent
+		int status;
+		wait(&status);
+		exit(0);
+	}
 }
 
 void Room::enter() {
 	std::vector<std::string> argsVec;
-	Room::exec(argsVec, "");
+	Room::exec(argsVec, ownerLogin);
 }
 
 bool Room::jailExists()
@@ -448,81 +449,15 @@ void Room::printSnapshotList()
 }
 
 void Room::start() {
-	int rv;
-
-	if (JailUtil::isRunning(jailName)) {
+	if (container->isRunning()) {
 		log_debug("room already started");
 		return;
 	}
 
-	PasswdEntry pwent(ownerUid);
 
 	log_debug("booting room: %s", roomName.c_str());
 
-	SetuidHelper::raisePrivileges();
-
-	Shell::execute("/usr/sbin/jail", {
-			"-i",
-			"-c", "name=" + jailName,
-			"host.hostname=" + roomName + ".room",
-			"path=" + chrootDir,
-			"ip4=inherit",
-			"mount.devfs",
-#if __FreeBSD__ >= 11
-			"sysvmsg=new",
-			"sysvsem=new",
-			"sysvshm=new",
-#endif
-			"persist",
-	}, rv);
-	if (rv != 0) {
-		log_error("jail(1) failed; rv=%d", rv);
-		throw std::runtime_error("jail(1) failed");
-	}
-
-	// Mount the /local directory as /data within the jail
-	string data_dir = string(chrootDir + "/data");
-	unlink(data_dir.c_str());
-	mkdir(data_dir.c_str(), 0755);
-	Shell::execute("/sbin/mount", { "-t", "nullfs",
-			string(roomDataDir + "/local").c_str(),
-			data_dir.c_str()
-	});
-
-	if (roomOptions.shareTempDir) {
-		log_debug("using a shared /tmp");
-		Shell::execute("/sbin/mount", { "-t", "nullfs", "/tmp", chrootDir + "/tmp" });
-		Shell::execute("/sbin/mount", { "-t", "nullfs", "/var/tmp", chrootDir + "/var/tmp" });
-	} else {
-		log_debug("using a private /tmp");
-		Shell::execute("/sbin/mount", {
-				"-t", "nullfs",
-				roomDataDir + "/local/tmp",
-				chrootDir + "/tmp" });
-		Shell::execute("/sbin/mount", {
-				"-t", "nullfs",
-				roomDataDir + "/local/tmp",
-				chrootDir + "/var/tmp" });
-	}
-
-	Shell::execute("/usr/sbin/chroot", {
-		chrootDir,
-		"mkdir", "-p", pwent.getHome(),
-	});
-	if (roomOptions.shareHomeDir) {
-		log_debug("using a shared /home");
-		Shell::execute("/sbin/mount", {
-				"-t", "nullfs",
-				pwent.getHome(),
-				chrootDir + pwent.getHome() });
-	} else {
-		log_debug("using a private /home");
-		Shell::execute("/sbin/mount", {
-				"-t", "nullfs",
-				roomDataDir + "/local/home",
-				chrootDir + pwent.getHome() });
-	}
-
+#ifdef __FreeBSD
 	if (roomOptions.kernelABI == "Linux") {
 		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
 		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
@@ -530,6 +465,7 @@ void Room::start() {
 		Shell::execute("/sbin/mount", { "-t", "linsysfs", "linsysfs", chrootDir + "/sys" });
 	}
 
+	//XXX-SECURITY need to do this after chroot
 	try {
 		log_debug("updating /etc/passwd");
 		PasswdEntry pwent(ownerUid);
@@ -546,16 +482,40 @@ void Room::start() {
 	} catch(...) {
 		log_warning("unable to create user account");
 	}
+#else
+	//XXX-SECURITY need to do this after chroot
+	try {
+		log_debug("updating /etc/passwd");
+		PasswdEntry pwent(ownerUid);
+		Shell::execute("/usr/sbin/useradd", {
+				"-R",  chrootDir,
+				"-u", std::to_string(ownerUid),
+//				"-g", std::to_string(ownerGid),
+				"-c", pwent.getGecos(),
+				"-s", pwent.getShell(),
+				"-m",
+				pwent.getLogin(),
+		});
+	} catch(...) {
+		log_warning("unable to create user account");
+	}
+#endif
 
 	pushResolvConf();
 
-	SetuidHelper::lowerPrivileges();
+	container->start();
 }
 
 void Room::stop()
 {
 	PasswdEntry pwent(ownerUid);
 	string cmd;
+
+#ifdef __linux__
+	container->stop();
+	return;
+	// TODO: move code below into freebsdjail.cc
+#endif
 
 	int unmount_flags = 0; // Future: might support MNT_FORCE
 
@@ -674,6 +634,41 @@ void Room::destroy()
 	log_notice("room has been destroyed");
 
 	SetuidHelper::lowerPrivileges();
+}
+
+void Room::mount() {
+	container->mountAll();
+
+	PasswdEntry pwent(ownerUid);
+	container->mkdir_p("/data", 0755, 0, 0);
+	container->mount_into(roomDataDir + "/local", "/data");
+
+	if (roomOptions.shareTempDir) {
+		log_debug("using a shared /tmp");
+		container->mount_into("/tmp", "/tmp");
+		container->mount_into("/var/tmp", "/var/tmp");
+	} else {
+		log_debug("using a private /tmp");
+		container->mount_into(chrootDir + "/data/tmp", "/tmp");
+		container->mount_into(chrootDir + "/data/tmp", "/var/tmp");
+	}
+
+	container->mkdir_p(pwent.getHome(), 0755, 0, 0);
+	if (roomOptions.shareHomeDir) {
+		log_debug("using a shared /home");
+		container->mount_into(pwent.getHome(), pwent.getHome());
+	} else {
+		log_debug("using a private /home");
+		container->mount_into(roomDataDir + "/local/home", pwent.getHome());
+	}
+}
+
+void Room::unmount() {
+	container->unmountAll();
+	container->unmount_idempotent("/data");
+	container->unmount_idempotent("/home");
+	container->unmount_idempotent("/tmp");
+	container->unmount_idempotent("/var/tmp");
 }
 
 // Must be called w/ elevated privileges

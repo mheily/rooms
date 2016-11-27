@@ -17,6 +17,7 @@
 #pragma once
 
 extern "C" {
+#include <err.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>

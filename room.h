@@ -14,31 +14,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
-#include <locale>
-#include <regex>
-#include <string>
-#include <streambuf>
-#include <unordered_set>
-
-extern "C" {
-#include <getopt.h>
-#include <pwd.h>
-#include <sys/param.h>
-#include <sys/mount.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/uio.h>
-#include <unistd.h>
-}
+#include <memory>
 
 #include "namespaceImport.h"
-#include "shell.h"
-#include "fileUtil.h"
-#include "passwdEntry.h"
+#include "Container.hpp"
 #include "roomOptions.h"
 
 extern FILE *logfile;
@@ -71,6 +50,8 @@ public:
 	static void destroy(const string& name);
 	void enter();
 	void send();
+	void mount();
+	void unmount();
 	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
 	void printSnapshotList();
@@ -113,6 +94,8 @@ public:
 	string getLatestSnapshot();
 
 private:
+	//std::unique_ptr<Container> container = std::make_unique<Container>(Container::create());
+	Container* container;
 	bool areRoomOptionsLoaded = false;
 	RoomOptions roomOptions;
 	string roomDir;   // copy of RoomManager::roomDir

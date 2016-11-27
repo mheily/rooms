@@ -19,6 +19,7 @@
 #define _BSD_SOURCE
 #endif
 
+#include <err.h>
 #include <sys/stat.h>
 #include <grp.h>
 
@@ -54,15 +55,15 @@ void SetuidHelper::raisePrivileges() {
 	debugPrintUid();
 
 	if (isDroppedPrivs) {
-		throw std::logic_error("privileges are dropped");
+		errx(1, "privileges are dropped");
 	}
 
 	if (!isInitialized) {
-		throw std::logic_error("must call checkPrivileges() first");
+		errx(1, "must call checkPrivileges() first");
 	}
 
 	if (!isLoweredPrivs) {
-		throw std::logic_error("privileges are not currently lowered");
+		errx(1, "privileges are not currently lowered");
 	}
 
 	saved_umask = umask(S_IWGRP|S_IWOTH);
@@ -70,15 +71,15 @@ void SetuidHelper::raisePrivileges() {
 	log_debug("raising privileges");
 
 	if (setresuid(0, 0, 0) < 0) {
-		throw std::system_error(errno, std::system_category());
+		err(1, "setresuid(2)");
 	}
 
 	if (setresgid(0, 0, 0) < 0) {
-		throw std::system_error(errno, std::system_category());
+		err(1, "setresgid(2)");
 	}
 
 	if (geteuid() != 0) {
-		throw std::runtime_error("unable to regain priviliges");
+		errx(1, "unable to regain priviliges");
 	}
 
 	debugPrintUid();
@@ -98,7 +99,7 @@ void SetuidHelper::lowerPrivileges() {
 	}
 
 	if (isLoweredPrivs) {
-		throw std::logic_error("privileges already lowered");
+		errx(1, "privileges already lowered");
 	}
 
 	log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
