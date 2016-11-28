@@ -34,3 +34,8 @@ sudo apt install libboost-program-options-dev
 	it is expected that '<pool>/room/<blah>' exists
 	but what if you want the pool to be mounted at /room, so
 	the desired dataset is '<pool>/blah'
+
+- things "mostly work" now but installation is tricky.
+All file permissions are nobody:nogroup instead of root:root.
+Not sure if remounting / will fix, or if debootstrap needs to run
+inside a user namespace w/ uid_map set to match.

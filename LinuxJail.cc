@@ -38,18 +38,22 @@ extern "C" {
 static const size_t STACK_SIZE = (1024 * 1024);
 static char jail_stack[STACK_SIZE];
 
+/* Use pipe(2) to emulate a simple semaphore, so we don't have
+   to link with -lpthread */
+static int semfd[2];
 
 static void update_map(pid_t pid, const char* file)
 {
 	std::string uid_map_path = "/proc/" + std::to_string(pid) + "/" + file;
-	const char* mapbuf = "0 999999 999\n1000 1000 1\n"; //XXX-1000 is hardcoded for testing
+	const char* mapbuf = "0 999999 60000\n";
 
-	system(string("echo updating " + uid_map_path + "; ls -l " + uid_map_path + " ; id").c_str());
+	log_debug("updating %s", uid_map_path.c_str());
 	int fd = open(uid_map_path.c_str(), O_RDWR);
 	if (fd < 0) err(1, "open(2)");
-	ssize_t bytes;
-	bytes = write(fd, mapbuf, strlen(mapbuf));
-	if (bytes < (ssize_t)strlen(mapbuf)) {
+	ssize_t bytes, len;
+	len = strlen(mapbuf);
+	bytes = write(fd, mapbuf, len);
+	if (bytes < len) {
 		err(1, "write(2) returned %d", (int) bytes);
 	}
 	if (close(fd) < 0) err(1, "close(2)");
@@ -66,6 +70,36 @@ static void enter_ns(pid_t pid, const char* nstype)
 	if (fd < 0) err(1, "open(2) of %s", nsfile.c_str());
 	if (setns(fd, 0) < 0) err(1, "setns(2)");
 	close(fd);
+}
+
+static void initialize_uid_map(pid_t initPid)
+{
+	//std::ofstream uid_map;
+
+//	pid_t pid = fork();
+//	if (pid < 0) err(1, "fork");
+//	if (pid > 0) {
+	system("echo whee; id");
+//	enter_ns(initPid, "pid");
+
+	int fd = open(string("/proc/" + std::to_string(initPid) + "/setgroups").c_str(), O_RDWR);
+	if (fd < 0) err(1, "open(2)");
+	if (write(fd, "deny", 5) < 5) {
+		err(1, "write(2)");
+	}
+	if (close(fd) < 0) err(1, "close(2)");
+
+	update_map(initPid, "uid_map");
+	update_map(initPid, "gid_map");
+//		int status;
+ //               wait(&status);
+  //              if (!WIFEXITED(status) || WEXITSTATUS(status))
+   //                     errx(1, "unable to update uid_map");
+//		
+//	} else {
+//		sleep(5);
+//	exit(0);
+//	}
 }
 
 static int jailMain(void *arg)
@@ -182,6 +216,9 @@ void LinuxJail::start()
 
         SetuidHelper::raisePrivileges();
 
+	if (pipe(semfd) < 0)
+		err(1, "prctl(2)");
+
 	int flags = CLONE_NEWIPC | CLONE_NEWNS | CLONE_NEWPID | CLONE_NEWUSER | CLONE_NEWUTS;
 	//std::cout << "about 2 going to " << chrootDir << "\n";
 	initPid = clone(jailMain, jail_stack + STACK_SIZE, flags, this);
@@ -189,18 +226,14 @@ void LinuxJail::start()
 		err(1, "clone(2)");
 	}
 
+	initialize_uid_map(initPid);
+
 	std::ofstream pidfile;
 	pidfile.open (initPidfilePath);
 	pidfile << std::to_string(initPid);
 	pidfile.close();
 
-	std::string uid_map_path = "/proc/" + std::to_string(initPid) + "/uid_map";
-	std::cout << uid_map_path << "\n";
-	std::ofstream uid_map;
-#if 1
-	update_map(initPid, "uid_map");
-	update_map(initPid, "gid_map");
-#endif
+
         SetuidHelper::lowerPrivileges();
 
 #if 0
@@ -225,13 +258,6 @@ void LinuxJail::start()
 	}
         SetuidHelper::lowerPrivileges();
 
-#endif
-#if 0
-	//DEADWOOD: per process_namespaces(7) there must be an init-like process
-	int status;
-	waitpid(pid, &status, 0);
-#else
-	sleep(2); //WORKAROUND: should synchronize with the child and resume after the uid/gid maps have been setup
 #endif
 }
 

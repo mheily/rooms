@@ -96,10 +96,19 @@ void Room::enterJail(const string& runAsUser)
 			log_errno("ERROR: unable to chdir(2) to %s", pwent.getHome());
 		}
 
+#ifdef __linux__
+		if (setgid(ownerGid) < 0) err(1, "setgid");
+		if (setuid(ownerUid) < 0) err(1, "setuid");
+#else
 		SetuidHelper::dropPrivileges();
+#endif
 	} else {
 		// XXX-FIXME: assumes root here
 		log_debug("retaining root privs");
+#ifdef __linux__
+		if (setgid(0) < 0) err(1, "setgid");
+		if (setuid(0) < 0) err(1, "setuid");
+#endif
 	}
 }
 
