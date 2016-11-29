@@ -39,3 +39,12 @@ sudo apt install libboost-program-options-dev
 All file permissions are nobody:nogroup instead of root:root.
 Not sure if remounting / will fix, or if debootstrap needs to run
 inside a user namespace w/ uid_map set to match.
+
+- manpage creation requires:
+	sudo apt install docbook2x groff
+
+- to create a base archive:
+
+	mkdir /tmp/ubuntu-xenial-x64 && \
+	sudo debootstrap xenial /tmp/ubuntu-xenial-x64 http://archive.ubuntu.com/ubuntu/ && \
+	sudo tar -C /tmp/ubuntu-xenial-x64 -JcPpf /tmp/ubuntu-xenial-x64.txz .
