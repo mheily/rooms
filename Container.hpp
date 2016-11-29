@@ -30,6 +30,7 @@ public:
 	virtual void stop() = 0;
 	virtual void unmountAll() = 0;
 	virtual void mountAll() = 0;
+	virtual void unpack(const std::string& archivePath) = 0;
 	static void runMainHook();
 	static Container* create(const std::string& chrootDir);
 

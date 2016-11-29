@@ -27,5 +27,6 @@ public:
 	void stop();
 	void mountAll();
 	void unmountAll();
+	void unpack(const std::string& archivePath);
 	static void main_hook();
 };

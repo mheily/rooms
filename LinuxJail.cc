@@ -34,6 +34,7 @@ extern "C" {
 #include "MountUtil.hpp"
 #include "fileUtil.h"
 #include "logger.h"
+#include "shell.h"
 
 static const size_t STACK_SIZE = (1024 * 1024);
 static char jail_stack[STACK_SIZE];
@@ -42,17 +43,17 @@ static char jail_stack[STACK_SIZE];
    to link with -lpthread */
 static int semfd[2];
 
-static void update_map(pid_t pid, const char* file)
+static void update_map(pid_t pid, uid_t euid, const char* file)
 {
 	std::string uid_map_path = "/proc/" + std::to_string(pid) + "/" + file;
-	const char* mapbuf = "0 999999 60000\n";
+	std::string mapbuf = "0 " + std::to_string(euid) + " 1\n1 999999 60000\n";
 
-	log_debug("updating %s", uid_map_path.c_str());
+	log_debug("updating %s: setting: %s", uid_map_path.c_str(), mapbuf.c_str());
 	int fd = open(uid_map_path.c_str(), O_RDWR);
 	if (fd < 0) err(1, "open(2)");
 	ssize_t bytes, len;
-	len = strlen(mapbuf);
-	bytes = write(fd, mapbuf, len);
+	len = mapbuf.length();
+	bytes = write(fd, mapbuf.c_str(), len);
 	if (bytes < len) {
 		err(1, "write(2) returned %d", (int) bytes);
 	}
@@ -72,7 +73,7 @@ static void enter_ns(pid_t pid, const char* nstype)
 	close(fd);
 }
 
-static void initialize_uid_map(pid_t initPid)
+static void initialize_uid_map(pid_t initPid, uid_t ownerUid)
 {
 	//std::ofstream uid_map;
 
@@ -82,15 +83,17 @@ static void initialize_uid_map(pid_t initPid)
 	system("echo whee; id");
 //	enter_ns(initPid, "pid");
 
-	int fd = open(string("/proc/" + std::to_string(initPid) + "/setgroups").c_str(), O_RDWR);
-	if (fd < 0) err(1, "open(2)");
+	auto path = "/proc/" + std::to_string(initPid) + "/setgroups";
+	system(std::string("ls -l " + path).c_str());
+	int fd = open(path.c_str(), O_RDWR);
+	if (fd < 0) err(1, "open(2) of %s", path.c_str());
 	if (write(fd, "deny", 5) < 5) {
-		err(1, "write(2)");
+		err(1, "write(2) of %s", path.c_str());
 	}
 	if (close(fd) < 0) err(1, "close(2)");
 
-	update_map(initPid, "uid_map");
-	update_map(initPid, "gid_map");
+	update_map(initPid, ownerUid, "uid_map");
+	update_map(initPid, ownerUid, "gid_map");
 //		int status;
  //               wait(&status);
   //              if (!WIFEXITED(status) || WEXITSTATUS(status))
@@ -105,6 +108,8 @@ static void initialize_uid_map(pid_t initPid)
 static int jailMain(void *arg)
 {
 	LinuxJail* jail = static_cast<LinuxJail*>(arg);
+
+sleep(3); // wait for uid_map setup
 
 	//std::cout << "going to " << jail->chrootDir << "\n";
 	//daemon(1, 0);
@@ -174,6 +179,9 @@ void LinuxJail::mountAll()
 {
         SetuidHelper::raisePrivileges();
 
+	if (::mount(chrootDir.c_str(), chrootDir.c_str(), "", MS_BIND, NULL) < 0) {
+		err(1, "mount(2) of %s", chrootDir.c_str());
+	}
 	auto mountpoint = std::string(chrootDir + "/sys");
 	if (mount("/sys", mountpoint.c_str(), "", MS_BIND | MS_RDONLY, NULL) < 0) {
 		err(1, "mount(2) of %s", mountpoint.c_str());
@@ -214,6 +222,8 @@ void LinuxJail::start()
 {
 	std::string mountpoint;
 
+	uid_t ownerUid = geteuid();
+
         SetuidHelper::raisePrivileges();
 
 	if (pipe(semfd) < 0)
@@ -226,7 +236,7 @@ void LinuxJail::start()
 		err(1, "clone(2)");
 	}
 
-	initialize_uid_map(initPid);
+	initialize_uid_map(initPid, ownerUid);
 
 	std::ofstream pidfile;
 	pidfile.open (initPidfilePath);
@@ -295,4 +305,33 @@ void LinuxJail::enter()
         if (chroot(chrootDir.c_str()) < 0) {
 		err(1, "chroot(2)");
         }
+}
+
+void LinuxJail::unpack(const std::string& archivePath) 
+{
+	log_debug("unpacking %s", archivePath.c_str());
+	pid_t pid = fork();
+	if (pid < 0) {
+		err(1, "fork(2)");
+	}
+	if (pid == 0) {
+		sleep(3);
+		auto tmprootDir = chrootDir;
+		log_debug("switching to new namespaces");
+		if (unshare(CLONE_NEWUSER) < 0) err(1, "unshare");
+		if (unshare(CLONE_NEWNS) < 0) err(1, "unshare");
+		if (mount(chrootDir.c_str(), tmprootDir.c_str(), "", MS_BIND, NULL) < 0) err(1, "mount");
+        	Subprocess proc;
+		proc.execve("/bin/tar", { "-C", tmprootDir, 
+			"--exclude=./dev/*",
+			"-Jxf", archivePath });
+		err(1, "execve(2))");
+	} else {
+		initialize_uid_map(pid, geteuid());
+		int status;
+		wait(&status);
+		if (!WIFEXITED(status) || WEXITSTATUS(status))
+			errx(1, "unable to unpack archive");
+	}
+	log_debug("unpack complete");
 }
