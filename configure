@@ -34,7 +34,7 @@ uname=$(uname)
 case $uname in
 FreeBSD)
 	room_CXXFLAGS="${room_CXXFLAGS} -isystem /usr/local/include"
-        room_SOURCES="${room_SOURCES} jail_getid.cc"
+        room_SOURCES="${room_SOURCES} jail_getid.cc FreeBSDJail.cc"
 	room_LDFLAGS="${room_LDFLAGS} -L/usr/local/lib"
         room_LDADD="${room_LDADD} /usr/local/lib/libboost_program_options.a"
         room_LDADD="${room_LDADD} -ljail "

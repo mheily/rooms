@@ -22,8 +22,11 @@ extern "C" {
 #include <unistd.h>
 }
 
+#include "fileUtil.h"
 #include "FreeBSDJail.hpp"
 #include "jail_getid.h"
+#include "logger.h"
+#include "shell.h"
 
 FreeBSDJail::FreeBSDJail()
 {
@@ -31,7 +34,7 @@ FreeBSDJail::FreeBSDJail()
 
 bool FreeBSDJail::isRunning()
 {
-        if (jail_getid(jailName.c_str() < 0) {
+        if (jail_getid(jailName.c_str()) < 0) {
 		return (false);
         } else {
 		return (false);
@@ -53,10 +56,12 @@ void FreeBSDJail::enter()
 
 void FreeBSDJail::start()
 {
+	int rv;
+
 	Shell::execute("/usr/sbin/jail", {
 			"-i",
 			"-c", "name=" + jailName,
-			"host.hostname=" + roomName + ".room",
+			"host.hostname=" + hostname,
 			"path=" + chrootDir,
 			"ip4=inherit",
 			"mount.devfs",
@@ -81,6 +86,28 @@ void FreeBSDJail::unpack(const std::string& archivePath)
 {
 	log_debug("unpacking %s", archivePath.c_str());
 	SetuidHelper::raisePrivileges();
-	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
+	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", archivePath });
 	SetuidHelper::lowerPrivileges();
 }
+
+void FreeBSDJail::mountAll()
+{
+}
+
+void FreeBSDJail::unmountAll()
+{
+	int unmount_flags = 0; // Future: might support MNT_FORCE
+
+	log_debug("unmounting /dev");
+	FileUtil::unmount(std::string(chrootDir + "/dev"), unmount_flags);
+
+#if 0
+	//FIXME: roomOptions not known to Container class
+	if (roomOptions.kernelABI == "Linux") {
+		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
+		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
+	}
+
+#endif
+}
+

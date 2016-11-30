@@ -464,6 +464,7 @@ void Room::start() {
 	log_debug("booting room: %s", roomName.c_str());
 
 #ifdef __FreeBSD
+	container->jailName = jailName;
 	if (roomOptions.kernelABI == "Linux") {
 		// TODO: maybe load kernel modules? or maybe require that be done during system boot...
 		//       requires:    kldload linux fdescfs linprocfs linsysfs tmpfs
@@ -523,8 +524,6 @@ void Room::stop()
 	// TODO: move code below into freebsdjail.cc
 #endif
 
-	int unmount_flags = 0; // Future: might support MNT_FORCE
-
 	log_debug("stopping room `%s'", roomName.c_str());
 
 	SetuidHelper::raisePrivileges();
@@ -538,36 +537,6 @@ void Room::stop()
 	}
 
 	killAllProcesses();
-
-	log_debug("unmounting /dev");
-	FileUtil::unmount(string(chrootDir + "/dev"), unmount_flags);
-
-	if (true || roomOptions.shareTempDir) {
-		log_debug("unmounting /tmp");
-		FileUtil::unmount(string(chrootDir + "/tmp"), unmount_flags);
-
-		log_debug("unmounting /var/tmp");
-		FileUtil::unmount(string(chrootDir + "/var/tmp"), unmount_flags);
-	}
-
-	log_debug("unmounting /home");
-	FileUtil::unmount(string(chrootDir + pwent.getHome()), unmount_flags);
-
-	if (roomOptions.kernelABI == "Linux") {
-		Shell::execute("/sbin/umount", { chrootDir + "/proc" });
-		Shell::execute("/sbin/umount", { chrootDir + "/sys" });
-	}
-
-//FIXME: this duplicates code from 5 lines earlier!
-	if (roomOptions.shareHomeDir) {
-		if (roomOptions.shareHomeDir) {
-			PasswdEntry pwent(ownerUid);
-			Shell::execute("/sbin/umount", { chrootDir + pwent.getHome() });
-		}
-	}
-
-	log_debug("unmounting /data");
-	FileUtil::unmount(string(chrootDir + "/data"), unmount_flags);
 
 	if (jailExists()) {
 		log_debug("removing jail");

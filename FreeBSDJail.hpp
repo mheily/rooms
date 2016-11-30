@@ -25,5 +25,9 @@ public:
 	void enter();
 	void start();
 	void stop();
+	void mountAll();
+	void unmountAll();
         void unpack(const std::string& archivePath);
+
+	std::string jailName;
 };
