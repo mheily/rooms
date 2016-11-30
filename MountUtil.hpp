@@ -47,7 +47,8 @@ public:
 		endmntent(f);
 		return false;
 #else
-#error Not implemented yet
+		errx(1, "FIXME: not implemented yet");
+		// on FreeBSD: mount -p | awk '{print $2}' | egrep '^/dev$'
 #endif
 	}
 
@@ -83,7 +84,8 @@ SetuidHelper::lowerPrivileges();
 	}
 	endmntent(f);
 #else
-#error Not implemented yet
+		errx(1, "FIXME: not implemented yet");
+		// on FreeBSD: mount -p | awk '{print $2}' | egrep '^/foo/'
 #endif
 	}
 };

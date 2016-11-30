@@ -165,8 +165,12 @@ void Container::mount_into(const string& src, const string& relativeTarget)
 	if (::mount(src.c_str(), target.c_str(), NULL, MS_BIND, NULL) < 0) {
 		err(1, "mount(2) of %s", src.c_str());
 	}
+#elif defined(__FreeBSD__)
+	if (::mount("nullfs", target.c_str(), 0, (void*)src.c_str()) < 0) {
+		err(1, "mount(2) of %s", src.c_str());
+	}
 #else
-#error FIXME - port to freebsd nullfs
+#error Unsupported OS
 #endif
 	SetuidHelper::lowerPrivileges();
 }

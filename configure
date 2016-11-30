@@ -27,7 +27,7 @@ room_CXXFLAGS="-std=c++14 -Wall -Werror"
 room_LDFLAGS=""
 room_LDADD=""
 room_INSTALLFLAGS="-s -m 4755 -o 0 -g 0"
-room_SOURCES=`ls -1 *.cc | egrep -v -e 'jail_getid.cc|FreeBSDJail.cc' | tr '\n' ' '`
+room_SOURCES=`ls -1 *.cc | egrep -v -e 'jail_getid.cc|FreeBSDJail.cc|LinuxJail.cc' | tr '\n' ' '`
 room_DEPENDS=""
 
 uname=$(uname)
@@ -40,6 +40,7 @@ FreeBSD)
         room_LDADD="${room_LDADD} -ljail "
 	;;
 Linux)
+        room_SOURCES="${room_SOURCES} LinuxJail.cc"
         room_LDADD="${room_LDADD} -lboost_program_options"
 	;;
 *)
