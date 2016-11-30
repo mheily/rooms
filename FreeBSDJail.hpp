@@ -25,5 +25,5 @@ public:
 	void enter();
 	void start();
 	void stop();
-        void unpack();
+        void unpack(const std::string& archivePath);
 };
