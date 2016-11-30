@@ -377,14 +377,7 @@ void Room::extractTarball(const string& baseTarball)
 		abort();
 	}
 
-#ifdef __linux__
 	container->unpack(baseTarball);
-#elif __FreeBSD__
-	SetuidHelper::raisePrivileges();
-	Shell::execute(tarCommand.c_str(), { "-C", chrootDir, "-xf", baseTarball });
-	pushResolvConf();
-	SetuidHelper::lowerPrivileges();
-#endif
 
 	log_debug("room %s created", roomName.c_str());
 }

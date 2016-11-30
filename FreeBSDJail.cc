@@ -76,3 +76,11 @@ void FreeBSDJail::start()
 void FreeBSDJail::stop()
 {
 }
+
+void FreeBSDJail::unpack(const std::string& archivePath) 
+{
+	log_debug("unpacking %s", archivePath.c_str());
+	SetuidHelper::raisePrivileges();
+	Shell::execute("/usr/bin/tar", { "-C", chrootDir, "-xf", baseTarball });
+	SetuidHelper::lowerPrivileges();
+}
