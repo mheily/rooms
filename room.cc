@@ -67,7 +67,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 
 	roomDataDir = roomDir + "/" + ownerLogin + "/" + name;
 	chrootDir = roomDataDir + "/share/root";
-	useZfs = ZfsPool::detectZfs();
+	useZfs = false; //TODO: change to ZfsPool::detectZfs();
 	if (useZfs) {
 		zpoolName = ZfsPool::getNameByPath(roomDir);
 		//FIXME: these are two names for the same thing now..
@@ -340,12 +340,17 @@ void Room::createEmpty()
 
 	SetuidHelper::raisePrivileges();
 
-	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
+	if (useZfs) {
+		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName });
 
-	Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName + "/share"});
+		Shell::execute("/sbin/zfs", {"create", roomDataset + "/" + roomName + "/share"});
 
-	// Allow the owner to use 'zfs send'
-	Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", roomDataset + "/" + roomName });
+		// Allow the owner to use 'zfs send'
+		Shell::execute("/sbin/zfs", {"allow", "-u", ownerLogin, "hold,send", roomDataset + "/" + roomName });
+	} else {
+		FileUtil::mkdir_idempotent(roomDataDir, 0700, ownerUid, ownerGid);
+		FileUtil::mkdir_idempotent(std::string(roomDataDir + "/share"), 0700, ownerUid, ownerGid);
+	}
 
 	FileUtil::mkdir_idempotent(chrootDir, 0700, ownerUid, ownerGid);
 

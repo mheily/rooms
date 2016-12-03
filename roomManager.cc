@@ -70,8 +70,13 @@ void RoomManager::bootstrap() {
 	string zpool;
 
 	if (!useZfs) {
-		throw std::logic_error("This utility requires ZFS");
+		SetuidHelper::raisePrivileges();
+		FileUtil::mkdir_idempotent(roomDir, 0755, 0, 0);
+		SetuidHelper::lowerPrivileges();
+
+		return;
 	}
+	// ZFS handling after this point
 
 	if (FileUtil::checkExists(roomDir)) {
 		zpool = ZfsPool::getNameByPath(roomDir);
@@ -121,29 +126,38 @@ void RoomManager::initUserRoomSpace()
 		return;
 	}
 
-	string tempdir = getTempdir() + "/user." + ownerLogin;
+	// TODO: simplify this. I think it was due to wanting the
+	// user to own /room/$LOGNAME, but if root owns it, the dance
+	// of changing the mointpoint may not be needed
+	if (useZfs) {
+		string tempdir = getTempdir() + "/user." + ownerLogin;
 
-	string zpool = ZfsPool::getNameByPath(roomDir);
+		string zpool = ZfsPool::getNameByPath(roomDir);
+		SetuidHelper::raisePrivileges();
+
+		Shell::execute("/sbin/zfs",	{
+				"create",
+				"-o", "mountpoint=" + tempdir,
+				zpool + "/room/" + ownerLogin
+		});
+
+		FileUtil::chmod(tempdir, 0750);
+		FileUtil::chgrp(tempdir, ownerGid);
+
+		string path = "/room/" + ownerLogin;
+		Shell::execute("/sbin/zfs",	{
+				"set", "mountpoint=" + path,
+				zpool + "/room/" + ownerLogin
+		});
+		FileUtil::rmdir(tempdir);
+	} else {
+		SetuidHelper::raisePrivileges();
+		FileUtil::mkdir_idempotent("/room/" + ownerLogin, 0755, 0, 0);
+		SetuidHelper::lowerPrivileges();
+	}
+
 	SetuidHelper::raisePrivileges();
-
-	Shell::execute("/sbin/zfs",	{
-			"create",
-			"-o", "mountpoint=" + tempdir,
-			zpool + "/room/" + ownerLogin
-	});
-
-	FileUtil::chmod(tempdir, 0750);
-	FileUtil::chgrp(tempdir, ownerGid);
-
-	string path = "/room/" + ownerLogin;
-	Shell::execute("/sbin/zfs",	{
-			"set", "mountpoint=" + path,
-			zpool + "/room/" + ownerLogin
-	});
-	FileUtil::rmdir(tempdir);
-
 	FileUtil::mkdir_idempotent("/room/" + ownerLogin + "/.tmp", 0700, ownerUid, ownerGid);
-
 	SetuidHelper::lowerPrivileges();
 }
 

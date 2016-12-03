@@ -21,6 +21,8 @@
 
 // Check for any ZFS pools.
 bool ZfsPool::detectZfs() {
+	return false;
+#if 0
 	static int result = -1;
 	if (result < 0) {
 		int exit_status;
@@ -33,6 +35,7 @@ bool ZfsPool::detectZfs() {
 		}
 	}
 	return (result == 1);
+#endif
 }
 
 string ZfsPool::getNameByPath(const string& path) {
