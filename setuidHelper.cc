@@ -68,7 +68,9 @@ void SetuidHelper::raisePrivileges() {
 
 	saved_umask = umask(S_IWGRP|S_IWOTH);
 
-	log_debug("raising privileges");
+	if (debugModule) {
+		log_debug("raising privileges");
+	}
 
 	if (setresuid(0, 0, 0) < 0) {
 		err(1, "setresuid(2)");
@@ -102,7 +104,9 @@ void SetuidHelper::lowerPrivileges() {
 		errx(1, "privileges already lowered");
 	}
 
-	log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
+	if (debugModule) {
+		log_debug("lowering privileges (current: uid=%d, euid=%d)", getuid(), geteuid());
+	}
 
 	// TODO: should call getgroups(3) to save the current grouplist,
 	//    and restore the privileges later
