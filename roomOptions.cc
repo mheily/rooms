@@ -26,12 +26,16 @@
 
 namespace pt = boost::property_tree;
 
+static const bool debugModule = false;
+
 void RoomOptions::load(const string &path)
 {
 	pt::ptree tree;
 
 	optionsPath = path;
-    log_debug("reading options from %s", path.c_str());
+	if (debugModule) {
+		log_debug("reading options from %s", path.c_str());
+	}
     pt::read_json(path, tree);
 
 	allowX11Clients = tree.get("permissions.allowX11Clients", false);
@@ -52,7 +56,9 @@ void RoomOptions::save(const string &path)
 {
     pt::ptree tree;
 
-    log_debug("writing options to %s", path.c_str());
+	if (debugModule) {
+		log_debug("writing options to %s", path.c_str());
+	}
 
     tree.put("api.version", "0");
     tree.put("abi.kernel", "FreeBSD");
