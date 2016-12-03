@@ -21,6 +21,12 @@ extern "C" {
 #include <mntent.h>
 #endif
 
+#ifdef __FreeBSD__
+#include <sys/param.h>
+#include <sys/ucred.h>
+#include <sys/mount.h>
+#endif
+
 #include <stdio.h>
 }
 
@@ -46,9 +52,22 @@ public:
 		}
 		endmntent(f);
 		return false;
+#elif defined(__FreeBSD__)
+		struct statfs *sfs;
+		int size;
+
+		if ((size = getmntinfo(&sfs, MNT_NOWAIT)) == 0) {
+			err(1, "getmntinfo(3)");
+		}
+		for (int i = 0; i < size; i++) {
+			std::cout << path << " " << sfs[i].f_mntonname << "\n";
+			if (!strcmp(path.c_str(), sfs[i].f_mntonname)) {
+				return true;
+			}
+		}
+		return false;
 #else
-		errx(1, "FIXME: not implemented yet");
-		// on FreeBSD: mount -p | awk '{print $2}' | egrep '^/dev$'
+		errx(1, "FIXME: checkIsMounted not implemented yet");
 #endif
 	}
 
@@ -84,7 +103,7 @@ SetuidHelper::lowerPrivileges();
 	}
 	endmntent(f);
 #else
-		errx(1, "FIXME: not implemented yet");
+		errx(1, "FIXME: recursive umount not implemented yet");
 		// on FreeBSD: mount -p | awk '{print $2}' | egrep '^/foo/'
 #endif
 	}

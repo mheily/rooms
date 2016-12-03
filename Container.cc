@@ -139,7 +139,7 @@ void Container::mkdir_p(const string& path, mode_t mode, uid_t uid, gid_t gid)
 
 void Container::mount_into(const string& src, const string& relativeTarget) 
 {
-	string target = chrootDir + "/" + relativeTarget;
+	string target = chrootDir + relativeTarget;
 
 	/* CAVEAT: The security of this check depends on
 	   it being executed before any user-controlled	
