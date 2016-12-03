@@ -27,6 +27,7 @@
 #endif
 
 #include <csignal>
+#include <sys/uio.h>
 
 #include "fileUtil.h"
 #include "logger.h"
@@ -166,7 +167,21 @@ void Container::mount_into(const string& src, const string& relativeTarget)
 		err(1, "mount(2) of %s", src.c_str());
 	}
 #elif defined(__FreeBSD__)
-	if (::mount("nullfs", target.c_str(), 0, (void*)src.c_str()) < 0) {
+	char *c_fspath = strdup(src.c_str());
+	char *c_target = strdup(target.c_str());
+	struct iovec iov[] = {
+			{ .iov_base = (void*)"fstype", .iov_len = 7 },
+			{ .iov_base = (void*)"nullfs", .iov_len = 7 },
+			{ .iov_base = (void*)"fspath", .iov_len = 7 },
+			{ .iov_base = (void*) c_fspath, .iov_len = strlen(c_fspath)+1 },
+			{ .iov_base = (void*)"target", .iov_len = 7 },
+			{ .iov_base = (void*) c_target, .iov_len = strlen(c_target)+1 },
+	};
+    int rv = nmount((struct iovec*)&iov, 6, 0);
+    free(c_fspath);
+    free(c_target);
+
+    if (rv < 0) {
 		err(1, "mount(2) of %s", src.c_str());
 	}
 #else

@@ -35,9 +35,9 @@ FreeBSDJail::FreeBSDJail()
 bool FreeBSDJail::isRunning()
 {
         if (jail_getid(jailName.c_str()) < 0) {
-		return (false);
+        	return (true);
         } else {
-		return (false);
+        	return (false);
 	}
 }
 
@@ -96,10 +96,14 @@ void FreeBSDJail::mountAll()
 
 void FreeBSDJail::unmountAll()
 {
+
+	// for now, mounted by jail(1)
+#if 0
 	int unmount_flags = 0; // Future: might support MNT_FORCE
 
 	log_debug("unmounting /dev");
 	FileUtil::unmount(std::string(chrootDir + "/dev"), unmount_flags);
+#endif
 
 #if 0
 	//FIXME: roomOptions not known to Container class
