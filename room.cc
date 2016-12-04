@@ -43,6 +43,7 @@ extern "C" {
 #include "shell.h"
 #include "fileUtil.h"
 #include "jail_getid.h"
+#include "MountUtil.hpp"
 #include "passwdEntry.h"
 #include "room.h"
 #include "setuidHelper.h"
@@ -81,6 +82,7 @@ Room::Room(const string& managerRoomDir, const string& name)
 	container = Container::create(chrootDir); //XXX-FIXME: WILL LEAK, NEED UNIQUE_PTR
 	container->setInitPidfilePath(roomDataDir + "/etc/init.pid"); // TODO: move to a /var/run directory instead
 	container->setHostname(roomName + ".room");
+	determineInitialState();
 }
 
 void Room::enterJail(const string& runAsUser)
@@ -360,7 +362,6 @@ void Room::createEmpty()
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/home", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/local/tmp", 0700, ownerUid, ownerGid);
 	FileUtil::mkdir_idempotent(roomDataDir + "/tags", 0700, ownerUid, ownerGid);
-
 	SetuidHelper::lowerPrivileges();
 }
 
@@ -583,9 +584,7 @@ void Room::destroy()
 
 	log_debug("destroying room at %s", chrootDir.c_str());
 
-	if (JailUtil::isRunning(jailName)) {
-		stop();
-	}
+	transitionState(ROOM_STATE_DEFINED);
 
 	SetuidHelper::raisePrivileges();
 	if (useZfs) {
@@ -654,6 +653,43 @@ void Room::unmount() {
 	container->unmount_idempotent("/home");
 	container->unmount_idempotent("/tmp");
 	container->unmount_idempotent("/var/tmp");
+}
+
+// We don't know what state a room is in, so figure it out.
+void Room::determineInitialState()
+{
+	if (MountUtil::checkIsMounted(roomDataDir + "/dev")) {
+		//log_debug("mounted");
+		if (container->isRunning()) {
+			//log_debug("running");
+			state = ROOM_STATE_RUNNING;
+		} else {
+			state = ROOM_STATE_DEFINED;
+		}
+	} else {
+		//log_debug("not mounted");
+		state = ROOM_STATE_DEFINED;
+	}
+}
+
+void Room::transitionState(enum e_RoomState targetState)
+{
+	switch (targetState) {
+	case ROOM_STATE_DEFINED:
+		switch (state) {
+		case ROOM_STATE_RUNNING:
+			stop();
+		case ROOM_STATE_MOUNTED:
+			unmount();
+		default:
+			state = ROOM_STATE_DEFINED;
+			break;
+		}
+		break;
+
+	default:
+		errx(1, "FIXME - finish this function");
+	}
 }
 
 // Must be called w/ elevated privileges

@@ -31,6 +31,13 @@ struct RoomInstallParams {
 	RoomOptions options;
 };
 
+enum e_RoomState {
+	ROOM_STATE_UNKNOWN,
+	ROOM_STATE_DEFINED,
+	ROOM_STATE_MOUNTED,
+	ROOM_STATE_RUNNING,
+};
+
 class Room {
 public:
 	Room(const string& managerRoomDir, const string& name);
@@ -55,6 +62,7 @@ public:
 	void exec(std::vector<std::string> execVec, const string& runAsUser);
 	void exportArchive();
 	void printSnapshotList();
+	void transitionState(enum e_RoomState targetState);
 
 	// Remote push/pull functions
 	//void cloneFromOrigin(const string& uri);
@@ -111,6 +119,7 @@ private:
 	string zpoolName; // the ZFS pool the room lives in
 	string roomOptionsPath; // The path to the room options.json file
 	bool useZfs; // if true, create ZFS rooms
+	enum e_RoomState state = ROOM_STATE_UNKNOWN;
 
 /*	struct {
 		string tarballUri; // URI to the tarball for the root fs
@@ -120,6 +129,7 @@ private:
 		return (roomOptions.templateSnapshot != "");
 	}
 
+	void determineInitialState();
 	void enterJail(const string& runAsUser);
 	bool jailExists();
 	void customizeWithoutRoot();

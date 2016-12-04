@@ -35,9 +35,9 @@ FreeBSDJail::FreeBSDJail()
 bool FreeBSDJail::isRunning()
 {
         if (jail_getid(jailName.c_str()) < 0) {
-        	return (true);
+        	return false;
         } else {
-        	return (false);
+        	return true;
 	}
 }
 

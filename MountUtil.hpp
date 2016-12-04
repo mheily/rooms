@@ -60,7 +60,7 @@ public:
 			err(1, "getmntinfo(3)");
 		}
 		for (int i = 0; i < size; i++) {
-			std::cout << path << " " << sfs[i].f_mntonname << "\n";
+			//std::cout << path << " " << sfs[i].f_mntonname << "\n";
 			if (!strcmp(path.c_str(), sfs[i].f_mntonname)) {
 				return true;
 			}
