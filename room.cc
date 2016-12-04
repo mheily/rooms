@@ -609,6 +609,11 @@ void Room::destroy()
 			log_error("unable to destroy the ZFS dataset");
 			throw std::runtime_error("unable to destroy the ZFS dataset");
 		}
+	} else {
+#ifdef __FreeBSD__
+		Shell::execute("/bin/chflags", { "-R", "noschg", roomDataDir });
+#endif
+		Shell::execute("/bin/rm", { "-rf", roomDataDir });
 	}
 
 	log_notice("room has been destroyed");
